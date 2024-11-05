@@ -1,0 +1,35 @@
+{
+  "favorites": [],
+  "lookup_history": [
+    "item:minecraft:tnt",
+    "item:minecraft:wooden_pickaxe{Damage:0}",
+    "item:minecraft:tipped_arrow{Potion:\"minecraft:purified_water\"}",
+    "item:minecraft:lingering_potion{Potion:\"minecraft:purified_water\"}",
+    "item:dehydration:purified_water_bucket",
+    "item:minecraft:potion{Potion:\"minecraft:purified_water\"}",
+    "item:handcrafted:evoker_trophy"
+  ],
+  "craft_history": [
+    "earlystage:flint_axe",
+    "minecraft:crafting_table",
+    "minecraft:cherry_planks",
+    "minecraft:bamboo_planks",
+    "minecraft:chest",
+    "minecraft:stick_from_bamboo_item",
+    "minecraft:wheat",
+    "minecraft:iron_ingot_from_nuggets",
+    "minecraft:bread",
+    "earlystage:flint_sword",
+    "earlystage:flint_shovel",
+    "earlystage:flint_hoe",
+    "earlystage:flint_pickaxe",
+    "minecraft:wooden_pickaxe"
+  ],
+  "recipe_defaults": {
+    "added": [],
+    "tags": {},
+    "resolutions": {},
+    "disabled": []
+  },
+  "hidden_stacks": []
+}

@@ -1,0 +1,66 @@
+{
+  "bookGuiScale": 0,
+  "clickedVisualize": false,
+  "bookData": {
+    "patchouli:aged_guide_book": {
+      "viewedEntries": [
+        "patchouli:0_get_started/0_basic_tools_entry",
+        "patchouli:0_get_started/1_skills_entry",
+        "patchouli:0_get_started/3_partys_entry",
+        "patchouli:0_get_started/2_jobs_entry",
+        "patchouli:3_farming/0_plants_and_seasons_entry",
+        "patchouli:3_farming/2_sprinkler_entry",
+        "patchouli:5_construction/0_chipped_entry",
+        "patchouli:4_production/0_ore_entry",
+        "patchouli:1_hydration/1_boil_entry",
+        "patchouli:4_production/2_leather_entry",
+        "patchouli:2_temperature/0_temperature_entry",
+        "patchouli:2_temperature/1_body_temp_entry",
+        "patchouli:6_technology/1_ships_entry",
+        "patchouli:6_technology/0_carts_entry",
+        "patchouli:3_farming/1_animal_breeding_entry",
+        "patchouli:4_production/1_food_entry",
+        "patchouli:1_hydration/2_carry_entry",
+        "patchouli:2_temperature/3_items_entry",
+        "patchouli:2_temperature/2_environment_temp_entry",
+        "patchouli:1_hydration/0_drink_entry",
+        "patchouli:6_technology/2_aircraft_entry",
+        "patchouli:5_production/0_food_entry",
+        "patchouli:2_nutrition/0_nutrients_entry",
+        "patchouli:4_farming/0_ores_entry",
+        "patchouli:4_farming/2_animal_breeding_entry",
+        "patchouli:4_farming/1_plants_and_seasons_entry",
+        "patchouli:8_enchant/0_runic_table_entry",
+        "patchouli:8_enchant/2_gilding_foundry_entry",
+        "patchouli:8_enchant/1_roll_bench_entry",
+        "patchouli:5_production/1_leather_entry",
+        "patchouli:7_technology/0_carts_entry",
+        "patchouli:6_construction/0_chipped_entry",
+        "patchouli:0_get_started/1_first_things_entry",
+        "patchouli:0_get_started/2_skills_entry",
+        "patchouli:0_get_started/3_jobs_entry",
+        "patchouli:0_get_started/4_partys_entry"
+      ],
+      "bookmarks": [
+        {
+          "entry": "patchouli:0_get_started/0_basic_tools_entry",
+          "page": 0
+        },
+        {
+          "entry": "patchouli:4_production/0_ore_entry",
+          "page": 0
+        },
+        {
+          "entry": "patchouli:0_get_started/0_basic_tools_entry",
+          "page": 0
+        }
+      ],
+      "completedManualQuests": []
+    },
+    "adventurez:adventurez": {
+      "viewedEntries": [],
+      "bookmarks": [],
+      "completedManualQuests": []
+    }
+  }
+}

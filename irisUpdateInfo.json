@@ -1,0 +1,9 @@
+{
+  "semanticVersion": "1.6.11",
+  "updateInfo": {
+    "en_us": "Iris 1.6.11 has released, with performance improvements and bug fixes, along with some minor features. Download it at: {link}"
+  },
+  "modHost": "Modrinth",
+  "modDownload": "https://modrinth.com/mod/iris",
+  "installer": "https://irisshaders.dev"
+}
