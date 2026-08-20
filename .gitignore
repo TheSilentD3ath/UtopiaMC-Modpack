@@ -1,0 +1,35 @@
+# Minecraft runtime and personal client state
+logs/
+crash-reports/
+saves/
+world/
+screenshots/
+resourcepacks/
+shaderpacks/
+mods/
+.fabric/
+*.log
+options*.txt
+servers.dat
+usercache.json
+usernamecache.json
+fancymenu_data/*.fmdata
+
+# Build and development output
+.gradle/
+**/build/
+run/
+out/
+.idea/
+.vscode/
+*.iml
+
+# Release binaries belong on GitHub Releases
+*.jar
+*.mrpack
+*.zip
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+desktop.ini
