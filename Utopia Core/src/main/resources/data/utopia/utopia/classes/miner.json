@@ -1,0 +1,55 @@
+{
+  "name": "trait.utopia.class.miner",
+  "description": "trait.utopia.class.miner.desc",
+  "icon": "minecraft:iron_pickaxe",
+  "order": 3,
+  "skills": {
+    "start_levels": {
+      "mining": 8,
+      "stamina": 3,
+      "health": 1,
+      "strength": 2
+    },
+    "bonus_points": 1,
+    "xp_multiplier": {
+      "mining": 1.3,
+      "stamina": 1.15
+    },
+    "effect_multiplier": {
+      "mining": 1.15,
+      "stamina": 1.1
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:iron_pickaxe",
+          "Count": 1
+        },
+        "slot": "mainhand"
+      },
+      {
+        "item": {
+          "id": "minecraft:stone_pickaxe",
+          "Count": 1
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:torch",
+          "Count": 32
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 12
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:mining_basics"
+  ]
+}

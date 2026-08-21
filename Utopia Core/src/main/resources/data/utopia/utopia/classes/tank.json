@@ -1,0 +1,78 @@
+{
+  "name": "trait.utopia.class.tank",
+  "description": "trait.utopia.class.tank.desc",
+  "icon": "minecraft:shield",
+  "order": 2,
+  "skills": {
+    "start_levels": {
+      "defense": 7,
+      "health": 4,
+      "stamina": 2,
+      "strength": 1
+    },
+    "bonus_points": 1,
+    "xp_multiplier": {
+      "defense": 1.25,
+      "health": 1.2
+    },
+    "effect_multiplier": {
+      "defense": 1.2,
+      "health": 1.1
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:stone_sword",
+          "Count": 1
+        },
+        "slot": "mainhand"
+      },
+      {
+        "item": {
+          "id": "minecraft:shield",
+          "Count": 1
+        },
+        "slot": "offhand"
+      },
+      {
+        "item": {
+          "id": "magistuarmory:kettlehat",
+          "Count": 1
+        },
+        "slot": "head"
+      },
+      {
+        "item": {
+          "id": "magistuarmory:chainmail_chestplate",
+          "Count": 1
+        },
+        "slot": "chest"
+      },
+      {
+        "item": {
+          "id": "magistuarmory:chainmail_leggings",
+          "Count": 1
+        },
+        "slot": "legs"
+      },
+      {
+        "item": {
+          "id": "magistuarmory:chainmail_boots",
+          "Count": 1
+        },
+        "slot": "feet"
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 12
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:shield_mastery"
+  ]
+}

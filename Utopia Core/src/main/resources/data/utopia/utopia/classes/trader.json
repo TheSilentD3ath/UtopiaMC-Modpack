@@ -1,0 +1,48 @@
+{
+  "name": "trait.utopia.class.trader",
+  "description": "trait.utopia.class.trader.desc",
+  "icon": "minecraft:emerald",
+  "order": 7,
+  "skills": {
+    "start_levels": {
+      "trade": 7,
+      "luck": 4,
+      "mining": 2
+    },
+    "bonus_points": 2,
+    "xp_multiplier": {
+      "trade": 1.35,
+      "luck": 1.2
+    },
+    "effect_multiplier": {
+      "trade": 1.2,
+      "luck": 1.1
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:stone_pickaxe",
+          "Count": 1
+        },
+        "slot": "mainhand"
+      },
+      {
+        "item": {
+          "id": "minecraft:emerald",
+          "Count": 16
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 8
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:trade_basics"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "PPP",
+    "SSS"
+  ],
+  "key": {
+    "S": { "item": "create:copper_sheet" },
+    "P": { "item": "create:fluid_pipe" }
+  },
+  "result": {
+    "item": "createhp:high_pressure_pipe",
+    "count": 6
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "criteria": {
+    "chosen": {
+      "trigger": "utopia:character",
+      "conditions": {
+        "class": "utopia:survivor"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "chosen"
+    ]
+  ]
+}

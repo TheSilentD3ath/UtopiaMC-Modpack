@@ -4,10 +4,11 @@ The previous repository content was an incomplete client-profile export. The
 repository will be brought up to date in controlled phases so that generated
 files, binaries, private runtime state and source code are not mixed together.
 
-1. Establish documentation, contribution rules and ignore rules; remove
-   accidental runtime files.
-2. Import maintained source projects after checking their repository and
-   license boundaries.
+1. **Complete:** establish documentation, contribution rules and ignore rules;
+   remove accidental runtime files.
+2. **In progress:** import maintained source projects after checking their
+   repository and license boundaries. Utopia Core and Create Industrial
+   Pressure are included; other maintained source components remain separate.
 3. Import canonical configuration, Guidebook and quest generator sources.
 4. Add reproducible validation and release-building automation.
 5. Publish verified `.mrpack` files and other binaries through GitHub Releases,

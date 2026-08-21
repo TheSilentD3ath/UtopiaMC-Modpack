@@ -1,0 +1,58 @@
+{
+  "name": "trait.utopia.class.hunter",
+  "description": "trait.utopia.class.hunter.desc",
+  "icon": "minecraft:bow",
+  "order": 1,
+  "skills": {
+    "start_levels": {
+      "archery": 6,
+      "agility": 4,
+      "luck": 2,
+      "farming": 1
+    },
+    "bonus_points": 2,
+    "xp_multiplier": {
+      "archery": 1.25,
+      "agility": 1.15
+    },
+    "effect_multiplier": {
+      "archery": 1.15,
+      "agility": 1.1
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:bow",
+          "Count": 1
+        },
+        "slot": "mainhand",
+        "enchantments": {
+          "minecraft:power": 2
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:arrow",
+          "Count": 24
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:stone_sword",
+          "Count": 1
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 8
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:hunting"
+  ]
+}

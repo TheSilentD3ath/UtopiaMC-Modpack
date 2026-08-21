@@ -1,0 +1,28 @@
+{
+  "name": "trait.utopia.origin.neko",
+  "description": "trait.utopia.origin.neko.desc",
+  "icon": "minecraft:cod",
+  "order": 0,
+  "attributes": [
+    {
+      "attribute": "minecraft:generic.movement_speed",
+      "operation": "multiply_base",
+      "value": 0.1
+    }
+  ],
+  "effects": [
+    {
+      "effect": "minecraft:night_vision",
+      "show_icon": true,
+      "show_particles": false,
+      "toggle": true
+    }
+  ],
+  "skills": {
+    "start_levels": {
+      "agility": 2,
+      "stamina": 1,
+      "strength": 2
+    }
+  }
+}

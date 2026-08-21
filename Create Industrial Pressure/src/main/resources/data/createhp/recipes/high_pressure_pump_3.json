@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "createhp:high_pressure_pump_2" },
+    { "item": "create:sturdy_sheet" },
+    { "item": "create:sturdy_sheet" },
+    { "item": "create:sturdy_sheet" },
+    { "item": "create:sturdy_sheet" }
+  ],
+  "result": { "item": "createhp:high_pressure_pump_3" }
+}

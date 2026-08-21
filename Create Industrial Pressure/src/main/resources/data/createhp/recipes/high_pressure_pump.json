@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "create:mechanical_pump" },
+    { "item": "create:copper_sheet" },
+    { "item": "create:copper_sheet" },
+    { "item": "create:copper_sheet" },
+    { "item": "create:copper_sheet" }
+  ],
+  "result": { "item": "createhp:high_pressure_pump" }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "tree.utopia.create",
+  "icon": "create:cogwheel",
+  "order": 0,
+  "nodes": {
+    "basics": {
+      "name": "tree.utopia.create.basics",
+      "icon": "create:shaft",
+      "cost": 1,
+      "level": 0,
+      "parents": [],
+      "position": [0, 1],
+      "unlocks": ["create:shaft", "create:cogwheel", "create:large_cogwheel", "create:gearbox", "create:andesite_casing"]
+    },
+    "power": {
+      "name": "tree.utopia.create.power",
+      "icon": "create:water_wheel",
+      "cost": 2,
+      "level": 3,
+      "parents": ["basics"],
+      "position": [1, 0],
+      "unlocks": ["create:water_wheel", "create:large_water_wheel", "create:windmill_bearing", "create:hand_crank"]
+    },
+    "processing": {
+      "name": "tree.utopia.create.processing",
+      "icon": "create:millstone",
+      "cost": 2,
+      "level": 5,
+      "parents": ["basics"],
+      "position": [1, 2],
+      "unlocks": ["create:millstone", "create:crushing_wheel", "create:mechanical_press", "create:basin"]
+    },
+    "logistics": {
+      "name": "tree.utopia.create.logistics",
+      "icon": "create:belt_connector",
+      "cost": 3,
+      "level": 8,
+      "parents": ["power", "processing"],
+      "position": [2, 1],
+      "unlocks": ["create:belt_connector", "create:chute", "create:mechanical_arm", "create:brass_casing"]
+    }
+  }
+}
