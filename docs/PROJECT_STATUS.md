@@ -30,6 +30,20 @@ while this public repository is migrated to the current structure.
 There is no final next-release artifact yet. Items listed here are development
 state, not a promise that they are already present in the downloadable pack.
 
+## Weekend release validation
+
+A live playtest is planned for Saturday, 22 August, or Sunday, 23 August 2026.
+The test will use a fresh survival server and fresh clients running one combined
+Utopia 3.0 release candidate with all approved changes. A small group of players
+will test normal early-game progression and multiplayer interaction to catch the
+last integration bugs before release.
+
+The release remains conditional on the combined candidate passing installation,
+server start, world join, character creation, quests, Guidebook, Create machinery,
+multiplayer lifecycle and stability checks without a release-blocking regression.
+Issues found during the playtest will be triaged before the final artifact is
+published.
+
 ## Public version distinction
 
 The public Modrinth build named **Utopia (Femboy Edition) 1.0.0** is the older

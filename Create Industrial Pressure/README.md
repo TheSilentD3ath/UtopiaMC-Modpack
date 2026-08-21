@@ -1,4 +1,8 @@
-# Create: High Pressure Pipes
+<p align="center">
+  <img src="logo_512.png" alt="Create: Industrial Pressure" width="260">
+</p>
+
+# Create: Industrial Pressure
 
 A Create **Fabric 1.20.1** addon that adds a **High Pressure Pipe** — a reinforced fluid pipe meant to push more fluid, further, with a bigger internal buffer than vanilla copper pipes.
 

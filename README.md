@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/utopia-logo.png" alt="Utopia Femboy Edition" width="800">
+</p>
+
 # UtopiaMC Modpack
 
 Utopia is a large Minecraft 1.20.1 Fabric modpack focused on technology,
