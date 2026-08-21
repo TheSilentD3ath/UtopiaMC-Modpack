@@ -1,0 +1,63 @@
+{
+  "name": "trait.utopia.class.wizard",
+  "description": "trait.utopia.class.wizard.desc",
+  "icon": "minecraft:brewing_stand",
+  "order": 5,
+  "skills": {
+    "start_levels": {
+      "alchemy": 6,
+      "farming": 3,
+      "luck": 3
+    },
+    "bonus_points": 3,
+    "xp_multiplier": {
+      "alchemy": 1.3,
+      "farming": 1.1
+    },
+    "effect_multiplier": {
+      "alchemy": 1.2,
+      "luck": 1.1
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "immersive_armors:robe_helmet",
+          "Count": 1
+        },
+        "slot": "head"
+      },
+      {
+        "item": {
+          "id": "immersive_armors:robe_chestplate",
+          "Count": 1
+        },
+        "slot": "chest"
+      },
+      {
+        "item": {
+          "id": "immersive_armors:robe_leggings",
+          "Count": 1
+        },
+        "slot": "legs"
+      },
+      {
+        "item": {
+          "id": "immersive_armors:robe_boots",
+          "Count": 1
+        },
+        "slot": "feet"
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 8
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:alchemy_basics"
+  ]
+}

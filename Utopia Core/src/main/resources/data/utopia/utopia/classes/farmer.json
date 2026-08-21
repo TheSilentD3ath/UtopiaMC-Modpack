@@ -1,0 +1,65 @@
+{
+  "name": "trait.utopia.class.farmer",
+  "description": "trait.utopia.class.farmer.desc",
+  "icon": "minecraft:iron_hoe",
+  "order": 6,
+  "skills": {
+    "start_levels": {
+      "farming": 8,
+      "trade": 2,
+      "luck": 2
+    },
+    "bonus_points": 3,
+    "xp_multiplier": {
+      "farming": 1.35,
+      "trade": 1.1
+    },
+    "effect_multiplier": {
+      "farming": 1.2
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:iron_hoe",
+          "Count": 1
+        },
+        "slot": "mainhand"
+      },
+      {
+        "item": {
+          "id": "minecraft:iron_axe",
+          "Count": 1
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:wheat_seeds",
+          "Count": 20
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:carrot",
+          "Count": 20
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 8
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:water_bucket",
+          "Count": 1
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:farming_basics"
+  ]
+}

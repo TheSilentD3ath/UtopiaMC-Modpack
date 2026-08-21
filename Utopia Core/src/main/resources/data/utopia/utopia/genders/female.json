@@ -1,0 +1,19 @@
+{
+  "name": "trait.utopia.gender.female",
+  "description": "trait.utopia.gender.female.desc",
+  "icon": "minecraft:pink_tulip",
+  "order": 1,
+  "attributes": [
+    { "attribute": "minecraft:generic.movement_speed", "operation": "multiply_base", "value": 0.04 },
+    { "attribute": "estrogen:boob_initial_size", "operation": "addition", "value": 1.0 }
+  ],
+  "effects": [
+    { "effect": "utopiacore:feminine", "show_icon": true, "show_particles": false },
+    { "effect": "estrogen:estrogen", "show_icon": false, "show_particles": false }
+  ],
+  "skills": {
+    "start_levels": { "agility": 2 },
+    "effect_multiplier": { "agility": 1.1 },
+    "xp_multiplier": { "alchemy": 1.1 }
+  }
+}

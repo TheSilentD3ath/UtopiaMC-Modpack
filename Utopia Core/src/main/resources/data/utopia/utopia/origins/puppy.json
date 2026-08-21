@@ -1,0 +1,20 @@
+{
+  "name": "trait.utopia.origin.puppy",
+  "description": "trait.utopia.origin.puppy.desc",
+  "icon": "minecraft:bone",
+  "order": 2,
+  "attributes": [
+    {
+      "attribute": "utopiacore:fall_resistance",
+      "operation": "addition",
+      "value": 0.2
+    }
+  ],
+  "skills": {
+    "start_levels": {
+      "smithing": 2,
+      "mining": 2,
+      "stamina": 1
+    }
+  }
+}

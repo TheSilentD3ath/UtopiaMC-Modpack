@@ -1,0 +1,20 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": false,
+  "key": {
+    "A": { "item": "create:sturdy_sheet" },
+    "B": { "item": "minecraft:netherite_ingot" },
+    "C": { "item": "createhp:high_pressure_pump_3" },
+    "D": { "item": "createhp:netherite_pressure_pipe" },
+    "E": { "item": "createhp:netherite_pressure_pump" }
+  },
+  "pattern": [
+    "ABBBA",
+    "CDEDC",
+    "ABBBA"
+  ],
+  "result": {
+    "item": "createhp:advanced_netherite_pump",
+    "count": 1
+  }
+}

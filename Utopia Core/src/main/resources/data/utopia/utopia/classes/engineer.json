@@ -1,0 +1,58 @@
+{
+  "name": "trait.utopia.class.engineer",
+  "description": "trait.utopia.class.engineer.desc",
+  "icon": "create:cogwheel",
+  "order": 8,
+  "skills": {
+    "start_levels": {
+      "mining": 4,
+      "smithing": 2
+    },
+    "bonus_points": 3,
+    "xp_multiplier": {
+      "mining": 1.1,
+      "smithing": 1.1
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:stone_pickaxe",
+          "Count": 1
+        },
+        "slot": "mainhand"
+      },
+      {
+        "item": {
+          "id": "minecraft:stone_axe",
+          "Count": 1
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:redstone",
+          "Count": 16
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:iron_nugget",
+          "Count": 8
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:create/basics"
+  ],
+  "unlock": {
+    "points_per_level": 1,
+    "discount": {
+      "create": 1
+    },
+    "level_offset": {
+      "create": -3
+    }
+  }
+}

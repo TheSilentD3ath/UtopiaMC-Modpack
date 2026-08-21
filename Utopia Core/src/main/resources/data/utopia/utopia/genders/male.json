@@ -1,0 +1,17 @@
+{
+  "name": "trait.utopia.gender.male",
+  "description": "trait.utopia.gender.male.desc",
+  "icon": "minecraft:iron_sword",
+  "order": 0,
+  "attributes": [
+    { "attribute": "minecraft:generic.max_health", "operation": "addition", "value": 2.0 },
+    { "attribute": "minecraft:generic.attack_damage", "operation": "multiply_base", "value": 0.05 }
+  ],
+  "effects": [
+    { "effect": "utopiacore:masculine", "show_icon": true, "show_particles": false }
+  ],
+  "skills": {
+    "start_levels": { "strength": 2 },
+    "effect_multiplier": { "strength": 1.1 }
+  }
+}

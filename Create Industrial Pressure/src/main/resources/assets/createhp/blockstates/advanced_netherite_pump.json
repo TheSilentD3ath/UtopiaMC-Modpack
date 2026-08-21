@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=down":  { "model": "createhp:block/netherite_pump", "x": 180 },
+    "facing=east":  { "model": "createhp:block/netherite_pump", "x": 90, "y": 90 },
+    "facing=north": { "model": "createhp:block/netherite_pump", "x": 90 },
+    "facing=south": { "model": "createhp:block/netherite_pump", "x": 90, "y": 180 },
+    "facing=up":    { "model": "createhp:block/netherite_pump" },
+    "facing=west":  { "model": "createhp:block/netherite_pump", "x": 90, "y": 270 }
+  }
+}

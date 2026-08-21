@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "createhp",
+  "version": "${version}",
+  "name": "Create: Industrial Pressure",
+  "description": "Industrial-grade pressure for Create: high pressure pipes, tiered pumps with long reach and high throughput, bursting of low-grade pipes, and a netherite endgame tier.",
+  "authors": [
+    "Shiro1337"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/createhp/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.shiro.createhp.CreateHP"
+    ],
+    "client": [
+      "net.shiro.createhp.client.CHPClient"
+    ]
+  },
+  "mixins": [
+    "createhp.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "create": ">=6.0.0",
+    "minecraft": "${minecraft_version}"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": false,
+  "key": {
+    "N": { "item": "minecraft:netherite_ingot" },
+    "D": { "item": "create:sturdy_sheet" },
+    "C": { "item": "create:precision_mechanism" },
+    "R": { "item": "create:electron_tube" },
+    "B": { "item": "create:smart_fluid_pipe" },
+    "V": { "item": "create:fluid_valve" },
+    "H": { "item": "createhp:high_pressure_pump_3" }
+  },
+  "pattern": [
+    " NNN ",
+    "DCRCD",
+    "BVHVB",
+    "DCRCD",
+    " NNN "
+  ],
+  "result": {
+    "item": "createhp:netherite_pressure_pump",
+    "count": 1
+  }
+}

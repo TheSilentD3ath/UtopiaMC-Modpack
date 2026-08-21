@@ -1,0 +1,43 @@
+{
+  "name": "trait.utopia.origin.sea_citizen",
+  "description": "trait.utopia.origin.sea_citizen.desc",
+  "icon": "minecraft:turtle_helmet",
+  "order": 3,
+  "attributes": [
+    {
+      "attribute": "utopiacore:breath_capacity",
+      "operation": "addition",
+      "value": 1.0
+    },
+    {
+      "attribute": "additionalentityattributes:player.water_visibility",
+      "operation": "addition",
+      "value": 1.0
+    }
+  ],
+  "skills": {
+    "start_levels": {
+      "agility": 1,
+      "stamina": 3,
+      "mining": 1
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:turtle_helmet",
+          "Count": 1
+        },
+        "slot": "head"
+      }
+    ]
+  },
+  "effects": [
+    {
+      "effect": "minecraft:dolphins_grace",
+      "show_icon": true,
+      "show_particles": false
+    }
+  ]
+}

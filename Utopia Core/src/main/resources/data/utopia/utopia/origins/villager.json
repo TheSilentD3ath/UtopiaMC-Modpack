@@ -1,0 +1,20 @@
+{
+  "name": "trait.utopia.origin.villager",
+  "description": "trait.utopia.origin.villager.desc",
+  "icon": "minecraft:emerald",
+  "order": 4,
+  "attributes": [
+    {
+      "attribute": "utopiacore:regeneration_speed",
+      "operation": "addition",
+      "value": 0.1
+    }
+  ],
+  "skills": {
+    "start_levels": {
+      "trade": 2,
+      "luck": 2,
+      "health": 1
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "id": "utopiacore",
+  "version": "${version}",
+  "name": "Utopia Core",
+  "description": "Utopia RPG-Kern: Origins, Gender, Klassen, Skills und Unlocks. Fork von LevelZ (Globox_Z, GPL-3.0).",
+  "authors": [
+    "Shiro",
+    "Globox_Z (LevelZ, GPL-3.0)"
+  ],
+  "contact": {
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/levelz",
+    "sources": "https://github.com/Globox1997/LevelZ",
+    "issues": "https://github.com/Globox1997/LevelZ/issues"
+  },
+  "license": "GPLv3",
+  "icon": "assets/levelz/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.utopia.core.UtopiaCore",
+      "net.levelz.LevelzMain"
+    ],
+    "client": [
+      "dev.utopia.core.client.UtopiaCoreClient",
+      "net.levelz.LevelzClient"
+    ],
+    "modmenu": [
+      "net.levelz.config.ModMenuIntegration"
+    ],
+    "emi": [
+      "net.levelz.compat.LevelzEmiPlugin"
+    ],
+    "rei_client": [
+      "net.levelz.compat.LevelzReiPlugin"
+    ],
+    "jade": [
+      "net.levelz.waila.LevelJadePlugin"
+    ]
+  },
+  "mixins": [
+    "levelz.mixins.json",
+    "utopiacore.mixins.json",
+    {
+      "config": "utopiacore.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "java": ">=17",
+    "minecraft": ">=${minecraft_version}",
+    "fabric-api": ">=${fabric_version}",
+    "fabricloader": ">=${loader_version}",
+    "cloth-config2": ">=${cloth_config_version}",
+    "libz": "*"
+  },
+  "suggests": {},
+  "custom": {
+    "mc-publish": {
+      "modrinth": "EFtixeiF",
+      "curseforge": 517130
+    },
+    "waila:plugins": {
+      "id": "levelz:plugin",
+      "environment": "client",
+      "initializer": "net.levelz.waila.LevelWailaPlugin"
+    }
+  },
+  "provides": [
+    "levelz"
+  ]
+}

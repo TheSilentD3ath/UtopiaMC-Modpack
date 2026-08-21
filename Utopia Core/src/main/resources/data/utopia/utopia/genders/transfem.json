@@ -1,0 +1,17 @@
+{
+  "name": "trait.utopia.gender.transfem",
+  "description": "trait.utopia.gender.transfem.desc",
+  "icon": "estrogen:estrogen_patches",
+  "order": 2,
+  "attributes": [
+    { "attribute": "minecraft:generic.movement_speed", "operation": "multiply_base", "value": 0.02 }
+  ],
+  "effects": [
+    { "effect": "utopiacore:feminine", "show_icon": true, "show_particles": false }
+  ],
+  "skills": {
+    "start_levels": { "alchemy": 3 },
+    "bonus_points": 2,
+    "xp_multiplier": { "alchemy": 1.25 }
+  }
+}

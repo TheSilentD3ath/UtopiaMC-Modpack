@@ -1,0 +1,25 @@
+{
+  "name": "trait.utopia.origin.melon_citizen",
+  "description": "trait.utopia.origin.melon_citizen.desc",
+  "icon": "minecraft:melon_slice",
+  "order": 1,
+  "attributes": [
+    {
+      "attribute": "utopiacore:fire_resistance",
+      "operation": "addition",
+      "value": 0.15
+    },
+    {
+      "attribute": "minecraft:generic.attack_speed",
+      "operation": "multiply_base",
+      "value": 0.05
+    }
+  ],
+  "skills": {
+    "start_levels": {
+      "farming": 2,
+      "defense": 1,
+      "trade": 2
+    }
+  }
+}

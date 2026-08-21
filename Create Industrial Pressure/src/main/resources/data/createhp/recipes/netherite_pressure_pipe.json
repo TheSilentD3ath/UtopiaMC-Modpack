@@ -1,0 +1,20 @@
+{
+  "type": "create:mechanical_crafting",
+  "acceptMirrored": false,
+  "key": {
+    "B": { "item": "create:brass_ingot" },
+    "N": { "item": "minecraft:netherite_scrap" },
+    "H": { "item": "createhp:high_pressure_pipe" },
+    "O": { "item": "create:powdered_obsidian" }
+  },
+  "pattern": [
+    "BNB",
+    "NHN",
+    "BNB",
+    " O "
+  ],
+  "result": {
+    "item": "createhp:netherite_pressure_pipe",
+    "count": 12
+  }
+}

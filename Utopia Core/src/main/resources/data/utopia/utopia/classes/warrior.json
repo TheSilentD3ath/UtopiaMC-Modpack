@@ -1,0 +1,72 @@
+{
+  "name": "trait.utopia.class.warrior",
+  "description": "trait.utopia.class.warrior.desc",
+  "icon": "minecraft:iron_sword",
+  "order": 0,
+  "skills": {
+    "start_levels": {
+      "strength": 5,
+      "defense": 4,
+      "health": 2,
+      "stamina": 2
+    },
+    "bonus_points": 2,
+    "xp_multiplier": {
+      "strength": 1.2,
+      "defense": 1.15,
+      "health": 1.1
+    },
+    "effect_multiplier": {
+      "strength": 1.1,
+      "defense": 1.1
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:iron_sword",
+          "Count": 1
+        },
+        "slot": "mainhand"
+      },
+      {
+        "item": {
+          "id": "minecraft:chainmail_helmet",
+          "Count": 1
+        },
+        "slot": "head"
+      },
+      {
+        "item": {
+          "id": "minecraft:chainmail_chestplate",
+          "Count": 1
+        },
+        "slot": "chest"
+      },
+      {
+        "item": {
+          "id": "minecraft:chainmail_leggings",
+          "Count": 1
+        },
+        "slot": "legs"
+      },
+      {
+        "item": {
+          "id": "minecraft:chainmail_boots",
+          "Count": 1
+        },
+        "slot": "feet"
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 8
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:combat_basics"
+  ]
+}

@@ -26,6 +26,7 @@ out/
 
 # Release binaries belong on GitHub Releases
 *.jar
+!**/gradle/wrapper/gradle-wrapper.jar
 *.mrpack
 *.zip
 

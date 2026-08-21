@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    { "item": "createhp:high_pressure_pump" },
+    { "item": "create:brass_sheet" },
+    { "item": "create:brass_sheet" },
+    { "item": "create:brass_sheet" },
+    { "item": "create:brass_sheet" }
+  ],
+  "result": { "item": "createhp:high_pressure_pump_2" }
+}

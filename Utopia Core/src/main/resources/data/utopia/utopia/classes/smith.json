@@ -1,0 +1,55 @@
+{
+  "name": "trait.utopia.class.smith",
+  "description": "trait.utopia.class.smith.desc",
+  "icon": "minecraft:anvil",
+  "order": 4,
+  "skills": {
+    "start_levels": {
+      "smithing": 6,
+      "mining": 4,
+      "defense": 1,
+      "strength": 2
+    },
+    "bonus_points": 2,
+    "xp_multiplier": {
+      "smithing": 1.3,
+      "mining": 1.1
+    },
+    "effect_multiplier": {
+      "smithing": 1.2,
+      "defense": 1.05
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:stone_pickaxe",
+          "Count": 1
+        },
+        "slot": "mainhand"
+      },
+      {
+        "item": {
+          "id": "minecraft:stone_sword",
+          "Count": 1
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:anvil",
+          "Count": 1
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 8
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:smithing_basics"
+  ]
+}

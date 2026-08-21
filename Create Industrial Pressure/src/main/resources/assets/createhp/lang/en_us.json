@@ -1,0 +1,12 @@
+{
+  "itemGroup.createhp": "Create: Industrial Pressure",
+  "block.createhp.high_pressure_pipe": "High Pressure Pipe",
+  "block.createhp.high_pressure_pump": "High Pressure Pump (Tier 1)",
+  "block.createhp.high_pressure_pump_2": "High Pressure Pump (Tier 2)",
+  "block.createhp.high_pressure_pump_3": "High Pressure Pump (Tier 3)",
+  "block.createhp.high_pressure_glass_pipe": "High Pressure Glass Pipe",
+  "block.createhp.netherite_pressure_pipe": "Netherite Pressure Pipe",
+  "block.createhp.netherite_glass_pipe": "Netherite Glass Pressure Pipe",
+  "block.createhp.netherite_pressure_pump": "Netherite Pressure Pump",
+  "block.createhp.advanced_netherite_pump": "Advanced Netherite Pressure Pump"
+}

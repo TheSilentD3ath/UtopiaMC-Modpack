@@ -1,0 +1,63 @@
+{
+  "name": "trait.utopia.class.survivor",
+  "description": "trait.utopia.class.survivor.desc",
+  "icon": "minecraft:campfire",
+  "order": 9,
+  "skills": {
+    "start_levels": {
+      "health": 3,
+      "stamina": 3,
+      "mining": 2,
+      "farming": 2
+    },
+    "bonus_points": 5,
+    "xp_multiplier": {
+      "health": 1.1,
+      "stamina": 1.15,
+      "mining": 1.05,
+      "farming": 1.05
+    },
+    "effect_multiplier": {
+      "stamina": 1.1,
+      "health": 1.05
+    }
+  },
+  "loadout": {
+    "items": [
+      {
+        "item": {
+          "id": "minecraft:stone_sword",
+          "Count": 1
+        },
+        "slot": "mainhand"
+      },
+      {
+        "item": {
+          "id": "minecraft:stone_pickaxe",
+          "Count": 1
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:stone_axe",
+          "Count": 1
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:bread",
+          "Count": 16
+        }
+      },
+      {
+        "item": {
+          "id": "minecraft:torch",
+          "Count": 16
+        }
+      }
+    ]
+  },
+  "unlocks": [
+    "utopia:survival_basics"
+  ]
+}

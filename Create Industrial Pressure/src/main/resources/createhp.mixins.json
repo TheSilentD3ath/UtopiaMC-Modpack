@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.shiro.createhp.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "FluidPipeWrenchMixin",
+    "FluidPropagatorMixin",
+    "FluidPropagatorPumpMixin",
+    "PumpRangeMixin",
+    "PumpSourcePressureMixin",
+    "PumpThroughputMixin"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
