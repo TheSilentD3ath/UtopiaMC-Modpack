@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.shiro.createhp.registry.CHPBlockEntities;
 
 /**
- * High Pressure Pump (3 tiers). Extends Create's {@link PumpBlock} so it IS a mechanical pump —
+ * Pressure pump shared by all five tiers. Extends Create's {@link PumpBlock} so it is a mechanical pump —
  * directional, kinetic, pushes/pulls fluid exactly like vanilla. The only differences live in the
  * block entity (more SU, longer reach scaled by speed). Each block instance carries its {@link PumpTier}.
  */

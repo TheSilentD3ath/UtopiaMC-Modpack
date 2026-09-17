@@ -1,5 +1,6 @@
 package dev.utopia.core.character;
 
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
@@ -7,6 +8,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -19,6 +21,7 @@ import java.util.Set;
 public class TraitBundle {
 
     public static final TraitBundle EMPTY = new TraitBundle();
+    private static final CharacterTrait.LoadoutEntry SHARED_WATER_SUPPLY = createSharedWaterSupply();
 
     public final List<CharacterTrait.AttributeMod> attributes = new ArrayList<>();
     public final Map<Identifier, CharacterTrait.EffectSpec> effects = new HashMap<>();
@@ -48,7 +51,18 @@ public class TraitBundle {
                 bundle.add(CharacterTraits.get(type, granted));
             }
         }
+        // Globale Startversorgung gehoert einmal in dasselbe massgebliche
+        // Loadout wie Trait-Ausruestung, nicht einmal pro Auswahlachse.
+        bundle.loadout.add(SHARED_WATER_SUPPLY);
         return bundle;
+    }
+
+    private static CharacterTrait.LoadoutEntry createSharedWaterSupply() {
+        NbtCompound tag = new NbtCompound();
+        tag.putString("Potion", "minecraft:purified_water");
+        CharacterTrait.ItemSpec water = new CharacterTrait.ItemSpec(
+                new Identifier("minecraft", "potion"), 6, Optional.of(tag));
+        return new CharacterTrait.LoadoutEntry(water, "inventory", Map.of());
     }
 
     private void add(CharacterTrait trait) {

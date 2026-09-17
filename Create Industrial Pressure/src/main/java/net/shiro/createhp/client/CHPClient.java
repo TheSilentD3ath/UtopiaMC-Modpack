@@ -16,14 +16,15 @@ public class CHPClient implements ClientModInitializer {
 		// Register our blue pipe-fitting partial models for baking (must happen before model bake).
 		CHPPartialModels.init();
 
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.HIGH_PRESSURE_PIPE.get(), RenderType.cutout());
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.HIGH_PRESSURE_GLASS_PIPE.get(), RenderType.cutout());
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.NETHERITE_PRESSURE_PIPE.get(), RenderType.cutout());
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.NETHERITE_GLASS_PIPE.get(), RenderType.cutout());
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.PUMP_T1.get(), RenderType.cutout());
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.PUMP_T2.get(), RenderType.cutout());
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.PUMP_T3.get(), RenderType.cutout());
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.PUMP_T4.get(), RenderType.cutout());
-		BlockRenderLayerMap.INSTANCE.putBlock(CHPBlocks.PUMP_T5.get(), RenderType.cutout());
+		BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(),
+				CHPBlocks.HIGH_PRESSURE_PIPE.get(),
+				CHPBlocks.HIGH_PRESSURE_GLASS_PIPE.get(),
+				CHPBlocks.NETHERITE_PRESSURE_PIPE.get(),
+				CHPBlocks.NETHERITE_GLASS_PIPE.get(),
+				CHPBlocks.PUMP_T1.get(),
+				CHPBlocks.PUMP_T2.get(),
+				CHPBlocks.PUMP_T3.get(),
+				CHPBlocks.PUMP_T4.get(),
+				CHPBlocks.PUMP_T5.get());
 	}
 }

@@ -45,7 +45,7 @@ public class CHPBlockEntities {
 					.renderer(() -> TransparentStraightPipeRenderer::new)
 					.register();
 
-	/** Our pump BE (extends Create's PumpBlockEntity), valid for all three tier blocks. */
+	/** Our pump BE (extends Create's PumpBlockEntity), valid for all five tier blocks. */
 	public static final BlockEntityEntry<HighPressurePumpBlockEntity> HIGH_PRESSURE_PUMP =
 			REGISTRATE.blockEntity("high_pressure_pump", HighPressurePumpBlockEntity::new)
 					// Spinning cog (Flywheel visual) — re-enabled now that we compile against 6.0.8.1, so

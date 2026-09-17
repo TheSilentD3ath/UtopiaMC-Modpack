@@ -25,6 +25,8 @@ public class UtopiaCoreClient implements ClientModInitializer {
     /** Offene Freischaltpunkte, gespiegelt fuer die Oberflaeche. */
     public static int unlockPoints;
     public static final java.util.Set<Identifier> unlocks = new java.util.HashSet<>();
+    /** Nur der Server entscheidet, ob der lokale Spieler Baeume bearbeiten darf. */
+    public static boolean canEditTrees;
 
     /** Der Server will die Auswahl sehen - geoeffnet wird erst, wenn die Welt steht. */
     private static boolean pendingOpen;
@@ -119,6 +121,7 @@ public class UtopiaCoreClient implements ClientModInitializer {
         });
 
         ClientPlayNetworking.registerGlobalReceiver(UtopiaNetworking.SYNC_TREES, (client, handler, buf, sender) -> {
+            boolean canEdit = buf.readBoolean();
             int size = buf.readVarInt();
             java.util.Map<Identifier, dev.utopia.core.unlock.UnlockTree> trees = new LinkedHashMap<>();
             List<Identifier> order = new ArrayList<>(size);
@@ -127,7 +130,10 @@ public class UtopiaCoreClient implements ClientModInitializer {
                 trees.put(id, buf.decode(net.minecraft.nbt.NbtOps.INSTANCE, dev.utopia.core.unlock.UnlockTree.CODEC));
                 order.add(id);
             }
-            client.execute(() -> dev.utopia.core.unlock.UnlockTrees.acceptSynced(trees, order));
+            client.execute(() -> {
+                canEditTrees = canEdit;
+                dev.utopia.core.unlock.UnlockTrees.acceptSynced(trees, order);
+            });
         });
 
         ClientPlayNetworking.registerGlobalReceiver(UtopiaNetworking.OPEN_CREATION,

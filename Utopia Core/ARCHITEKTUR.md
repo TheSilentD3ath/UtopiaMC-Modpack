@@ -67,6 +67,8 @@ Utopia Core/
    │   │   ├─ CharacterData.java          Spielerzustand + NBT
    │   │   ├─ TraitBundle.java            Merge-Ergebnis (Cache)
    │   │   ├─ CharacterService.java       Anwenden, Validieren, Tick
+   │   │   ├─ CharacterStateApplier.java  Attribute, Effekte, Trait-Unlocks
+   │   │   ├─ CharacterStarter.java       einmalige Startwerte und Loadout
    │   │   └─ CharacterAccess.java        Mixin-Interface
    │   ├─ network/UtopiaNetworking.java
    │   ├─ integration/EstrogenBridge.java
@@ -74,6 +76,10 @@ Utopia Core/
    │   └─ client/…                        Sync-Empfänger + Auswahl-Screen
    └─ resources/data/utopia/utopia/{origins,genders,classes}/*.json
 ```
+
+`CharacterService` ist die stabile Orchestrierungsfassade. Die konkreten
+Seiteneffekte sind paketintern getrennt, damit Lifecycle, Auswahlregeln und
+Spielerzustand nicht wieder in einer God-Class zusammenwachsen.
 
 ---
 
@@ -150,6 +156,34 @@ Reihenfolge: **Origin → Gender → Klasse → gewährte Traits**.
 | `unlocks` | Vereinigung |
 | `loadout` | konkateniert; `clear_inventory` ist ein ODER |
 
+Nach dem Trait-Merge wird einmalig die gemeinsame Startversorgung angehängt.
+Aktuell sind das sechs gereinigte Dehydration-Wassertränke
+(`minecraft:potion` mit `Potion:"minecraft:purified_water"`). Dehydration 1.3.6
+registriert diese Potion effektfrei; bei `potion_thirst_quench=2` deckt die
+Versorgung 12 von maximal 20 internen Durstpunkten ab. Das Balanceziel sind
+höchstens 6 verbrauchte Punkte beziehungsweise drei Flaschen pro Minecraft-Tag;
+die Startversorgung ist daher als Vorrat für ungefähr zwei Tage gedacht. Sie
+liegt in derselben maßgeblichen Loadout-Liste und verwendet denselben
+Inventar-/Drop-Pfad wie Klassen- und Origin-Ausrüstung, ohne pro Auswahlachse
+dupliziert zu werden.
+
+`CharacterStarter` ergänzt anschließend genau einmal ein vollständiges
+EnvironmentZ-Wandererset im Inventar, wenn das Biom am tatsächlichen
+Charakterabschluss für die konkrete Blockposition als kalt gilt. Zusätzlich
+wird `environmentz:comfort` für 9.600 Ticks gesetzt. Dieser Effekt ist der
+unmittelbare Kälteschutz: EnvironmentZ 2.0.8 führt das Wandererset in
+`non_affecting_armor`, weshalb es selbst angezogen keine Temperatur liefert.
+Die bedingte Vergabe bleibt im vorhandenen Starter-Lifecycle und überschreibt
+keine bereits ausgerüstete Klassenrüstung. Fehlt EnvironmentZ, werden Items und
+Effekt über Registry-Lookups nur protokolliert beziehungsweise übersprungen.
+
+Die optionale Datenintegration
+`data/environmentz/tags/items/warm_armor.json` erweitert EnvironmentZs additives
+Wärmerüstungs-Tag um `#thigh_highs_etc:thigh_highs`. Die Tag-Referenz ist optional;
+Core erhält keine Java-Abhängigkeit auf EnvironmentZ oder Thigh Highs Etc.
+EnvironmentZ wertet dabei ausschließlich tatsächlich ausgerüstete Rüstung aus;
+Thigh Highs im Inventar liefern keine Wärme.
+
 Das Bundle wird in `CharacterData` gecacht und nur bei `dirty` neu gebaut.
 
 ---
@@ -225,6 +259,14 @@ eigener Effekt bestehen, das Pack läuft weiter.
 agility, defense, stamina, luck, archery, trade, smithing, mining, farming, alchemy).
 Effektstärken liegen in einer Cloth-Config, Sperrlisten in Datapack-JSON
 (`data/levelz/block|item|brewing|smithing/*.json`).
+
+Die Vanilla-Grundstufe ist bewusst frei: Axt, Hacke, Schwert und die generische
+Werkzeuggruppe für Holz und Stein stehen in `data/levelz/item/` auf Level 0.
+Benutzung, Abbau und Angriff lesen diese gemeinsame Item-Progression. Für ihre
+Rezepte existiert keine zusätzliche Datei unter `data/levelz/crafting/`, daher
+sind sie ebenfalls ab Spielbeginn herstellbar. Bogen, Eimer, Leder/Kette und
+höhere Materialstufen bleiben getrennte, unveränderte Anforderungen. Der
+Gradle-Check `verifyStarterProgression` schützt diese Abgrenzung.
 
 ### 7.2 Umgesetzt: dynamische Skill-Registry
 
@@ -321,15 +363,17 @@ Oberfläche beisammen:
 ```jsonc
 {
   "name": "tree.utopia.create",
+  "description": "Optionaler Text oder Uebersetzungsschluessel",
   "icon": "create:cogwheel",
   "order": 0,
   "nodes": {
     "basics": {
+      "description": "Optionaler Knotentext",
       "icon": "create:shaft",
       "cost": 1,              // Freischaltpunkte
       "level": 0,             // Mindest-Gesamtlevel
       "parents": [],          // erst kaufbar, wenn diese Knoten stehen
-      "position": [0, 0],     // Raster in der Oberfläche
+      "position": [0.0, 0.0], // freie Canvas-Koordinaten
       "unlocks": [            // Blöcke und Items, einzeln oder als Tag
         "create:shaft", "create:cogwheel", "#create:seats"
       ]
@@ -341,6 +385,98 @@ Oberfläche beisammen:
   }
 }
 ```
+
+Optionale Addon-Zweige verwenden `"requires_mods": ["mod_id"]`. Fehlt eine
+dieser Fabric-Mod-IDs, wird der Knoten vor Indexierung und Netzwerksync entfernt;
+Kinder mit dadurch fehlendem Elternknoten werden ebenfalls entfernt. Neben
+einzelnen IDs und Tags akzeptiert `unlocks` auch `namespace:*`, um sämtliche
+registrierten Items und Blöcke eines optionalen Addons abzudecken, ohne dessen
+JAR als Compile-Abhängigkeit einzubinden. Mit `"excludes": ["mod:id"]` bleiben
+einzelne Creative- oder reine Deko-Inhalte eines solchen Namespace-Wildcards
+bewusst frei. Eine explizite `unlocks`-Zuordnung hat weiterhin Vorrang vor
+Wildcard und Ausschluss.
+
+Mit `"legacy_owners": ["create/alter_knoten"]` kann ein neu aufgeteilter
+Knoten außerdem von Freischaltungen aus älteren Baumfassungen als bereits
+besessen gelten. Das verändert den Kaufpfad für neue Charaktere nicht, hält
+aber bestehende Spielstände nach fachlichen Aufteilungen zugriffsberechtigt.
+Die Besitzprüfung dafür liegt zentral in `UnlockService.owns(...)` und wird von
+Sperren, Kaufprüfung, Elternlinien und Befehlsausgabe gemeinsam verwendet.
+
+Der Create-Baum folgt der tatsächlichen Herstellungsprogression. Seine
+Hauptachse lautet Andesit-Kinetik → mechanische Verarbeitung → Blaze-Heizung →
+Messing → Deployer → Präzisionsmechanismus. Mechanisches Crafting,
+Crushing-Wheels, Sturdy Sheets, Schienen, Verpackung/Stock-Netz und Elektronik
+sind eigene Seitenäste mit den Maschinen als Eltern, die ihre installierten
+Rezepte tatsächlich verlangen. Funktionale Farbvarianten wie Segel, Sitze,
+Toolboxes, Ventilgriffe, Nixie Tubes, Postboxes und Table Cloths gehören zum
+jeweiligen Technik-Knoten; sie erzeugen keine kosmetischen Einzelknoten.
+
+Optionale technische Addons verzweigen an der fachlich passenden Stufe. Reine
+Architektur-, Dekorations- und Struktur-Addons gehören nicht in den Technikbaum.
+`tools/audit_create_tree_recipes.py` liest dafür die Rezepte aus den wirklich
+installierten JARs, löst Item- und Maschinenabhängigkeiten auf und kann mit
+`--strict` fehlende transitive Elternpfade als Fehler melden.
+
+Die Oberfläche verwendet `position` als freie Gleitkomma-Koordinaten. Der
+Spielermodus zeichnet niemals ein Raster. Im Überblick bildet ausschließlich
+die erste Elternkante jedes Knotens den lesbaren Baum; weitere fachliche
+Voraussetzungen bleiben vollständig erhalten und erscheinen als gestrichelte
+Linien, sobald der betroffene Knoten oder sein Elternknoten fokussiert ist.
+Hauptäste sind gerade und kreuzungsfrei angeordnet. Sie werden als dunkle
+Kontur mit gestricheltem Messing- oder Statuskern vor den Knoten gezeichnet;
+nur die Statusringe bleiben GPU-gebatcht. Dadurch liegen Kanten, Knoten und
+Beschriftungen garantiert in einer stabilen GUI-Zeichenreihenfolge. Der
+Holzgrund verwendet denselben Pan- und Zoom-Bezug wie der Baum, statt als
+festes Bildschirmbild stehenzubleiben.
+
+Der Screen begrenzt seine Arbeitsfläche auf 760 × 660 GUI-Pixel und zentriert
+sie auf großen Auflösungen, damit die freigegebenen Mockup-Proportionen nicht
+durch Ultrawide-Streckung verloren gehen. Außenrahmen, Kopfzeile, Sidebar,
+Canvas, Werkzeugleiste und Detailinspektor besitzen eigenständige, sichtbar
+verschachtelte Rahmen; zwischen Sidebar und Canvas liegt ein heller Holzsteg
+mit dunklem Schatten. `Zentrieren` berechnet die sichtbaren Modellgrenzen und
+passt den vollständigen Baum mit Rand in den Canvas ein. Manuelles Zoomen
+reicht von 15 bis 175 Prozent und bleibt am Mauszeiger verankert. Der visuelle
+Layoutmaßstab beträgt 64 Pixel pro Modelleinheit, damit nahe gespeicherte
+Knoten auch bei mittleren Zoomstufen klar getrennt bleiben. Knotennamen sind ab
+30 Prozent dauerhaft sichtbar; in der Gesamtübersicht darunter erscheinen sie
+bei Hover oder Auswahl. Ein schwebender doppelt gerahmter Detailinspektor zeigt bei
+Auswahl Namen, Voraussetzungen, Kosten, Level und **alle** Einträge des
+Knotens; dadurch ist das repräsentative runde Icon nicht die einzige Erklärung
+und verdeckt im Normalzustand keine feste rechte Bildschirmspalte. Tabs und
+Werkzeugknöpfe verwenden eigene, unverzerrte Rahmenflächen und keine auf
+Knopfgröße gestauchte Paneltextur.
+
+Item-Renderer schreiben im GUI einen eigenen Tiefenwert. Deshalb wird der
+Detailinspektor samt Texten, Unlock-Items und Kaufknopf auf einer expliziten
+Vordergrundebene gezeichnet; Kontextmenüs liegen nochmals darüber. Der
+Scroll-Scissor beginnt vier Pixel oberhalb der Textgrundlinie, weil jedes
+16-Pixel-Item dort bereits beginnt. Beim Pannen wird `panX/panY` genau einmal
+auf gemeinsame Renderpixel gerundet. Hintergrund, Kanten, Halos, Node-Rahmen
+und Icons verwenden denselben Wert, sodass keine Komponente relativ zu den
+anderen um einen Pixel driftet. Gestrichelte Kanten bestehen aus fest am
+Elternknoten verankerten 8-Pixel-Strichen in einem 13-Pixel-Raster; ihre Phase
+wird nicht bei jeder Längenänderung über die gesamte Kante neu verteilt.
+
+OPs erhalten im selben Screen einen Entwurfsmodus. Nur dort ist ein dezentes
+Fangraster sichtbar. Auswahl und Knotenbewegung sind getrennte Werkzeuge: Im
+Auswahlmodus verschiebt ein Drag auch über einem Knoten ausschließlich die
+Arbeitsfläche; nur das ausdrücklich aktivierte Bewegungswerkzeug verändert nach
+einer Drag-Schwelle Knotenkoordinaten. Rechtsklick öffnet kontextabhängige
+Aktionen zum Anlegen, Bearbeiten, Duplizieren und sicheren Löschen. `Strg` plus
+Pfeiltaste verschiebt den gewählten Knoten um 0,5 Einheiten, zusätzliches
+`Shift` um 0,1. Elternlisten stellen die Kanten her; Baum-Metadaten sind
+ebenfalls editierbar. Speichern wird auf dem Server
+erneut validiert (IDs, Eltern, Zyklen, Positionen und Mengenbegrenzungen),
+danach atomar unter
+`config/utopiacore/trees/<namespace>/<name>.json` abgelegt und an alle Spieler
+synchronisiert. Datapack-Bäume bleiben der Fallback. Vorhandene Editor-Dateien
+erhalten vor dem Überschreiben eine `.bak`-Sicherung. Nicht installierte
+optionale Zweige und ihre ausgeblendeten Kinder werden beim Speichern erhalten,
+auch wenn der bearbeitende Client sie nicht sehen konnte. Spielerfortschritt
+bleibt unverändert in den Charakterdaten und wird nie in diese Konfiguration
+geschrieben.
 
 Knoten-Id ist `<baum>/<knoten>`, also `create/basics` — dieselbe Form, die schon
 in `unlocks` der Traits steht.
@@ -414,8 +550,14 @@ kommt früher heran — ohne dass es eine Mechanik gäbe, die nur ihm gehört.
 /utopia character set <spieler> <origin> <gender> <klasse>
 /utopia character reset <spieler>          → öffnet die Auswahl erneut
 /utopia points add <spieler> <anzahl>
+/utopia handbuch                            → deutsches Utopia-Handbuch
+/utopia handbook                            → englisches Utopia-Handbuch
 ```
-Alle mit Permission-Level 2. `/playerstats …` aus dem LevelZ-Erbe bleibt unverändert.
+`handbuch`, `handbook` und die eigene `character get`-Abfrage sind öffentlich;
+verwaltende Unterbefehle bleiben auf Permission-Level 2. Die Handbuchbefehle
+prüfen Lavender und das separat ausgelieferte `utopia_handbook`-Datapack zur
+Laufzeit. Fehlt eines davon, bleibt Core geladen und meldet die fehlende
+Voraussetzung. `/playerstats …` aus dem LevelZ-Erbe bleibt unverändert.
 
 ---
 

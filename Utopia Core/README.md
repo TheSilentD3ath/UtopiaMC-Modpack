@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="logo_512.png" alt="Utopia Core" width="220">
-</p>
-
 # Utopia Core
 
 RPG-Kern für das Utopia-Modpack (Fabric 1.20.1): Origin → Gender → Klasse bei Weltstart,

@@ -12,7 +12,7 @@ import net.shiro.createhp.CreateHP;
 
 /**
  * Creative inventory tab for the mod. Holds every block/item the mod adds, in a sensible order
- * (pipes first, then the three pump tiers). The tab icon is the Tier-1 pump.
+ * (pipes first, then the five pump tiers). The tab icon is the Tier-1 pump.
  *
  * Registered the Fabric-native way (version-stable) rather than through Registrate's tab helper.
  * The icon + displayItems suppliers run lazily, after all items are registered, so wiring this in

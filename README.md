@@ -20,6 +20,9 @@ Current technical baseline:
 - Minecraft 1.20.1
 - Fabric Loader 0.18.4
 - Current verified release baseline: Utopia 3.0.0
+- Repository source: Utopia Core `1.4.13+utopia.0.10.11`
+- Repository source: Create: Industrial Pressure `0.1.0+1.20.1`, including
+  the shared pipe-class and Create-compatible glass-pipe refactoring
 - Active work areas: Utopia Core, Create Industrial Pressure, Guidebook,
   Heracles quests, FancyMenu, server pack, performance and stability
 

@@ -4,7 +4,7 @@ import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
 import com.tterrag.registrate.util.entry.BlockEntry;
 
 import net.minecraft.world.level.block.state.BlockState;
-import net.shiro.createhp.content.PressurePipe;
+import net.shiro.createhp.content.PressurePipeBlock;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -33,7 +33,7 @@ public class FluidPipeWrenchMixin {
 	)
 	private BlockState createhp$highPressureGlassVariant(BlockEntry<?> instance) {
 		// Any of our pressure pipes (copper, netherite, ...) wrenches into its OWN glass variant.
-		if ((Object) this instanceof PressurePipe pipe) {
+		if ((Object) this instanceof PressurePipeBlock pipe) {
 			return pipe.getGlassPipeDefaultState();
 		}
 		return instance.getDefaultState();

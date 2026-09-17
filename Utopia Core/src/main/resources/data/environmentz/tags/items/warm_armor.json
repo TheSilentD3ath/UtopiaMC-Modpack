@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    {
+      "id": "#thigh_highs_etc:thigh_highs",
+      "required": false
+    }
+  ]
+}
