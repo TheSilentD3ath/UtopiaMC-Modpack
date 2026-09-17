@@ -162,7 +162,7 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 	 */
 	private static boolean isBurstablePipe(Block b) {
 		// Any of our pressure pipes / glass variants (copper, netherite, ...) are immune.
-		if (b instanceof PressurePipe || b instanceof PressureGlassPipe)
+		if (b instanceof PressurePipeBlock || b instanceof PressureGlassPipeBlock)
 			return false;
 		return b instanceof FluidPipeBlock || b instanceof AxisPipeBlock;
 	}

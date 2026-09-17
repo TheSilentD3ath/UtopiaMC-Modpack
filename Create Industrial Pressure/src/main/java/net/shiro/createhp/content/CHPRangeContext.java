@@ -25,6 +25,7 @@ public final class CHPRangeContext {
 	public static void pop() {
 		ArrayDeque<Integer> s = STACK.get();
 		if (!s.isEmpty()) s.pop();
+		if (s.isEmpty()) STACK.remove();
 	}
 
 	/** Top override, or null if no high pressure pump is currently updating on this thread. */

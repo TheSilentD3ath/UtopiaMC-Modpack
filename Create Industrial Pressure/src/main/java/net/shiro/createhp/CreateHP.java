@@ -14,12 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Create: High Pressure Pipes — main entrypoint.
- *
- * Registers a high pressure fluid pipe that joins Create's existing fluid network
- * (it reuses Create's {@code FluidPipeBlockEntity}, so connection + transport logic
- * works out of the box). The "high pressure" flow/range/capacity boost lives in the
- * mixin package and the {@link net.shiro.createhp.config.CHPConfig} multipliers.
+ * Main entrypoint for Create: Industrial Pressure.
  */
 public class CreateHP implements ModInitializer {
 	public static final String ID = "createhp";

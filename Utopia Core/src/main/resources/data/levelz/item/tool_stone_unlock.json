@@ -1,7 +1,7 @@
 {
     "replace": false,
     "skill": "mining",
-    "level": 4,
+    "level": 0,
     "item": "minecraft:tool",
     "material": "stone"
 }

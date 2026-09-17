@@ -1,6 +1,6 @@
 # Utopia 3.0 project status
 
-Status date: 2026-08-21
+Status date: 2026-09-17
 
 The current verified release baseline is Utopia 3.0.0 for Minecraft 1.20.1
 with Fabric Loader 0.18.4. Development continues in a separate working copy
@@ -8,17 +8,23 @@ while this public repository is migrated to the current structure.
 
 ## Repository migration
 
-- Utopia Core source, resources, Gradle wrapper and GPL attribution are imported.
-- Create Industrial Pressure source, resources and Gradle wrapper are imported.
+- Utopia Core `1.4.13+utopia.0.10.11` source, resources, Gradle wrapper and GPL
+  attribution are synchronized with the authoritative development workspace.
+- Create Industrial Pressure `0.1.0+1.20.1` source, resources and Gradle wrapper
+  are synchronized with the authoritative post-refactoring workspace.
 - Build outputs, Gradle caches, runtime profiles and release binaries remain
   excluded.
 - Guidebook, Heracles and canonical pack configuration are not imported yet.
 
 ## Current work
 
-- A newer Utopia Core build is awaiting release integration and pack-level
-  verification; the current release still carries the older integrated build.
-- Create Industrial Pressure has a build awaiting runtime integration tests.
+- Utopia Core `0.10.11` builds successfully from this repository. Its
+  repository-built JAR is byte-identical to the verified development artifact.
+  Pack-level runtime verification and final public release integration remain
+  separate gates.
+- Create Industrial Pressure builds successfully from this repository. Its
+  repository-built JAR is byte-identical to the current development artifact;
+  the remaining gate is its full in-game client/server smoke test.
 - Guidebook generation works, but final in-game validation remains pending.
 - Heracles quest data has passed its current static validation.
 - The approved client performance baseline for the next build includes
@@ -30,13 +36,13 @@ while this public repository is migrated to the current structure.
 There is no final next-release artifact yet. Items listed here are development
 state, not a promise that they are already present in the downloadable pack.
 
-## Weekend release validation
+## Release validation
 
-A live playtest is planned for Saturday, 22 August, or Sunday, 23 August 2026.
-The test will use a fresh survival server and fresh clients running one combined
-Utopia 3.0 release candidate with all approved changes. A small group of players
-will test normal early-game progression and multiplayer interaction to catch the
-last integration bugs before release.
+The previously planned 22/23 August release window has passed. The next public
+release still requires a newly scheduled live playtest using a fresh survival
+server and fresh clients running one combined Utopia 3.0 release candidate. A
+small group of players should test normal early-game progression and multiplayer
+interaction to catch the last integration bugs before release.
 
 The release remains conditional on the combined candidate passing installation,
 server start, world join, character creation, quests, Guidebook, Create machinery,

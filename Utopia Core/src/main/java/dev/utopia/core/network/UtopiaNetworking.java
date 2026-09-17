@@ -7,10 +7,20 @@ import dev.utopia.core.character.CharacterService;
 import dev.utopia.core.character.CharacterTrait;
 import dev.utopia.core.character.CharacterTraits;
 import dev.utopia.core.character.TraitType;
+import dev.utopia.core.unlock.UnlockService;
+import dev.utopia.core.unlock.UnlockTree;
+import dev.utopia.core.unlock.UnlockTrees;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.levelz.access.PlayerStatsManagerAccess;
+import net.levelz.network.PlayerStatsServerPacket;
+import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 
 import java.util.List;
@@ -31,6 +41,7 @@ public final class UtopiaNetworking {
     public static final Identifier TOGGLE_ABILITIES = UtopiaCore.id("toggle_abilities");
     public static final Identifier SYNC_TREES = UtopiaCore.id("sync_trees");
     public static final Identifier BUY_NODE = UtopiaCore.id("buy_node");
+    public static final Identifier SAVE_TREE = UtopiaCore.id("save_tree");
 
     private UtopiaNetworking() {
     }
@@ -57,6 +68,7 @@ public final class UtopiaNetworking {
 
         registerAbilityToggle();
         registerNodePurchase();
+        registerTreeSave();
     }
 
     private static void registerAbilityToggle() {
@@ -65,13 +77,12 @@ public final class UtopiaNetworking {
             if (!data.isComplete()) {
                 return;
             }
-            java.util.List<net.minecraft.entity.effect.StatusEffect> affected = CharacterService.toggleAbilities(player, data);
+            List<StatusEffect> affected = CharacterService.toggleAbilities(player, data);
             if (affected.isEmpty()) {
-                player.sendMessage(net.minecraft.text.Text.translatable("message.utopia.ability.none")
-                        .formatted(net.minecraft.util.Formatting.GRAY), true);
+                player.sendMessage(Text.translatable("message.utopia.ability.none").formatted(Formatting.GRAY), true);
                 return;
             }
-            net.minecraft.text.MutableText names = net.minecraft.text.Text.empty();
+            MutableText names = Text.empty();
             for (int i = 0; i < affected.size(); i++) {
                 if (i > 0) {
                     names.append(", ");
@@ -79,23 +90,46 @@ public final class UtopiaNetworking {
                 names.append(affected.get(i).getName());
             }
             boolean on = CharacterService.abilitiesEnabled(data);
-            player.sendMessage(net.minecraft.text.Text
+            player.sendMessage(Text
                     .translatable(on ? "message.utopia.ability.on" : "message.utopia.ability.off", names)
-                    .formatted(on ? net.minecraft.util.Formatting.GREEN : net.minecraft.util.Formatting.GRAY), true);
+                    .formatted(on ? Formatting.GREEN : Formatting.GRAY), true);
         }));
     }
 
     /** Die Baeume gehen einmal pro Join raus, wie die Traits. */
     public static void syncTrees(ServerPlayerEntity player) {
         PacketByteBuf buf = PacketByteBufs.create();
-        java.util.List<Identifier> order = dev.utopia.core.unlock.UnlockTrees.ordered();
+        buf.writeBoolean(player.hasPermissionLevel(2));
+        List<Identifier> order = UnlockTrees.ordered();
         buf.writeVarInt(order.size());
         for (Identifier id : order) {
             buf.writeIdentifier(id);
-            buf.encode(net.minecraft.nbt.NbtOps.INSTANCE, dev.utopia.core.unlock.UnlockTree.CODEC,
-                    dev.utopia.core.unlock.UnlockTrees.tree(id));
+            buf.encode(NbtOps.INSTANCE, UnlockTree.CODEC, UnlockTrees.tree(id));
         }
         ServerPlayNetworking.send(player, SYNC_TREES, buf);
+    }
+
+    private static void registerTreeSave() {
+        ServerPlayNetworking.registerGlobalReceiver(SAVE_TREE, (server, player, handler, buf, sender) -> {
+            Identifier treeId = buf.readIdentifier();
+            UnlockTree tree = buf.decode(NbtOps.INSTANCE, UnlockTree.CODEC);
+            server.execute(() -> {
+                if (!player.hasPermissionLevel(2)) {
+                    player.sendMessage(Text.literal("Keine Berechtigung fuer den Baum-Editor")
+                            .formatted(Formatting.RED), false);
+                    return;
+                }
+                String problem = UnlockTrees.saveOverride(treeId, tree);
+                if (problem != null) {
+                    player.sendMessage(Text.literal("Baum nicht gespeichert: " + problem)
+                            .formatted(Formatting.RED), false);
+                    return;
+                }
+                server.getPlayerManager().getPlayerList().forEach(UtopiaNetworking::syncTrees);
+                player.sendMessage(Text.literal("Baum gespeichert: " + treeId)
+                        .formatted(Formatting.GREEN), false);
+            });
+        });
     }
 
     private static void registerNodePurchase() {
@@ -103,21 +137,20 @@ public final class UtopiaNetworking {
             String nodeId = buf.readString(128);
             server.execute(() -> {
                 CharacterData data = ((CharacterAccess) player).utopia$getCharacter();
-                int overallLevel = ((net.levelz.access.PlayerStatsManagerAccess) player).getPlayerStatsManager().getOverallLevel();
-                String problem = dev.utopia.core.unlock.UnlockService.whyNotBuyable(player, data, nodeId, overallLevel);
+                int overallLevel = ((PlayerStatsManagerAccess) player).getPlayerStatsManager().getOverallLevel();
+                String problem = UnlockService.whyNotBuyable(data, nodeId, overallLevel);
                 if (problem != null) {
-                    player.sendMessage(net.minecraft.text.Text.translatable(problem)
-                            .formatted(net.minecraft.util.Formatting.RED), true);
+                    player.sendMessage(Text.translatable(problem).formatted(Formatting.RED), true);
                     return;
                 }
-                dev.utopia.core.unlock.UnlockService.buy(player, data, nodeId, overallLevel);
+                UnlockService.buy(player, data, nodeId, overallLevel);
                 CharacterService.applyAll(player, data, true);
                 // Die Sperrlisten des Spielers neu rechnen und mitschicken.
-                net.levelz.network.PlayerStatsServerPacket.writeS2CSkillPacket(
-                        ((net.levelz.access.PlayerStatsManagerAccess) player).getPlayerStatsManager(), player);
+                PlayerStatsServerPacket.writeS2CSkillPacket(
+                        ((PlayerStatsManagerAccess) player).getPlayerStatsManager(), player);
                 syncCharacter(player, data);
-                player.sendMessage(net.minecraft.text.Text.translatable("message.utopia.unlock.bought", nodeId)
-                        .formatted(net.minecraft.util.Formatting.GREEN), true);
+                player.sendMessage(Text.translatable("message.utopia.unlock.bought", nodeId)
+                        .formatted(Formatting.GREEN), true);
             });
         });
     }

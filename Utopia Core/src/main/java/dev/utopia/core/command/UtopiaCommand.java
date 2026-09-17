@@ -4,16 +4,21 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import dev.utopia.core.UtopiaCore;
 import dev.utopia.core.character.CharacterAccess;
 import dev.utopia.core.character.CharacterData;
 import dev.utopia.core.character.CharacterService;
 import dev.utopia.core.network.UtopiaNetworking;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.levelz.access.PlayerStatsManagerAccess;
 import net.levelz.network.PlayerStatsServerPacket;
 import net.levelz.stats.PlayerStatsManager;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.scoreboard.ScoreboardCriterion;
+import net.minecraft.scoreboard.ScoreboardObjective;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -25,6 +30,8 @@ import net.minecraft.util.Identifier;
  * /utopia character set <spieler> <origin> <gender> <klasse>     (OP)
  * /utopia character reset [spieler]                              (OP)
  * /utopia points add <spieler> <anzahl>                          (OP)
+ * /utopia handbuch                                               (alle)
+ * /utopia handbook                                               (alle)
  *
  * Die Rechte haengen bewusst an den Unterbefehlen, nicht an der Wurzel: haengt
  * das Recht an "/utopia", blendet Brigadier den ganzen Befehl fuer normale
@@ -41,6 +48,14 @@ public final class UtopiaCommand {
     public static void register() {
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             LiteralArgumentBuilder<ServerCommandSource> root = CommandManager.literal("utopia");
+
+            // Oeffentliche, optionale Bruecke zum getrennt ausgelieferten
+            // Handbuch-Datapack. Keine Lavender-Klassen referenzieren: Fehlt
+            // der Mod, muss Utopia Core weiterhin normal laden koennen.
+            root.then(CommandManager.literal("handbuch")
+                    .executes(context -> requestHandbook(context, "handbuch", true)));
+            root.then(CommandManager.literal("handbook")
+                    .executes(context -> requestHandbook(context, "handbook", false)));
 
             root.then(CommandManager.literal("character")
                     // get: fuer jeden, aber ohne Argument nur ueber sich selbst
@@ -86,6 +101,36 @@ public final class UtopiaCommand {
 
             dispatcher.register(root);
         });
+    }
+
+    private static int requestHandbook(CommandContext<ServerCommandSource> context, String objectiveName,
+            boolean german) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
+
+        if (!FabricLoader.getInstance().isModLoaded("lavender")) {
+            source.sendError(Text.literal(german
+                    ? "Lavender ist nicht installiert; das Utopia-Handbuch ist deshalb nicht verfügbar."
+                    : "Lavender is not installed, so the Utopia handbook is unavailable."));
+            return 0;
+        }
+
+        Scoreboard scoreboard = source.getServer().getScoreboard();
+        ScoreboardObjective objective = scoreboard.getNullableObjective(objectiveName);
+        Identifier giveFunction = UtopiaCore.data("handbook/give_" + (german ? "de" : "en"));
+        boolean datapackLoaded = source.getServer().getCommandFunctionManager().getFunction(giveFunction).isPresent();
+        if (!datapackLoaded || objective == null || objective.getCriterion() != ScoreboardCriterion.TRIGGER) {
+            source.sendError(Text.literal(german
+                    ? "Das Utopia-Handbuch-Datapack ist nicht installiert oder nicht geladen."
+                    : "The Utopia handbook datapack is not installed or not loaded."));
+            return 0;
+        }
+
+        // Entspricht /trigger <sprache> set 1, umgeht aber nur dessen
+        // kurzlebigen Enable-Zustand. Das Datapack verarbeitet die Anfrage im
+        // naechsten Tick und bleibt allein fuer das Buch-Item verantwortlich.
+        scoreboard.getPlayerScore(player.getEntityName(), objective).setScore(1);
+        return 1;
     }
 
     private static int get(CommandContext<ServerCommandSource> context, ServerPlayerEntity player) {
@@ -136,7 +181,7 @@ public final class UtopiaCommand {
             StringBuilder line = new StringBuilder(treeId.getPath() + ": ");
             tree.nodes().forEach((key, node) -> {
                 String nodeId = treeId.getPath() + "/" + key;
-                boolean owned = data.unlocks().contains(dev.utopia.core.unlock.UnlockService.nodeId(nodeId));
+                boolean owned = dev.utopia.core.unlock.UnlockService.owns(data, nodeId);
                 line.append(owned ? "[x] " : "[ ] ").append(key)
                         .append("(").append(dev.utopia.core.unlock.UnlockService.cost(data, nodeId, node)).append(") ");
             });
@@ -150,7 +195,7 @@ public final class UtopiaCommand {
         String nodeId = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "node");
         CharacterData data = ((CharacterAccess) player).utopia$getCharacter();
         int level = ((PlayerStatsManagerAccess) player).getPlayerStatsManager().getOverallLevel();
-        String problem = dev.utopia.core.unlock.UnlockService.whyNotBuyable(player, data, nodeId, level);
+        String problem = dev.utopia.core.unlock.UnlockService.whyNotBuyable(data, nodeId, level);
         if (problem != null) {
             context.getSource().sendError(Text.translatable(problem));
             return 0;

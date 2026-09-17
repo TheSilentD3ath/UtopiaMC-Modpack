@@ -103,6 +103,73 @@ processResources {
 	}
 }
 
+tasks.register("verifyStarterProgression") {
+    group = "verification"
+    description = "Verifies the intentionally free wooden/stone tier and guards nearby restrictions."
+
+    def itemDataDir = file("src/main/resources/data/levelz/item")
+    def expectedFree = [
+        "axe_wood_unlock.json"  : [skill: "farming",  level: 0, item: "minecraft:axe",   material: "wood"],
+        "hoe_wood_unlock.json"  : [skill: "farming",  level: 0, item: "minecraft:hoe",   material: "wood"],
+        "sword_wood_unlock.json": [skill: "strength", level: 0, item: "minecraft:sword", material: "wood"],
+        "tool_wood_unlock.json" : [skill: "mining",   level: 0, item: "minecraft:tool",  material: "wood"],
+        "axe_stone_unlock.json" : [skill: "farming",  level: 0, item: "minecraft:axe",   material: "stone"],
+        "hoe_stone_unlock.json" : [skill: "farming",  level: 0, item: "minecraft:hoe",   material: "stone"],
+        "sword_stone_unlock.json": [skill: "strength", level: 0, item: "minecraft:sword", material: "stone"],
+        "tool_stone_unlock.json" : [skill: "mining",   level: 0, item: "minecraft:tool",  material: "stone"]
+    ]
+    def expectedRestricted = [
+        "bow_unlock.json"            : [skill: "archery", level: 1],
+        "bucket_unlock.json"         : [skill: "farming", level: 1],
+        "armor_leather_unlock.json"  : [skill: "defense", level: 1],
+        "armor_chainmail_unlock.json": [skill: "defense", level: 4],
+        "axe_iron_unlock.json"       : [skill: "farming", level: 8],
+        "hoe_iron_unlock.json"       : [skill: "farming", level: 8],
+        "sword_iron_unlock.json"     : [skill: "strength", level: 8],
+        "tool_iron_unlock.json"      : [skill: "mining", level: 8]
+    ]
+    inputs.files((expectedFree.keySet() + expectedRestricted.keySet()).collect { new File(itemDataDir, it) })
+    inputs.dir("src/main/resources/data/levelz").optional()
+
+    doLast {
+        def parser = new groovy.json.JsonSlurper()
+        (expectedFree + expectedRestricted).each { fileName, expected ->
+            def source = new File(itemDataDir, fileName)
+            if (!source.isFile()) {
+                throw new GradleException("Missing progression resource: ${source}")
+            }
+            def actual = parser.parse(source)
+            expected.each { field, value ->
+                if (actual[field] != value) {
+                    throw new GradleException("${fileName}: expected ${field}=${value}, found ${actual[field]}")
+                }
+            }
+        }
+
+        def freeRecipeOutputs = [
+            "minecraft:wooden_axe", "minecraft:wooden_hoe", "minecraft:wooden_pickaxe",
+            "minecraft:wooden_shovel", "minecraft:wooden_sword", "minecraft:stone_axe",
+            "minecraft:stone_hoe", "minecraft:stone_pickaxe", "minecraft:stone_shovel",
+            "minecraft:stone_sword"
+        ] as Set
+        def craftingDir = file("src/main/resources/data/levelz/crafting")
+        if (craftingDir.isDirectory()) {
+            fileTree(craftingDir).matching { include "**/*.json" }.each { source ->
+                def data = parser.parse(source)
+                def lockedItems = data.item instanceof Collection ? data.item as Set : [] as Set
+                def conflicts = lockedItems.intersect(freeRecipeOutputs)
+                if (!conflicts.isEmpty()) {
+                    throw new GradleException("${source}: starter-tier recipes must stay craftable: ${conflicts}")
+                }
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn("verifyStarterProgression")
+}
+
 tasks.withType(JavaCompile).configureEach {
     it.options.release = 17
 }
