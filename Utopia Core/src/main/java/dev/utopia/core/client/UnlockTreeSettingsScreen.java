@@ -29,7 +29,7 @@ final class UnlockTreeSettingsScreen extends Screen {
 
     UnlockTreeSettingsScreen(Screen parent, String treeId, String name, String description, String icon,
             int order, SaveHandler handler) {
-        super(Text.literal("Baum bearbeiten"));
+        super(Text.translatable("screen.utopia.unlocks.editor.tree"));
         this.parent = parent;
         this.treeId = treeId;
         this.initialName = name;
@@ -47,7 +47,7 @@ final class UnlockTreeSettingsScreen extends Screen {
         description = field(x, 124, width, initialDescription, 1024);
         icon = field(x, 160, width, initialIcon, 128);
         order = field(x, 196, width, Integer.toString(initialOrder), 8);
-        addDrawableChild(ButtonWidget.builder(Text.literal("Uebernehmen"), button -> save())
+        addDrawableChild(ButtonWidget.builder(Text.translatable("screen.utopia.unlocks.editor.apply"), button -> save())
                 .dimensions(this.width / 2 - 104, this.height - 44, 100, 20).build());
         addDrawableChild(ButtonWidget.builder(Text.translatable("gui.cancel"), button -> close())
                 .dimensions(this.width / 2 + 4, this.height - 44, 100, 20).build());
@@ -64,14 +64,14 @@ final class UnlockTreeSettingsScreen extends Screen {
     private void save() {
         Identifier iconId = icon.getText().isBlank() ? null : Identifier.tryParse(icon.getText().trim());
         if (!icon.getText().isBlank() && iconId == null) {
-            error = "Ungueltige Icon-ID";
+            error = "screen.utopia.unlocks.editor.error.icon";
             return;
         }
         try {
             handler.save(name.getText(), description.getText(), iconId, Integer.parseInt(order.getText().trim()));
             close();
         } catch (NumberFormatException ignored) {
-            error = "Sortierung muss eine ganze Zahl sein";
+            error = "screen.utopia.unlocks.editor.error.order";
         }
     }
 
@@ -82,19 +82,22 @@ final class UnlockTreeSettingsScreen extends Screen {
         context.drawCenteredTextWithShadow(this.textRenderer, this.title, this.width / 2, 32, 0xFFFFE4A8);
         int width = Math.min(420, this.width - 50);
         int x = (this.width - width) / 2;
-        context.drawTextWithShadow(this.textRenderer, Text.literal("Stabile ID: " + treeId), x, 60, 0xFFBFA77D);
-        label(context, "Name / Uebersetzungsschluessel", x, 78);
-        label(context, "Beschreibung", x, 114);
-        label(context, "Icon (namespace:item)", x, 150);
-        label(context, "Sortierung", x, 186);
+        context.drawTextWithShadow(this.textRenderer,
+                Text.translatable("screen.utopia.unlocks.editor.stable_id", treeId), x, 60, 0xFFBFA77D);
+        label(context, "name", x, 78);
+        label(context, "description", x, 114);
+        label(context, "icon", x, 150);
+        label(context, "order", x, 186);
         if (error != null) {
-            context.drawCenteredTextWithShadow(this.textRenderer, error, this.width / 2, this.height - 58, 0xFFFF7777);
+            context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable(error),
+                    this.width / 2, this.height - 58, 0xFFFF7777);
         }
         super.render(context, mouseX, mouseY, delta);
     }
 
-    private void label(DrawContext context, String value, int x, int y) {
-        context.drawTextWithShadow(this.textRenderer, Text.literal(value), x, y, 0xFFF4D69B);
+    private void label(DrawContext context, String key, int x, int y) {
+        context.drawTextWithShadow(this.textRenderer,
+                Text.translatable("screen.utopia.unlocks.editor.field." + key), x, y, 0xFFF4D69B);
     }
 
     @Override

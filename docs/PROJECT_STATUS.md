@@ -36,6 +36,48 @@ while this public repository is migrated to the current structure.
 There is no final next-release artifact yet. Items listed here are development
 state, not a promise that they are already present in the downloadable pack.
 
+## Unlock tree interface rework
+
+The Utopia Core unlock screen (`dev.utopia.core.client`) has been reworked. The
+change is source-only and has **not been compiled or run yet**, because the
+environment it was written in could not reach the Fabric, Yarn or Minecraft
+Maven repositories. Every API used was matched against call sites that already
+exist in this repository rather than from memory, and translation keys, texture
+paths, record constructors and cross-class calls were verified statically. A
+build and an in-game pass are still required before this can go into a release
+candidate.
+
+What changed:
+
+- Map nodes no longer carry a permanent text label. 68 labelled nodes need
+  roughly twice the available canvas area, which forced every "fit to screen"
+  to the minimum zoom. Names now appear on hover and in the inspector.
+- Node state is carried by a badge (check, plus, coin, lock) plus outline, not
+  by colour alone. The previous state colours sat at 1.18:1 against each other,
+  so "already unlocked" and "unlockable now" were effectively indistinguishable
+  and invisible to red-green colour blindness.
+- Nodes carry an optional `shape` (circle, square, rsquare, diamond, hexagon,
+  gear) describing the *kind* of node. `create.json` now assigns these by graph
+  role: gear for the root, diamond for whole-addon gates, hexagon for branch
+  points, square for dead ends. Node positions were not touched.
+- All prerequisite edges are drawn. Previously only the first parent edge was
+  shown, so for 45 of 68 nodes the drawn structure was not the real one.
+- The inspector is a column beside the canvas instead of a panel floating over
+  it, the sidebar collapses when there is only one tree, and a selection can be
+  cleared again — previously it could not, which left part of the canvas
+  permanently covered and unclickable.
+- Added: node search (by name, description, entry id and item name), a state
+  legend, per-frame state caching, editor undo, and a layered auto-layout
+  action that rearranges a tree by progression tier.
+- GUI textures dropped from 4.5 MB to 884 KB. The wood textures were 1254 px
+  sources drawn at 130–455 px, which aliased visibly while zooming.
+
+Open items for the in-game pass: purchase feedback is currently the status line
+only (no sound — the `SoundEvents` API shape could not be verified without a
+compiler); the layered auto-layout is available as an editor button but has not
+been applied to `create.json`, which is still authored portrait (30 x 43 units)
+and therefore still needs a low zoom for the full overview.
+
 ## Release validation
 
 The previously planned 22/23 August release window has passed. The next public

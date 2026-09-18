@@ -53,6 +53,8 @@ public class UnlockTrees extends JsonDataLoader implements IdentifiableResourceR
     private static Map<Identifier, UnlockTree> configuredTrees = Map.of();
     private static Map<Identifier, UnlockTree> trees = Map.of();
     private static List<Identifier> ordered = List.of();
+    /** Knoten-Id ("create/basics") -> Knoten. Ersetzt den fruehereren Linearscan. */
+    private static Map<String, UnlockTree.Node> nodeIndex = Map.of();
     /** Item- oder Block-Id -> Knoten-Id ("create/basics"). */
     private static Map<Identifier, String> byId = Map.of();
     /** Namespace-Wildcard (z.B. "createaddition:*") -> Knoten-Id. */
@@ -94,18 +96,42 @@ public class UnlockTrees extends JsonDataLoader implements IdentifiableResourceR
         List<Identifier> order = new ArrayList<>(parsed.keySet());
         order.sort(Comparator.comparingInt((Identifier id) -> parsed.get(id).order()).thenComparing(Identifier::toString));
 
+        index(parsed, order, true);
+        UtopiaCore.LOGGER.info("{} Freischalt-Baeume geladen, {} Knoten, {} gesperrte Ids, {} Namensraeume, {} Ausnahmen",
+                parsed.size(), nodeIndex.size(), byId.size(), byNamespace.size(), excludedIds.size());
+    }
+
+    /**
+     * Baut alle Nachschlage-Strukturen aus den aktiven Baeumen.
+     *
+     * <p><b>withTags:</b> Tag-Eintraege werden nur serverseitig indexiert. Der Client
+     * bekommt sie nicht, weil dort die Tag-Registry beim Sync noch nicht zwingend steht —
+     * die Sperre selbst haelt trotzdem, weil der Server entscheidet.
+     *
+     * <p><b>Warum die Tag-Listen bei {@code withTags == false} unangetastet bleiben:</b> Im
+     * Einzelspieler laufen integrierter Server und Client in derselben JVM und teilen sich
+     * diese statischen Felder. Der Client-Sync wuerde die serverseitig aufgebauten Tag-Listen
+     * sonst leeren und damit alle Tag-Sperren im Einzelspieler aufheben. Die uebrigen Felder
+     * sind unkritisch, weil der Sync dort exakt dieselben Daten liefert.
+     */
+    private static void index(Map<Identifier, UnlockTree> active, List<Identifier> order, boolean withTags) {
+        Map<String, UnlockTree.Node> nodes = new HashMap<>();
         Map<Identifier, String> ids = new HashMap<>();
         Map<String, String> namespaces = new HashMap<>();
         Set<Identifier> exclusions = new java.util.HashSet<>();
         List<Map.Entry<TagKey<net.minecraft.item.Item>, String>> itemTags = new ArrayList<>();
         List<Map.Entry<TagKey<net.minecraft.block.Block>, String>> blockTags = new ArrayList<>();
 
-        parsed.forEach((treeId, tree) -> tree.nodes().forEach((key, node) -> {
+        active.forEach((treeId, tree) -> tree.nodes().forEach((key, node) -> {
             String nodeId = treeId.getPath() + "/" + key;
+            nodes.put(nodeId, node);
             for (String entry : node.unlocks()) {
                 if (entry.endsWith(":*") && entry.indexOf(':') == entry.length() - 2) {
                     namespaces.put(entry.substring(0, entry.length() - 2), nodeId);
                 } else if (entry.startsWith("#")) {
+                    if (!withTags) {
+                        continue;
+                    }
                     Identifier tag = Identifier.tryParse(entry.substring(1));
                     if (tag == null) {
                         continue;
@@ -127,15 +153,16 @@ public class UnlockTrees extends JsonDataLoader implements IdentifiableResourceR
             }
         }));
 
-        trees = Collections.unmodifiableMap(parsed);
+        trees = Collections.unmodifiableMap(new LinkedHashMap<>(active));
         ordered = List.copyOf(order);
+        nodeIndex = Collections.unmodifiableMap(nodes);
         byId = Collections.unmodifiableMap(ids);
         byNamespace = Collections.unmodifiableMap(namespaces);
         excludedIds = Set.copyOf(exclusions);
-        byItemTag = List.copyOf(itemTags);
-        byBlockTag = List.copyOf(blockTags);
-        UtopiaCore.LOGGER.info("{} Freischalt-Baeume geladen, {} gesperrte Ids, {} Namensraeume, {} Ausnahmen",
-                parsed.size(), ids.size(), namespaces.size(), exclusions.size());
+        if (withTags) {
+            byItemTag = List.copyOf(itemTags);
+            byBlockTag = List.copyOf(blockTags);
+        }
     }
 
     private static Map<Identifier, UnlockTree> loadOverrides() {
@@ -288,18 +315,15 @@ public class UnlockTrees extends JsonDataLoader implements IdentifiableResourceR
         return trees.get(id);
     }
 
-    /** Knoten zu einer Knoten-Id ("create/basics"), oder null. */
+    /**
+     * Knoten zu einer Knoten-Id ("create/basics"), oder null.
+     *
+     * Direkter Map-Zugriff: Der Freischalt-Screen fragt das pro Bild einige hundert Mal
+     * ab, ein Linearscan ueber alle Baeume mit {@code substring} je Aufruf war dort
+     * messbar teuer.
+     */
     public static UnlockTree.Node node(String nodeId) {
-        int slash = nodeId.indexOf('/');
-        if (slash < 0) {
-            return null;
-        }
-        for (Map.Entry<Identifier, UnlockTree> entry : trees.entrySet()) {
-            if (entry.getKey().getPath().equals(nodeId.substring(0, slash))) {
-                return entry.getValue().nodes().get(nodeId.substring(slash + 1));
-            }
-        }
-        return null;
+        return nodeId == null ? null : nodeIndex.get(nodeId);
     }
 
     public static String treeOf(String nodeId) {
@@ -356,32 +380,11 @@ public class UnlockTrees extends JsonDataLoader implements IdentifiableResourceR
      * trotzdem, weil der Server entscheidet.
      */
     public static void acceptSynced(Map<Identifier, UnlockTree> synced, List<Identifier> order) {
-        Map<Identifier, String> ids = new HashMap<>();
-        Map<String, String> namespaces = new HashMap<>();
-        Set<Identifier> exclusions = new java.util.HashSet<>();
-        synced.forEach((treeId, tree) -> tree.nodes().forEach((key, node) -> {
-            String nodeId = treeId.getPath() + "/" + key;
-            for (String entry : node.unlocks()) {
-                if (entry.endsWith(":*") && entry.indexOf(':') == entry.length() - 2) {
-                    namespaces.put(entry.substring(0, entry.length() - 2), nodeId);
-                } else if (!entry.startsWith("#")) {
-                    Identifier id = Identifier.tryParse(entry);
-                    if (id != null) {
-                        ids.put(id, nodeId);
-                    }
-                }
-            }
-            for (String entry : node.excludes()) {
-                Identifier id = Identifier.tryParse(entry);
-                if (id != null) {
-                    exclusions.add(id);
-                }
-            }
-        }));
-        trees = Collections.unmodifiableMap(synced);
-        ordered = List.copyOf(order);
-        byId = Collections.unmodifiableMap(ids);
-        byNamespace = Collections.unmodifiableMap(namespaces);
-        excludedIds = Set.copyOf(exclusions);
+        index(synced, order, false);
+    }
+
+    /** Alle Knoten-Ids ("create/basics") der aktiven Baeume. */
+    public static Set<String> nodeIds() {
+        return nodeIndex.keySet();
     }
 }

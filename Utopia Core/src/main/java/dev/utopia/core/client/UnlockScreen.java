@@ -4,6 +4,7 @@ import dev.utopia.core.UtopiaCore;
 import dev.utopia.core.character.CharacterAccess;
 import dev.utopia.core.character.CharacterData;
 import dev.utopia.core.network.UtopiaNetworking;
+import dev.utopia.core.unlock.NodeShape;
 import dev.utopia.core.unlock.UnlockService;
 import dev.utopia.core.unlock.UnlockTree;
 import dev.utopia.core.unlock.UnlockTreeValidator;
@@ -14,63 +15,119 @@ import net.levelz.access.PlayerStatsManagerAccess;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.client.resource.language.I18n;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
-/** Rustikaler, frei zoombarer Freischaltbaum mit server-autoritativem OP-Editor. */
+/**
+ * Rustikaler Freischaltbaum mit server-autoritativem OP-Editor.
+ *
+ * <p><b>Aufteilung:</b> Kopfzeile, darunter drei Spalten (Seitenleiste, Karte, Inspektor),
+ * darunter eine Fusszeile mit Legende und Status. Alle Abmessungen entstehen an einer
+ * einzigen Stelle ({@link #layout()}); Spalten, fuer die kein Platz ist, entfallen ganz,
+ * statt sich zu ueberlappen oder aus dem Rahmen zu laufen.
+ *
+ * <p><b>Warum der Inspektor eine eigene Spalte ist:</b> Vorher lag er als schwebende Flaeche
+ * ueber der Karte und verdeckte etwa ein Fuenftel davon — einschliesslich der Knoten
+ * darunter, die dadurch auch nicht mehr anklickbar waren.
+ *
+ * <p><b>Warum die Seitenleiste verschwinden kann:</b> Bei einem einzigen Baum enthielt sie
+ * nur einen Reiter und ansonsten 150 px Leere. Dieser Platz gehoert der Karte.
+ */
 public class UnlockScreen extends Screen {
 
     private enum EditorTool { SELECT, MOVE }
 
     private static final Identifier LIGHT_WOOD = UtopiaCore.id("textures/gui/unlock/light_wood.png");
     private static final Identifier DARK_WOOD = UtopiaCore.id("textures/gui/unlock/dark_wood.png");
-    private static final int TEXTURE_SIZE = 1254;
-    private static final int MAX_PANEL_WIDTH = 760;
-    private static final int MAX_PANEL_HEIGHT = 660;
+    private static final int TEXTURE_SIZE = 512;
+
+    private static final int MAX_PANEL_WIDTH = 960;
+    private static final int MAX_PANEL_HEIGHT = 700;
     private static final int OUTER = 8;
-    private static final int HEADER_BOTTOM = 62;
-    private static final int SIDEBAR_WIDTH = 164;
-    private static final int DETAIL_WIDTH = 282;
+    private static final int GAP = 8;
+    private static final int HEADER_HEIGHT = 44;
+    private static final int TOOLBAR_HEIGHT = 30;
+    private static final int FOOTER_HEIGHT = 30;
+    private static final int SIDEBAR_WIDTH = 150;
+    private static final int INSPECTOR_WIDTH = 214;
+    private static final int MIN_CANVAS_WIDTH = 150;
+    private static final int ENTRY_HEIGHT = 20;
+
+    // Kontrastgeprueft gegen die gemessene Helligkeit der Holztexturen.
     private static final int COLOR_TEXT = 0xFF2C1B10;
-    private static final int COLOR_MUTED = 0xFF735638;
+    private static final int COLOR_MUTED = 0xFF4A3524;
     private static final int COLOR_LIGHT = 0xFFF5DCA5;
+    private static final int COLOR_WARN = 0xFF861C14;
+    private static final int COLOR_ACCENT = 0xFFD8B97B;
+
+    /** Zoom beim Oeffnen: lesbar an der richtigen Stelle statt vollstaendig und winzig. */
+    private static final double READABLE_ZOOM = 0.9;
 
     private Identifier currentTree;
     private UnlockTreeDraft draft;
     private boolean editing;
-    private boolean centerAfterInit = true;
+    private boolean focusAfterInit = true;
     private UnlockTreeCanvas canvas;
-    private final List<ButtonWidget> rusticButtons = new ArrayList<>();
     private final List<ButtonWidget> treeTabs = new ArrayList<>();
-    private final List<ButtonWidget> editorToolButtons = new ArrayList<>();
     private final List<EditorMenuEntry> contextMenu = new ArrayList<>();
+    private final Map<String, UnlockTreeCanvas.State> stateCache = new HashMap<>();
+
+    private TextFieldWidget search;
+    private String lastQuery = "";
+    private Set<String> searchMatches;
+
     private ButtonWidget purchaseButton;
     private ButtonWidget editNodeButton;
+    private ButtonWidget undoButton;
     private ButtonWidget selectedTreeTab;
     private ButtonWidget selectToolButton;
     private ButtonWidget moveToolButton;
     private EditorTool editorTool = EditorTool.SELECT;
-    private int editorToolsTop;
+
     private int contextMenuX;
     private int contextMenuY;
     private int contextMenuWidth;
     private int detailScroll;
+    private String status;
+
+    // Aufteilung; gesetzt in layout().
     private int panelLeft;
     private int panelTop;
     private int panelRight;
     private int panelBottom;
-    private String status;
+    private int innerLeft;
+    private int innerRight;
+    private int headerTop;
+    private int headerBottom;
+    private int bodyTop;
+    private int bodyBottom;
+    private int sidebarLeft;
+    private int sidebarRight;
+    private int canvasLeft;
+    private int canvasRight;
+    private int inspectorLeft;
+    private int inspectorRight;
+    private int toolbarTop;
+    private int footerTop;
+    private boolean showSidebar;
+    private boolean showInspector;
 
     public UnlockScreen() {
         super(Text.translatable("screen.utopia.unlocks"));
@@ -84,27 +141,68 @@ public class UnlockScreen extends Screen {
         return ((PlayerStatsManagerAccess) this.client.player).getPlayerStatsManager().getOverallLevel();
     }
 
-    @Override
-    protected void init() {
-        rusticButtons.clear();
-        treeTabs.clear();
-        editorToolButtons.clear();
-        contextMenu.clear();
-        editNodeButton = null;
-        selectedTreeTab = null;
-        selectToolButton = null;
-        moveToolButton = null;
-        if (canvas == null) {
-            canvas = new UnlockTreeCanvas(this.textRenderer);
-        }
-        int panelWidth = Math.min(MAX_PANEL_WIDTH, Math.max(320, this.width - 8));
-        int panelHeight = Math.min(MAX_PANEL_HEIGHT, Math.max(240, this.height - 8));
+    // --- Aufteilung -------------------------------------------------------
+
+    /**
+     * Legt alle Bereiche fest.
+     *
+     * Reihenfolge des Verzichts bei wenig Platz: zuerst faellt der Inspektor weg (seine
+     * Angaben stehen auch im Tooltip), dann die Seitenleiste. Die Karte behaelt immer
+     * mindestens {@link #MIN_CANVAS_WIDTH}.
+     */
+    private void layout() {
+        int panelWidth = Math.min(MAX_PANEL_WIDTH, Math.max(260, this.width - 12));
+        int panelHeight = Math.min(MAX_PANEL_HEIGHT, Math.max(200, this.height - 12));
         panelLeft = (this.width - panelWidth) / 2;
         panelTop = (this.height - panelHeight) / 2;
         panelRight = panelLeft + panelWidth;
         panelBottom = panelTop + panelHeight;
-        int canvasLeft = panelLeft + SIDEBAR_WIDTH + 14;
-        canvas.bounds(canvasLeft, panelTop + HEADER_BOTTOM + 8, panelRight - 17, panelBottom - 64);
+
+        innerLeft = panelLeft + OUTER + 5;
+        innerRight = panelRight - OUTER - 5;
+        headerTop = panelTop + OUTER + 5;
+        headerBottom = headerTop + HEADER_HEIGHT;
+        footerTop = panelBottom - OUTER - 5 - FOOTER_HEIGHT;
+        bodyTop = headerBottom + GAP;
+        bodyBottom = footerTop - GAP;
+
+        int treeCount = UnlockTrees.ordered().size();
+        showSidebar = treeCount > 1 || editing;
+        showInspector = true;
+
+        int available = innerRight - innerLeft;
+        int needed = MIN_CANVAS_WIDTH + (showSidebar ? SIDEBAR_WIDTH + GAP : 0) + INSPECTOR_WIDTH + GAP;
+        if (available < needed) {
+            showInspector = false;
+            needed = MIN_CANVAS_WIDTH + (showSidebar ? SIDEBAR_WIDTH + GAP : 0);
+            if (available < needed && showSidebar) {
+                showSidebar = false;
+            }
+        }
+
+        sidebarLeft = innerLeft;
+        sidebarRight = showSidebar ? sidebarLeft + SIDEBAR_WIDTH : sidebarLeft;
+        inspectorRight = innerRight;
+        inspectorLeft = showInspector ? inspectorRight - INSPECTOR_WIDTH : inspectorRight;
+        canvasLeft = sidebarRight + (showSidebar ? GAP : 0);
+        canvasRight = inspectorLeft - (showInspector ? GAP : 0);
+        toolbarTop = bodyBottom - TOOLBAR_HEIGHT;
+    }
+
+    @Override
+    protected void init() {
+        treeTabs.clear();
+        contextMenu.clear();
+        editNodeButton = null;
+        undoButton = null;
+        selectedTreeTab = null;
+        selectToolButton = null;
+        moveToolButton = null;
+        if (canvas == null) {
+            canvas = new UnlockTreeCanvas();
+        }
+        layout();
+        canvas.bounds(canvasLeft, bodyTop, canvasRight, toolbarTop - 4);
 
         List<Identifier> ids = new ArrayList<>(UnlockTrees.ordered());
         if (currentTree != null && !ids.contains(currentTree)) {
@@ -112,105 +210,156 @@ public class UnlockScreen extends Screen {
         }
         if (currentTree == null && !ids.isEmpty()) {
             currentTree = ids.get(0);
-            centerAfterInit = true;
+            focusAfterInit = true;
         }
-        int tabY = panelTop + HEADER_BOTTOM + 18;
+
+        buildHeader();
+        if (showSidebar) {
+            buildSidebar(ids);
+        }
+        buildToolbar();
+        buildFooter();
+        if (showInspector) {
+            purchaseButton = addRustic(new RusticButton(inspectorLeft + 8, bodyBottom - 26,
+                    INSPECTOR_WIDTH - 16, 22, Text.translatable("screen.utopia.unlocks.purchase"),
+                    button -> purchaseSelected()));
+        } else {
+            purchaseButton = null;
+        }
+
+        // Suchtreffer nach einem Neuaufbau erneut anwenden.
+        lastQuery = "";
+        if (focusAfterInit) {
+            focusProgress();
+            canvas.snapToTarget();
+            focusAfterInit = false;
+        }
+    }
+
+    private void buildHeader() {
+        int searchWidth = Math.min(150, Math.max(70, (innerRight - innerLeft) / 3));
+        int pointsWidth = this.textRenderer.getWidth(pointsText()) + 22;
+        int searchLeft = innerRight - pointsWidth - GAP - searchWidth;
+        if (searchLeft < innerLeft + 40) {
+            searchWidth = Math.max(60, innerRight - pointsWidth - GAP - innerLeft - 40);
+            searchLeft = innerRight - pointsWidth - GAP - searchWidth;
+        }
+        String previous = search == null ? "" : search.getText();
+        search = new TextFieldWidget(this.textRenderer, searchLeft, headerTop + 12, searchWidth, 18,
+                Text.translatable("screen.utopia.unlocks.search"));
+        search.setMaxLength(64);
+        search.setText(previous);
+        addDrawableChild(search);
+    }
+
+    private void buildSidebar(List<Identifier> ids) {
+        int y = bodyTop;
         for (Identifier id : ids) {
             UnlockTree tree = id.equals(currentTree) ? currentTreeData() : UnlockTrees.tree(id);
             Text label = tree == null ? Text.literal(id.getPath()) : displayName(tree.name(), id.getPath());
-            ButtonWidget tab = addRustic(ButtonWidget.builder(label, button -> selectTree(id))
-                    .dimensions(panelLeft + 18, tabY, SIDEBAR_WIDTH - 27, 24).build());
+            RusticButton tab = new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 22, label,
+                    button -> selectTree(id));
+            tab.selected = id.equals(currentTree);
+            tab.active = !editing && !id.equals(currentTree);
+            addRustic(tab);
             treeTabs.add(tab);
             if (id.equals(currentTree)) {
                 selectedTreeTab = tab;
             }
-            tab.active = !editing && !id.equals(currentTree);
-            tabY += 25;
+            y += 24;
         }
 
-        if (UtopiaCoreClient.canEditTrees) {
-            if (!editing) {
-                addRustic(ButtonWidget.builder(Text.literal("Editor oeffnen"), button -> enterEditor())
-                        .dimensions(panelLeft + 18, panelBottom - 94, SIDEBAR_WIDTH - 27, 24).build());
-                addRustic(ButtonWidget.builder(Text.literal("Neuer Baum"), button -> createTree())
-                        .dimensions(panelLeft + 18, panelBottom - 65, SIDEBAR_WIDTH - 27, 20).build());
-            } else {
-                editorToolsTop = Math.max(tabY + 18, panelBottom - 205);
-                selectToolButton = addEditorTool(ButtonWidget.builder(Text.literal("Auswahl"),
-                                button -> setEditorTool(EditorTool.SELECT))
-                        .dimensions(panelLeft + 18, editorToolsTop, 65, 22).build());
-                moveToolButton = addEditorTool(ButtonWidget.builder(Text.literal("Bewegen"),
-                                button -> setEditorTool(EditorTool.MOVE))
-                        .dimensions(panelLeft + 87, editorToolsTop, SIDEBAR_WIDTH - 96, 22).build());
-                addRustic(ButtonWidget.builder(Text.literal("+ Knoten"), button -> addNode())
-                        .dimensions(panelLeft + 18, editorToolsTop + 27, SIDEBAR_WIDTH - 27, 22).build());
-                editNodeButton = addRustic(ButtonWidget.builder(Text.literal("Knoten"), button -> editSelectedNode())
-                        .dimensions(panelLeft + 18, editorToolsTop + 54, SIDEBAR_WIDTH - 27, 22).build());
-                addRustic(ButtonWidget.builder(Text.literal("Baum"), button -> editTreeSettings())
-                        .dimensions(panelLeft + 18, editorToolsTop + 81, SIDEBAR_WIDTH - 27, 22).build());
-                addRustic(ButtonWidget.builder(Text.literal("Speichern"), button -> saveTree())
-                        .dimensions(panelRight - 196, panelBottom - 50, 84, 24).build());
-                addRustic(ButtonWidget.builder(Text.literal("Verwerfen"), button -> discardEditor())
-                        .dimensions(panelRight - 107, panelBottom - 50, 84, 24).build());
-            }
+        if (!editing || !UtopiaCoreClient.canEditTrees) {
+            return;
         }
+        y += 10;
+        int half = (SIDEBAR_WIDTH - 4) / 2;
+        selectToolButton = new RusticButton(sidebarLeft, y, half, 20,
+                Text.translatable("screen.utopia.unlocks.editor.tool.select"),
+                button -> setEditorTool(EditorTool.SELECT));
+        ((RusticButton) selectToolButton).selected = editorTool == EditorTool.SELECT;
+        addRustic(selectToolButton);
+        moveToolButton = new RusticButton(sidebarLeft + half + 4, y, SIDEBAR_WIDTH - half - 4, 20,
+                Text.translatable("screen.utopia.unlocks.editor.tool.move"),
+                button -> setEditorTool(EditorTool.MOVE));
+        ((RusticButton) moveToolButton).selected = editorTool == EditorTool.MOVE;
+        addRustic(moveToolButton);
+        y += 24;
+        addRustic(new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 20,
+                Text.translatable("screen.utopia.unlocks.editor.add_node"), button -> addNode()));
+        y += 22;
+        editNodeButton = addRustic(new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 20,
+                Text.translatable("screen.utopia.unlocks.editor.node"), button -> editSelectedNode()));
+        y += 22;
+        addRustic(new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 20,
+                Text.translatable("screen.utopia.unlocks.editor.tree"), button -> editTreeSettings()));
+        y += 22;
+        addRustic(new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 20,
+                Text.translatable("screen.utopia.unlocks.editor.auto_layout"), button -> autoLayout()));
+        y += 22;
+        undoButton = addRustic(new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 20,
+                Text.translatable("screen.utopia.unlocks.editor.undo"), button -> undoEdit()));
+    }
 
-        addRustic(ButtonWidget.builder(Text.literal("−"), button -> canvas.zoomBy(-1.0))
-                .dimensions(canvasLeft + 5, panelBottom - 48, 28, 24).build());
-        addRustic(ButtonWidget.builder(Text.literal("+"), button -> canvas.zoomBy(1.0))
-                .dimensions(canvasLeft + 67, panelBottom - 48, 28, 24).build());
-        addRustic(ButtonWidget.builder(Text.literal("Zentrieren"), button -> centerTree())
-                .dimensions(canvasLeft + 101, panelBottom - 48, 100, 24).build());
+    private void buildToolbar() {
+        int y = toolbarTop + 3;
+        addRustic(new RusticButton(canvasLeft + 4, y, 22, 22, Text.literal("−"),
+                button -> canvas.zoomBy(-1.0)));
+        addRustic(new RusticButton(canvasLeft + 70, y, 22, 22, Text.literal("+"),
+                button -> canvas.zoomBy(1.0)));
+        int overviewWidth = Math.min(96, Math.max(40, canvasRight - canvasLeft - 100));
+        addRustic(new RusticButton(canvasLeft + 96, y, overviewWidth, 22,
+                Text.translatable("screen.utopia.unlocks.overview"), button -> fitTree()));
+    }
 
-        purchaseButton = addRustic(ButtonWidget.builder(Text.literal("Freischalten"), button -> purchaseSelected())
-                .dimensions(detailLeft() + 12, detailBottom() - 31, DETAIL_WIDTH - 24, 21).build());
-        addRustic(ButtonWidget.builder(Text.translatable("gui.done"), button -> close())
-                .dimensions(panelLeft + 18, panelBottom - 36, SIDEBAR_WIDTH - 27, 20).build());
-
-        if (centerAfterInit) {
-            centerTree();
-            centerAfterInit = false;
+    private void buildFooter() {
+        int y = footerTop + 4;
+        int x = innerRight;
+        RusticButton done = new RusticButton(x - 70, y, 70, 22, Text.translatable("gui.done"),
+                button -> close());
+        addRustic(done);
+        x -= 74;
+        if (!UtopiaCoreClient.canEditTrees) {
+            return;
+        }
+        if (editing) {
+            addRustic(new RusticButton(x - 76, y, 76, 22,
+                    Text.translatable("screen.utopia.unlocks.editor.discard"), button -> discardEditor()));
+            x -= 80;
+            addRustic(new RusticButton(x - 76, y, 76, 22,
+                    Text.translatable("screen.utopia.unlocks.editor.save"), button -> saveTree()));
+        } else {
+            addRustic(new RusticButton(x - 96, y, 96, 22,
+                    Text.translatable("screen.utopia.unlocks.editor.open"), button -> enterEditor()));
+            x -= 100;
+            addRustic(new RusticButton(x - 86, y, 86, 22,
+                    Text.translatable("screen.utopia.unlocks.editor.new_tree"), button -> createTree()));
         }
     }
 
-    private int detailLeft() {
-        return Math.max(panelLeft + SIDEBAR_WIDTH + 230, panelRight - DETAIL_WIDTH - 30);
-    }
-
-    private int detailTop() {
-        return Math.max(panelTop + HEADER_BOTTOM + 30, panelBottom - 280);
-    }
-
-    private int detailBottom() {
-        return panelBottom - 66;
-    }
-
-    private ButtonWidget addRustic(ButtonWidget button) {
-        rusticButtons.add(button);
+    private <T extends ButtonWidget> T addRustic(T button) {
         return addDrawableChild(button);
     }
 
-    private ButtonWidget addEditorTool(ButtonWidget button) {
-        editorToolButtons.add(button);
-        return addRustic(button);
-    }
+    // --- Zustand ----------------------------------------------------------
 
-    private void selectTree(Identifier id) {
-        currentTree = id;
-        canvas.select(null);
-        detailScroll = 0;
-        centerAfterInit = true;
-        clearAndInit();
-    }
-
-    private UnlockTree currentTreeData() {
-        if (editing && draft != null) {
-            return draft.build();
-        }
-        return currentTree == null ? null : UnlockTrees.tree(currentTree);
-    }
-
+    /**
+     * Zustand eines Knotens, hoechstens einmal je Bild berechnet.
+     *
+     * {@code buyability} schlaegt den Knoten und jeden Elternknoten nach und erzeugt dabei
+     * Identifier. Ohne diesen Zwischenspeicher lief das pro Bild mehrere hundert Mal.
+     */
     private UnlockTreeCanvas.State state(String key, UnlockTree.Node node) {
+        UnlockTreeCanvas.State cached = stateCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        UnlockTreeCanvas.State computed = compute(key, node);
+        stateCache.put(key, computed);
+        return computed;
+    }
+
+    private UnlockTreeCanvas.State compute(String key, UnlockTree.Node node) {
         if (currentTree == null || node == null) {
             return UnlockTreeCanvas.State.BLOCKED;
         }
@@ -223,88 +372,58 @@ public class UnlockScreen extends Screen {
         };
     }
 
+    private UnlockTree currentTreeData() {
+        if (editing && draft != null) {
+            return draft.build();
+        }
+        return currentTree == null ? null : UnlockTrees.tree(currentTree);
+    }
+
+    private Text pointsText() {
+        return Text.translatable("screen.utopia.unlocks.points", data().unlockPoints());
+    }
+
+    // --- Zeichnen ---------------------------------------------------------
+
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        stateCache.clear();
         renderBackground(context);
-        drawWoodPanel(context, panelLeft + OUTER, panelTop + OUTER,
-                panelRight - OUTER, panelBottom - OUTER);
-        int headerLeft = panelLeft + 13;
-        int headerRight = panelRight - 13;
-        int headerCenterY = panelTop + (14 + HEADER_BOTTOM) / 2;
-        drawLightPanel(context, headerLeft, panelTop + 14, headerRight, panelTop + HEADER_BOTTOM);
-        context.fill(headerLeft, panelTop + HEADER_BOTTOM - 4,
-                headerRight, panelTop + HEADER_BOTTOM, 0xFF59351E);
-        drawDarkPanel(context, panelLeft + 13, panelTop + HEADER_BOTTOM + 5,
-                panelLeft + SIDEBAR_WIDTH + 4, panelBottom - 13);
-        int canvasLeft = panelLeft + SIDEBAR_WIDTH + 14;
-        context.fill(panelLeft + SIDEBAR_WIDTH + 3, panelTop + HEADER_BOTTOM + 5,
-                panelLeft + SIDEBAR_WIDTH + 7, panelBottom - 13, 0xFF76502E);
-        context.fill(panelLeft + SIDEBAR_WIDTH + 7, panelTop + HEADER_BOTTOM + 5,
-                panelLeft + SIDEBAR_WIDTH + 9, panelBottom - 13, 0xFF1C0E09);
-        drawCanvasFrame(context, canvas.left(), canvas.top(), canvas.right(), canvas.bottom());
-        drawToolbarPanel(context, canvas.left() - 3, panelBottom - 54,
-                canvas.right() + 3, panelBottom - 15);
-
         UnlockTree tree = currentTreeData();
-        boolean detailsVisible = tree != null && canvas.selected() != null;
-        Text heading = tree == null ? Text.translatable("screen.utopia.unlocks")
-                : displayName(tree.name(), currentTree == null ? "Technologie" : currentTree.getPath())
-                        .copy().append("-Technologie");
-        if (tree != null) {
-            Item treeIcon = tree.icon().map(Registries.ITEM::get).orElse(null);
-            if (treeIcon != null && treeIcon != net.minecraft.item.Items.AIR) {
-                context.drawItem(new ItemStack(treeIcon), headerLeft + 9, headerCenterY - 8);
-            }
+        updateSearch(tree);
+
+        drawWoodPanel(context, panelLeft + OUTER, panelTop + OUTER, panelRight - OUTER, panelBottom - OUTER);
+        drawLightPanel(context, innerLeft - 4, headerTop - 4, innerRight + 4, headerBottom);
+        if (showSidebar) {
+            drawDarkPanel(context, sidebarLeft - 4, bodyTop - 4, sidebarRight + 4, bodyBottom + 4);
         }
-        int headerTextY = headerCenterY - this.textRenderer.fontHeight / 2;
-        context.drawText(this.textRenderer, heading, headerLeft + 32, headerTextY, COLOR_TEXT, false);
-        Text points = Text.translatable("screen.utopia.unlocks.points", data().unlockPoints());
-        int pointsRight = headerRight - 7;
-        int pointsLeft = pointsRight - 16 - this.textRenderer.getWidth(points);
-        drawDarkPanel(context, pointsLeft, headerCenterY - 13, pointsRight, headerCenterY + 13);
-        context.drawText(this.textRenderer, points, pointsLeft + 8, headerTextY, COLOR_LIGHT, false);
+        if (showInspector) {
+            drawLightPanel(context, inspectorLeft - 4, bodyTop - 4, inspectorRight + 4, bodyBottom + 4);
+        }
+        drawCanvasFrame(context, canvasLeft, bodyTop, canvasRight, toolbarTop - 4);
+        drawDarkPanel(context, canvasLeft, toolbarTop, canvasRight, bodyBottom);
+
+        renderHeader(context, tree);
 
         if (tree == null) {
-            context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable("screen.utopia.unlocks.empty"),
-                    (panelLeft + panelRight) / 2, (panelTop + panelBottom) / 2, COLOR_MUTED);
+            context.drawCenteredTextWithShadow(this.textRenderer,
+                    Text.translatable("screen.utopia.unlocks.empty"),
+                    (canvasLeft + canvasRight) / 2, (bodyTop + toolbarTop) / 2, COLOR_LIGHT);
         } else {
             canvas.render(context, tree, this::state, editing, mouseX, mouseY);
         }
 
-        if (editing) {
-            context.drawTextWithShadow(this.textRenderer, Text.literal("Bearbeitung"), panelLeft + 20,
-                    editorToolsTop - 14, 0xFFD8B97B);
-        } else if (UtopiaCoreClient.canEditTrees) {
-            context.drawTextWithShadow(this.textRenderer, Text.literal("Bearbeitung"), panelLeft + 20,
-                    panelBottom - 111, 0xFFD8B97B);
-        }
-        context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(canvas.zoomPercent() + "%"),
-                canvasLeft + 50, panelBottom - 40, COLOR_LIGHT);
-        String editorHint = editorTool == EditorTool.MOVE
-                ? "Verschieben · Knoten ziehen · Shift = frei"
-                : "Auswahl · Ziehen = Ansicht · Rechtsklick = Aktionen";
-        Text hint = Text.literal(editing ? editorHint : "Spieleransicht · Ziehen zum Verschieben");
-        int hintX = canvasLeft + 215;
-        context.drawTextWithShadow(this.textRenderer, hint, hintX, panelBottom - 41, COLOR_LIGHT);
-        if (status != null) {
-            context.drawTextWithShadow(this.textRenderer, Text.literal(status),
-                    canvasLeft + 184, panelBottom - 29, 0xFFFFC96A);
-        }
-
+        renderToolbar(context);
+        renderFooter(context);
         updateButtonState(tree);
         super.render(context, mouseX, mouseY, delta);
-        for (ButtonWidget button : rusticButtons) {
-            if (!detailsVisible || button != purchaseButton) {
-                drawRusticButton(context, button, mouseX, mouseY);
-            }
+        renderSearchPlaceholder(context);
+
+        if (showInspector) {
+            renderInspector(context, tree);
         }
-        if (detailsVisible) {
-            context.getMatrices().push();
-            context.getMatrices().translate(0.0F, 0.0F, 400.0F);
-            drawInspectorPanel(context, detailLeft(), detailTop(), panelRight - 29, detailBottom());
-            renderDetails(context, tree, detailLeft(), detailTop(), detailBottom());
-            drawRusticButton(context, purchaseButton, mouseX, mouseY);
-            context.getMatrices().pop();
+        if (tree != null && contextMenu.isEmpty()) {
+            renderNodeTooltip(context, tree, mouseX, mouseY);
         }
         context.getMatrices().push();
         context.getMatrices().translate(0.0F, 0.0F, 600.0F);
@@ -312,53 +431,181 @@ public class UnlockScreen extends Screen {
         context.getMatrices().pop();
     }
 
-    private void renderDetails(DrawContext context, UnlockTree tree, int left, int top, int bottom) {
-        String selected = canvas.selected();
-        int x = left + 12;
-        int width = panelRight - left - 45;
-        if (selected == null || !tree.nodes().containsKey(selected)) {
+    private void renderHeader(DrawContext context, UnlockTree tree) {
+        int centerY = (headerTop + headerBottom) / 2;
+        int textY = centerY - this.textRenderer.fontHeight / 2;
+        int x = innerLeft + 2;
+        if (tree != null) {
+            Item icon = tree.icon().map(Registries.ITEM::get).orElse(null);
+            if (icon != null && icon != net.minecraft.item.Items.AIR) {
+                context.drawItem(new ItemStack(icon), x, centerY - 8);
+                x += 21;
+            }
+        }
+        Text heading = tree == null ? Text.translatable("screen.utopia.unlocks")
+                : displayName(tree.name(), currentTree == null ? "" : currentTree.getPath());
+        int headingLimit = (search == null ? innerRight : search.getX()) - x - GAP;
+        if (headingLimit > 24) {
+            context.drawText(this.textRenderer, trim(heading, headingLimit), x, textY, COLOR_TEXT, false);
+        }
+
+        Text points = pointsText();
+        int pointsRight = innerRight;
+        int pointsLeft = pointsRight - this.textRenderer.getWidth(points) - 14;
+        drawDarkPanel(context, pointsLeft, centerY - 11, pointsRight, centerY + 11);
+        context.drawText(this.textRenderer, points, pointsLeft + 7, textY, COLOR_LIGHT, false);
+    }
+
+    /**
+     * Platzhalter im leeren Suchfeld.
+     *
+     * Muss nach {@code super.render} laufen: Das Textfeld zeichnet seinen eigenen
+     * Hintergrund und wuerde den Platzhalter sonst wieder zudecken.
+     */
+    private void renderSearchPlaceholder(DrawContext context) {
+        if (search != null && search.getText().isEmpty() && !search.isFocused()) {
+            context.drawText(this.textRenderer, trim(Text.translatable("screen.utopia.unlocks.search"),
+                    search.getWidth() - 8), search.getX() + 4, search.getY() + 5, 0xFF8A7355, false);
+        }
+    }
+
+    private void renderToolbar(DrawContext context) {
+        int textY = toolbarTop + (TOOLBAR_HEIGHT - this.textRenderer.fontHeight) / 2;
+        context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(canvas.zoomPercent() + "%"),
+                canvasLeft + 48, textY, COLOR_LIGHT);
+        int hintLeft = canvasLeft + 196;
+        int room = canvasRight - hintLeft - 6;
+        if (room < 60) {
             return;
         }
+        Text hint;
+        if (!editing) {
+            hint = Text.translatable("screen.utopia.unlocks.hint.player");
+        } else if (editorTool == EditorTool.MOVE) {
+            hint = Text.translatable("screen.utopia.unlocks.hint.move");
+        } else {
+            hint = Text.translatable("screen.utopia.unlocks.hint.select");
+        }
+        context.drawTextWithShadow(this.textRenderer, trim(hint, room), hintLeft, textY, COLOR_ACCENT);
+    }
+
+    /** Legende: Abzeichen plus Wort. Ohne sie raet man, was die Zustaende bedeuten. */
+    private void renderFooter(DrawContext context) {
+        int y = footerTop + (FOOTER_HEIGHT - 10) / 2;
+        int x = innerLeft;
+        int limit = statusLeft();
+        for (UnlockTreeCanvas.State state : UnlockTreeCanvas.State.values()) {
+            Text label = Text.translatable("screen.utopia.unlocks.state." + state.name().toLowerCase(Locale.ROOT));
+            int width = 12 + this.textRenderer.getWidth(label) + 10;
+            if (x + width > limit) {
+                break;
+            }
+            int color = UnlockTreeCanvas.outlineColor(state);
+            float r = (color >> 16 & 255) / 255.0F;
+            float g = (color >> 8 & 255) / 255.0F;
+            float b = (color & 255) / 255.0F;
+            context.setShaderColor(r, g, b, 1.0F);
+            context.drawTexture(UnlockTreeCanvas.badgeTexture(state), x, y - 1, 10, 10,
+                    0.0F, 0.0F, 32, 32, 32, 32);
+            context.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            context.drawText(this.textRenderer, label, x + 13, y, COLOR_LIGHT, false);
+            x += width;
+        }
+        if (status != null) {
+            context.drawTextWithShadow(this.textRenderer, trim(Text.literal(status), innerRight - statusLeft()),
+                    statusLeft(), y, 0xFFFFC96A);
+        }
+    }
+
+    private int statusLeft() {
+        // Die Fusszeilen-Knoepfe stehen rechts; der Status endet davor.
+        int buttons = UtopiaCoreClient.canEditTrees ? (editing ? 234 : 258) : 74;
+        return Math.max(innerLeft, innerRight - buttons - 160);
+    }
+
+    private void renderInspector(DrawContext context, UnlockTree tree) {
+        int x = inspectorLeft + 8;
+        int width = INSPECTOR_WIDTH - 16;
+        String selected = canvas.selected();
+        if (tree == null) {
+            return;
+        }
+        if (selected == null || !tree.nodes().containsKey(selected)) {
+            context.drawTextWrapped(this.textRenderer, Text.translatable("screen.utopia.unlocks.no_selection"),
+                    x, bodyTop + 8, width, COLOR_MUTED);
+            if (tree.description().isPresent()) {
+                context.drawTextWrapped(this.textRenderer, displayName(tree.description(), ""),
+                        x, bodyTop + 40, width, COLOR_MUTED);
+            }
+            return;
+        }
+
         UnlockTree.Node node = tree.nodes().get(selected);
         String nodeId = currentTree.getPath() + "/" + selected;
-        context.drawText(this.textRenderer, displayName(node.name(), selected), x, top + 12, COLOR_TEXT, false);
-        int y = top + 28;
+        int y = bodyTop + 8;
+        context.drawTextWrapped(this.textRenderer, displayName(node.name(), selected), x, y, width, COLOR_TEXT);
+        y += this.textRenderer.wrapLines(displayName(node.name(), selected), width).size() * 10 + 3;
+
         if (node.description().isPresent()) {
             Text description = displayName(node.description(), node.description().get());
             context.drawTextWrapped(this.textRenderer, description, x, y, width, COLOR_MUTED);
             y += this.textRenderer.wrapLines(description, width).size() * 9 + 5;
         }
+
         int cost = UnlockService.cost(data(), nodeId, node);
         int level = UnlockService.requiredLevel(data(), nodeId, node);
-        context.drawText(this.textRenderer, Text.translatable("screen.utopia.unlocks.cost", cost), x, y,
-                COLOR_MUTED, false);
+        UnlockTreeCanvas.State state = state(selected, node);
+        context.drawText(this.textRenderer,
+                Text.translatable("screen.utopia.unlocks.state." + state.name().toLowerCase(Locale.ROOT)),
+                x, y, COLOR_TEXT, false);
         y += 12;
-        if (level > 0) {
-            context.drawText(this.textRenderer, Text.translatable("screen.utopia.unlocks.level", level), x, y,
-                    overallLevel() >= level ? COLOR_MUTED : 0xFFAA3D2D, false);
-            y += 12;
+        if (state != UnlockTreeCanvas.State.OWNED) {
+            context.drawText(this.textRenderer, Text.translatable("screen.utopia.unlocks.cost", cost), x, y,
+                    data().unlockPoints() >= cost ? COLOR_MUTED : COLOR_WARN, false);
+            y += 11;
+            if (level > 0) {
+                context.drawText(this.textRenderer, Text.translatable("screen.utopia.unlocks.level", level), x, y,
+                        overallLevel() >= level ? COLOR_MUTED : COLOR_WARN, false);
+                y += 11;
+            }
         }
+
         if (!node.parents().isEmpty()) {
-            context.drawText(this.textRenderer, Text.literal("Vorgaenger: " + String.join(", ", node.parents())),
-                    x, y, COLOR_MUTED, false);
-            y += 15;
+            // Namen statt roher Schluessel: "Messing-Zeitalter" sagt mehr als "brass".
+            List<Text> names = new ArrayList<>();
+            for (String parent : node.parents()) {
+                UnlockTree.Node parentNode = tree.nodes().get(parent);
+                names.add(parentNode == null ? Text.literal(parent) : displayName(parentNode.name(), parent));
+            }
+            Text joined = Text.translatable("screen.utopia.unlocks.requires", join(names));
+            context.drawTextWrapped(this.textRenderer, joined, x, y + 3, width, COLOR_MUTED);
+            y += this.textRenderer.wrapLines(joined, width).size() * 9 + 8;
         }
+
         context.fill(x, y, x + width, y + 1, 0x886B4727);
-        y += 8;
+        y += 6;
         context.drawText(this.textRenderer, Text.translatable("screen.utopia.unlocks.contains"), x, y,
                 COLOR_TEXT, false);
-        y += 13;
+        y += 12;
 
-        int listBottom = editing ? bottom - 9 : bottom - 37;
-        context.enableScissor(left + 5, y - 4, panelRight - 31, listBottom);
-        int entryY = y - detailScroll;
-        for (String unlock : node.unlocks()) {
-            drawUnlockEntry(context, unlock, x, entryY, width);
-            entryY += 20;
+        int listBottom = showInspector && purchaseButton != null ? purchaseButton.getY() - 6 : bodyBottom;
+        if (listBottom <= y) {
+            return;
         }
+        context.enableScissor(inspectorLeft + 2, y - 2, inspectorRight - 2, listBottom);
+        int entryY = y - detailScroll;
         if (node.unlocks().isEmpty()) {
-            context.drawText(this.textRenderer, Text.literal("Keine direkten Eintraege"), x, entryY,
+            context.drawText(this.textRenderer, Text.translatable("screen.utopia.unlocks.no_entries"), x, entryY,
                     COLOR_MUTED, false);
+        }
+        for (String unlock : node.unlocks()) {
+            if (entryY > listBottom) {
+                break;
+            }
+            if (entryY + ENTRY_HEIGHT >= y) {
+                drawUnlockEntry(context, unlock, x, entryY, width);
+            }
+            entryY += ENTRY_HEIGHT;
         }
         context.disableScissor();
     }
@@ -369,19 +616,57 @@ public class UnlockScreen extends Screen {
         if (entry.endsWith(":*")) {
             label = Text.translatable("screen.utopia.unlocks.addon_all", entry.substring(0, entry.length() - 2));
         } else if (entry.startsWith("#")) {
-            label = Text.literal(entry + " (Tag)");
+            label = Text.translatable("screen.utopia.unlocks.tag", entry.substring(1));
         } else {
             Identifier id = Identifier.tryParse(entry);
             item = id == null ? null : Registries.ITEM.get(id);
             label = item == null || item == net.minecraft.item.Items.AIR ? Text.literal(entry) : item.getName();
         }
         if (item != null && item != net.minecraft.item.Items.AIR) {
-            context.drawItem(new ItemStack(item), x, y - 4);
+            context.drawItem(new ItemStack(item), x, y - 3);
         }
-        context.drawText(this.textRenderer, label, x + 20, y, COLOR_TEXT, false);
-        if (this.textRenderer.getWidth(label) > width - 22) {
-            context.drawText(this.textRenderer, Text.literal(entry), x + 20, y + 9, COLOR_MUTED, false);
+        context.drawText(this.textRenderer, trim(label, width - 22), x + 20, y, COLOR_TEXT, false);
+    }
+
+    /**
+     * Tooltip am Zeiger. Er traegt seit dem Wegfall der Kartenbeschriftung die Hauptlast:
+     * Name und Zustand sollen erreichbar sein, ohne dass man erst klicken muss.
+     */
+    private void renderNodeTooltip(DrawContext context, UnlockTree tree, int mouseX, int mouseY) {
+        String key = canvas.hovered();
+        if (key == null) {
+            return;
         }
+        UnlockTree.Node node = tree.nodes().get(key);
+        if (node == null) {
+            return;
+        }
+        String nodeId = currentTree.getPath() + "/" + key;
+        UnlockTreeCanvas.State state = state(key, node);
+        List<Text> lines = new ArrayList<>();
+        lines.add(displayName(node.name(), key).copy().formatted(Formatting.WHITE));
+        lines.add(Text.translatable("screen.utopia.unlocks.state." + state.name().toLowerCase(Locale.ROOT))
+                .formatted(switch (state) {
+                    case OWNED -> Formatting.GREEN;
+                    case BUYABLE -> Formatting.YELLOW;
+                    case TOO_EXPENSIVE -> Formatting.GOLD;
+                    case BLOCKED -> Formatting.GRAY;
+                }));
+        if (state != UnlockTreeCanvas.State.OWNED) {
+            int cost = UnlockService.cost(data(), nodeId, node);
+            lines.add(Text.translatable("screen.utopia.unlocks.cost", cost)
+                    .formatted(data().unlockPoints() >= cost ? Formatting.GRAY : Formatting.RED));
+            int level = UnlockService.requiredLevel(data(), nodeId, node);
+            if (level > 0) {
+                lines.add(Text.translatable("screen.utopia.unlocks.level", level)
+                        .formatted(overallLevel() >= level ? Formatting.GRAY : Formatting.RED));
+            }
+        }
+        if (!node.unlocks().isEmpty()) {
+            lines.add(Text.translatable("screen.utopia.unlocks.entry_count", node.unlocks().size())
+                    .formatted(Formatting.DARK_GRAY));
+        }
+        context.drawTooltip(this.textRenderer, lines, mouseX, mouseY);
     }
 
     private void updateButtonState(UnlockTree tree) {
@@ -390,22 +675,146 @@ public class UnlockScreen extends Screen {
         if (editNodeButton != null) {
             editNodeButton.active = hasNode;
         }
+        if (undoButton != null) {
+            undoButton.active = draft != null && draft.canUndo();
+        }
         if (purchaseButton != null) {
             purchaseButton.visible = !editing && hasNode;
             purchaseButton.active = hasNode
                     && state(selected, tree.nodes().get(selected)) == UnlockTreeCanvas.State.BUYABLE;
         }
+        for (ButtonWidget tab : treeTabs) {
+            tab.active = !editing && tab != selectedTreeTab;
+        }
+    }
+
+    // --- Suche ------------------------------------------------------------
+
+    /**
+     * Treffer nur bei Textaenderung berechnen, nicht je Bild: Ein Durchlauf loest die
+     * Item-Namen aller Eintraege auf, das sind beim Create-Baum ueber tausend Registry-Zugriffe.
+     */
+    private void updateSearch(UnlockTree tree) {
+        String query = search == null ? "" : search.getText().trim().toLowerCase(Locale.ROOT);
+        if (query.equals(lastQuery)) {
+            return;
+        }
+        lastQuery = query;
+        if (query.isEmpty() || tree == null) {
+            searchMatches = null;
+            canvas.searchMatches(null);
+            return;
+        }
+        Set<String> matches = new HashSet<>();
+        tree.nodes().forEach((key, node) -> {
+            if (matches(key, node, query)) {
+                matches.add(key);
+            }
+        });
+        searchMatches = matches;
+        canvas.searchMatches(matches);
+        status = Text.translatable("screen.utopia.unlocks.search_result", matches.size()).getString();
+    }
+
+    private boolean matches(String key, UnlockTree.Node node, String query) {
+        if (key.toLowerCase(Locale.ROOT).contains(query)) {
+            return true;
+        }
+        if (displayName(node.name(), key).getString().toLowerCase(Locale.ROOT).contains(query)) {
+            return true;
+        }
+        if (node.description().isPresent()
+                && displayName(node.description(), "").getString().toLowerCase(Locale.ROOT).contains(query)) {
+            return true;
+        }
+        for (String entry : node.unlocks()) {
+            if (entry.toLowerCase(Locale.ROOT).contains(query)) {
+                return true;
+            }
+            Identifier id = Identifier.tryParse(entry);
+            if (id == null) {
+                continue;
+            }
+            Item item = Registries.ITEM.get(id);
+            if (item != net.minecraft.item.Items.AIR
+                    && item.getName().getString().toLowerCase(Locale.ROOT).contains(query)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // --- Kamera -----------------------------------------------------------
+
+    /**
+     * Auf die Fortschrittskante fahren: den guenstigsten kaufbaren Knoten, sonst den am
+     * weitesten fortgeschrittenen besessenen, sonst den Anfang. Der Spieler soll dort
+     * landen, wo er weiterkommt, statt vor der Gesamtuebersicht zu stehen.
+     */
+    private void focusProgress() {
+        UnlockTree tree = currentTreeData();
+        if (tree == null || tree.nodes().isEmpty()) {
+            canvas.fit(tree);
+            return;
+        }
+        // Ausserhalb von render(): der Zwischenspeicher koennte vom letzten Bild stammen.
+        stateCache.clear();
+        String buyable = null;
+        int cheapest = Integer.MAX_VALUE;
+        String owned = null;
+        double furthest = -Double.MAX_VALUE;
+        String first = null;
+        double earliest = Double.MAX_VALUE;
+        for (Map.Entry<String, UnlockTree.Node> entry : tree.nodes().entrySet()) {
+            String key = entry.getKey();
+            UnlockTree.Node node = entry.getValue();
+            if (node.x() < earliest) {
+                earliest = node.x();
+                first = key;
+            }
+            UnlockTreeCanvas.State state = state(key, node);
+            if (state == UnlockTreeCanvas.State.BUYABLE) {
+                int cost = UnlockService.cost(data(), currentTree.getPath() + "/" + key, node);
+                if (cost < cheapest || (cost == cheapest && (buyable == null || key.compareTo(buyable) < 0))) {
+                    cheapest = cost;
+                    buyable = key;
+                }
+            } else if (state == UnlockTreeCanvas.State.OWNED && node.x() > furthest) {
+                furthest = node.x();
+                owned = key;
+            }
+        }
+        String target = buyable != null ? buyable : owned != null ? owned : first;
+        canvas.focus(tree, target, READABLE_ZOOM);
+    }
+
+    private void fitTree() {
+        canvas.fit(currentTreeData());
+    }
+
+    // --- Aktionen ---------------------------------------------------------
+
+    private void selectTree(Identifier id) {
+        currentTree = id;
+        canvas.select(null);
+        detailScroll = 0;
+        focusAfterInit = true;
+        clearAndInit();
     }
 
     private void purchaseSelected() {
         String selected = canvas.selected();
         UnlockTree tree = currentTreeData();
-        if (selected == null || tree == null || state(selected, tree.nodes().get(selected)) != UnlockTreeCanvas.State.BUYABLE) {
+        if (selected == null || tree == null
+                || state(selected, tree.nodes().get(selected)) != UnlockTreeCanvas.State.BUYABLE) {
             return;
         }
         PacketByteBuf buf = PacketByteBufs.create();
         buf.writeString(currentTree.getPath() + "/" + selected);
         ClientPlayNetworking.send(UtopiaNetworking.BUY_NODE, buf);
+        // Sofortige Rueckmeldung. Vorher passierte beim Klick sichtbar nichts, bis der
+        // Server-Sync zurueckkam; die verbindliche Bestaetigung kommt weiterhin von dort.
+        status = Text.translatable("screen.utopia.unlocks.sent").getString();
     }
 
     private void enterEditor() {
@@ -416,7 +825,7 @@ public class UnlockScreen extends Screen {
         draft = new UnlockTreeDraft(tree);
         editing = true;
         editorTool = EditorTool.SELECT;
-        status = "Entwurf aktiv – Spielerdaten bleiben unveraendert";
+        status = Text.translatable("screen.utopia.unlocks.editor.draft_active").getString();
         clearAndInit();
     }
 
@@ -430,15 +839,15 @@ public class UnlockScreen extends Screen {
             id = new Identifier("utopia", "custom_" + number++);
         } while (UnlockTrees.all().containsKey(id));
         UnlockTree.Node root = new UnlockTree.Node(Optional.of("Start"), Optional.empty(), Optional.empty(),
-                0, 0, List.of(), List.of(0.0, 0.0), List.of(), List.of(), List.of(), List.of());
+                NodeShape.DEFAULT, 0, 0, List.of(), List.of(0.0, 0.0), List.of(), List.of(), List.of(), List.of());
         currentTree = id;
         draft = new UnlockTreeDraft(new UnlockTree(Optional.of("Neuer Technikbaum"), Optional.empty(),
                 Optional.empty(), 1000, Map.of("start", root)));
         editing = true;
         editorTool = EditorTool.SELECT;
         canvas.select("start");
-        centerAfterInit = true;
-        status = "Neuer Entwurf: " + id;
+        focusAfterInit = true;
+        status = Text.translatable("screen.utopia.unlocks.editor.new_draft", id.toString()).getString();
         clearAndInit();
     }
 
@@ -460,24 +869,46 @@ public class UnlockScreen extends Screen {
         UnlockTree.Node selected = draft.nodes().get(canvas.selected());
         List<String> parents = selected == null ? List.of() : List.of(canvas.selected());
         UnlockTree.Node node = new UnlockTree.Node(Optional.of("Neuer Knoten"), Optional.empty(), Optional.empty(),
-                1, 0, parents, List.of(position.x(), position.y()), List.of(), List.of(), List.of(), List.of());
+                NodeShape.DEFAULT, 1, 0, parents, List.of(position.x(), position.y()),
+                List.of(), List.of(), List.of(), List.of());
         this.client.setScreen(new UnlockNodeEditorScreen(this, key, node, true, (newKey, edited) -> {
             if (!newKey.equals(key) && draft.nodes().containsKey(newKey)) {
-                status = "Knoten-ID existiert bereits: " + newKey;
+                status = Text.translatable("screen.utopia.unlocks.editor.error.duplicate", newKey).getString();
                 return;
             }
             draft.put(newKey, edited);
             canvas.select(newKey);
-            status = "Knoten im Entwurf angelegt";
+            status = Text.translatable("screen.utopia.unlocks.editor.node_added").getString();
         }));
     }
 
     private void setEditorTool(EditorTool tool) {
         editorTool = tool;
         contextMenu.clear();
-        status = tool == EditorTool.MOVE
-                ? "Verschieben aktiv – nur Knoten-Drag aendert Positionen"
-                : "Auswahl aktiv – Ziehen verschiebt nur die Ansicht";
+        status = Text.translatable(tool == EditorTool.MOVE
+                ? "screen.utopia.unlocks.editor.move_active"
+                : "screen.utopia.unlocks.editor.select_active").getString();
+        if (selectToolButton instanceof RusticButton select) {
+            select.selected = tool == EditorTool.SELECT;
+        }
+        if (moveToolButton instanceof RusticButton move) {
+            move.selected = tool == EditorTool.MOVE;
+        }
+    }
+
+    private void autoLayout() {
+        if (draft == null) {
+            return;
+        }
+        draft.autoLayout();
+        canvas.fit(draft.build());
+        status = Text.translatable("screen.utopia.unlocks.editor.layout_done").getString();
+    }
+
+    private void undoEdit() {
+        if (draft != null && draft.undo()) {
+            status = Text.translatable("screen.utopia.unlocks.editor.undone").getString();
+        }
     }
 
     private void duplicateSelectedNode() {
@@ -491,7 +922,7 @@ public class UnlockScreen extends Screen {
         String key = draft.uniqueNodeKey();
         draft.put(key, source.withPosition(source.x() + 0.5, source.y() + 0.5));
         canvas.select(key);
-        status = "Knoten als " + key + " dupliziert";
+        status = Text.translatable("screen.utopia.unlocks.editor.duplicated", key).getString();
     }
 
     private void deleteSelectedNode() {
@@ -504,17 +935,17 @@ public class UnlockScreen extends Screen {
             return;
         }
         if (node.parents().isEmpty()) {
-            status = "Wurzelknoten koennen nicht geloescht werden";
+            status = Text.translatable("screen.utopia.unlocks.editor.error.root").getString();
             return;
         }
         boolean required = draft.nodes().values().stream().anyMatch(candidate -> candidate.parents().contains(key));
         if (required) {
-            status = "Nicht geloescht: andere Knoten benoetigen " + key;
+            status = Text.translatable("screen.utopia.unlocks.editor.error.needed", key).getString();
             return;
         }
         draft.remove(key);
         canvas.select(null);
-        status = "Knoten " + key + " aus dem Entwurf entfernt";
+        status = Text.translatable("screen.utopia.unlocks.editor.removed", key).getString();
     }
 
     private void nudgeSelected(double deltaX, double deltaY) {
@@ -524,13 +955,7 @@ public class UnlockScreen extends Screen {
         UnlockTree.Node node = draft.nodes().get(canvas.selected());
         if (node != null) {
             draft.move(canvas.selected(), node.x() + deltaX, node.y() + deltaY);
-            status = "Knotenposition: " + formatCoordinate(node.x() + deltaX)
-                    + ", " + formatCoordinate(node.y() + deltaY);
         }
-    }
-
-    private static String formatCoordinate(double value) {
-        return String.format(java.util.Locale.ROOT, "%.1f", value);
     }
 
     private void editSelectedNode() {
@@ -544,7 +969,7 @@ public class UnlockScreen extends Screen {
         }
         this.client.setScreen(new UnlockNodeEditorScreen(this, key, node, false, (ignored, edited) -> {
             draft.put(key, edited);
-            status = "Knoten im Entwurf aktualisiert";
+            status = Text.translatable("screen.utopia.unlocks.editor.node_updated").getString();
         }));
     }
 
@@ -558,6 +983,41 @@ public class UnlockScreen extends Screen {
                 draft::setMetadata));
     }
 
+    private void saveTree() {
+        if (draft == null || currentTree == null) {
+            return;
+        }
+        UnlockTree tree = draft.build();
+        String problem = UnlockTreeValidator.validate(currentTree, tree);
+        if (problem != null) {
+            status = Text.translatable("screen.utopia.unlocks.editor.not_saved", problem).getString();
+            return;
+        }
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeIdentifier(currentTree);
+        buf.encode(net.minecraft.nbt.NbtOps.INSTANCE, UnlockTree.CODEC, tree);
+        ClientPlayNetworking.send(UtopiaNetworking.SAVE_TREE, buf);
+        editing = false;
+        draft = null;
+        contextMenu.clear();
+        status = Text.translatable("screen.utopia.unlocks.editor.sent").getString();
+        clearAndInit();
+    }
+
+    private void discardEditor() {
+        editing = false;
+        draft = null;
+        contextMenu.clear();
+        if (currentTree != null && UnlockTrees.tree(currentTree) == null) {
+            currentTree = UnlockTrees.ordered().stream().findFirst().orElse(null);
+        }
+        status = Text.translatable("screen.utopia.unlocks.editor.discarded").getString();
+        focusAfterInit = true;
+        clearAndInit();
+    }
+
+    // --- Kontextmenue -----------------------------------------------------
+
     private boolean openContextMenu(UnlockTree tree, double mouseX, double mouseY) {
         if (!editing || tree == null || !canvas.contains(mouseX, mouseY)) {
             return false;
@@ -566,22 +1026,27 @@ public class UnlockScreen extends Screen {
         String hit = canvas.nodeAt(tree, mouseX, mouseY);
         if (hit != null) {
             canvas.select(hit);
-            contextMenu.add(new EditorMenuEntry(Text.literal("Knoten bearbeiten"), this::editSelectedNode, false));
-            contextMenu.add(new EditorMenuEntry(Text.literal("Knoten verschieben"),
+            contextMenu.add(new EditorMenuEntry(Text.translatable("screen.utopia.unlocks.editor.node"),
+                    this::editSelectedNode, false));
+            contextMenu.add(new EditorMenuEntry(Text.translatable("screen.utopia.unlocks.editor.tool.move"),
                     () -> setEditorTool(EditorTool.MOVE), false));
-            contextMenu.add(new EditorMenuEntry(Text.literal("Duplizieren"), this::duplicateSelectedNode, false));
-            contextMenu.add(new EditorMenuEntry(Text.literal("Loeschen"), this::deleteSelectedNode, true));
+            contextMenu.add(new EditorMenuEntry(Text.translatable("screen.utopia.unlocks.editor.duplicate"),
+                    this::duplicateSelectedNode, false));
+            contextMenu.add(new EditorMenuEntry(Text.translatable("screen.utopia.unlocks.editor.delete"),
+                    this::deleteSelectedNode, true));
         } else {
             UnlockTreeCanvas.Position position = canvas.modelAt(mouseX, mouseY, !hasShiftDown());
-            contextMenu.add(new EditorMenuEntry(Text.literal("Knoten hier anlegen"),
+            contextMenu.add(new EditorMenuEntry(Text.translatable("screen.utopia.unlocks.editor.add_here"),
                     () -> addNodeAt(position), false));
-            contextMenu.add(new EditorMenuEntry(Text.literal("Baum bearbeiten"), this::editTreeSettings, false));
-            contextMenu.add(new EditorMenuEntry(Text.literal("Zentrieren"), this::centerTree, false));
+            contextMenu.add(new EditorMenuEntry(Text.translatable("screen.utopia.unlocks.editor.tree"),
+                    this::editTreeSettings, false));
+            contextMenu.add(new EditorMenuEntry(Text.translatable("screen.utopia.unlocks.editor.auto_layout"),
+                    this::autoLayout, false));
+            contextMenu.add(new EditorMenuEntry(Text.translatable("screen.utopia.unlocks.overview"),
+                    this::fitTree, false));
         }
-        contextMenuWidth = contextMenu.stream()
-                .mapToInt(entry -> this.textRenderer.getWidth(entry.label()) + 24)
-                .max().orElse(124);
-        contextMenuWidth = Math.max(124, contextMenuWidth);
+        contextMenuWidth = Math.max(124, contextMenu.stream()
+                .mapToInt(entry -> this.textRenderer.getWidth(entry.label()) + 24).max().orElse(124));
         int menuHeight = contextMenu.size() * 20 + 4;
         contextMenuX = Math.max(canvas.left() + 4,
                 Math.min((int) mouseX, canvas.right() - contextMenuWidth - 4));
@@ -614,8 +1079,7 @@ public class UnlockScreen extends Screen {
         int bottom = contextMenuY + contextMenu.size() * 20 + 4;
         context.fill(contextMenuX - 2, contextMenuY - 2,
                 contextMenuX + contextMenuWidth + 2, bottom + 2, 0xE8211009);
-        context.fill(contextMenuX, contextMenuY,
-                contextMenuX + contextMenuWidth, bottom, 0xF24A2B19);
+        context.fill(contextMenuX, contextMenuY, contextMenuX + contextMenuWidth, bottom, 0xF24A2B19);
         context.fill(contextMenuX + 1, contextMenuY + 1,
                 contextMenuX + contextMenuWidth - 1, contextMenuY + 2, 0xFFD7A65B);
         for (int i = 0; i < contextMenu.size(); i++) {
@@ -623,8 +1087,7 @@ public class UnlockScreen extends Screen {
             boolean hovered = mouseX >= contextMenuX && mouseX < contextMenuX + contextMenuWidth
                     && mouseY >= top && mouseY < top + 20;
             if (hovered) {
-                context.fill(contextMenuX + 2, top, contextMenuX + contextMenuWidth - 2,
-                        top + 20, 0xFF6A4326);
+                context.fill(contextMenuX + 2, top, contextMenuX + contextMenuWidth - 2, top + 20, 0xFF6A4326);
             }
             EditorMenuEntry entry = contextMenu.get(i);
             context.drawTextWithShadow(this.textRenderer, entry.label(), contextMenuX + 10, top + 6,
@@ -632,44 +1095,7 @@ public class UnlockScreen extends Screen {
         }
     }
 
-    private void saveTree() {
-        if (draft == null || currentTree == null) {
-            return;
-        }
-        UnlockTree tree = draft.build();
-        String problem = UnlockTreeValidator.validate(currentTree, tree);
-        if (problem != null) {
-            status = "Nicht gespeichert: " + problem;
-            return;
-        }
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeIdentifier(currentTree);
-        buf.encode(net.minecraft.nbt.NbtOps.INSTANCE, UnlockTree.CODEC, tree);
-        ClientPlayNetworking.send(UtopiaNetworking.SAVE_TREE, buf);
-        editing = false;
-        draft = null;
-        contextMenu.clear();
-        status = "An Server gesendet";
-        clearAndInit();
-    }
-
-    private void discardEditor() {
-        editing = false;
-        draft = null;
-        contextMenu.clear();
-        if (currentTree != null && UnlockTrees.tree(currentTree) == null) {
-            currentTree = UnlockTrees.ordered().stream().findFirst().orElse(null);
-        }
-        status = "Entwurf verworfen";
-        centerAfterInit = true;
-        clearAndInit();
-    }
-
-    private void centerTree() {
-        if (canvas != null) {
-            canvas.center(currentTreeData());
-        }
-    }
+    // --- Eingabe ----------------------------------------------------------
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
@@ -679,9 +1105,6 @@ public class UnlockScreen extends Screen {
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
-        if (insideDetails(mouseX, mouseY)) {
-            return true;
-        }
         UnlockTree tree = currentTreeData();
         if (button == 1 && openContextMenu(tree, mouseX, mouseY)) {
             detailScroll = 0;
@@ -689,6 +1112,9 @@ public class UnlockScreen extends Screen {
         }
         if (tree != null && canvas.mouseClicked(tree, mouseX, mouseY, button)) {
             detailScroll = 0;
+            // Klick auf die Karte gibt die Tastatur wieder frei, sonst schluckt das
+            // Suchfeld die Editor-Kuerzel.
+            this.setFocused(null);
             return true;
         }
         return false;
@@ -696,10 +1122,13 @@ public class UnlockScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (canvas.mouseDragged(mouseX, mouseY, deltaX, deltaY,
-                editing && editorTool == EditorTool.MOVE, !hasShiftDown(),
+        boolean moving = editing && editorTool == EditorTool.MOVE;
+        if (canvas.mouseDragged(mouseX, mouseY, deltaX, deltaY, moving, !hasShiftDown(),
                 (key, x, y) -> {
                     if (draft != null) {
+                        // Erst hier, nicht schon beim Ziehbeginn: Ein Schwenk der Ansicht
+                        // soll keinen Eintrag in der Rueckgaengig-Liste hinterlassen.
+                        draft.beginGesture();
                         draft.move(key, x, y);
                     }
                 })) {
@@ -710,6 +1139,9 @@ public class UnlockScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (draft != null) {
+            draft.endGesture();
+        }
         if (canvas.mouseReleased()) {
             return true;
         }
@@ -718,11 +1150,11 @@ public class UnlockScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
-        if (insideDetails(mouseX, mouseY)) {
+        if (insideInspector(mouseX, mouseY)) {
             UnlockTree tree = currentTreeData();
             UnlockTree.Node node = tree == null ? null : tree.nodes().get(canvas.selected());
-            int available = Math.max(40, detailBottom() - detailTop() - 105);
-            int max = node == null ? 0 : Math.max(0, node.unlocks().size() * 20 - available);
+            int available = Math.max(40, bodyBottom - bodyTop - 150);
+            int max = node == null ? 0 : Math.max(0, node.unlocks().size() * ENTRY_HEIGHT - available);
             detailScroll = Math.max(0, Math.min(max, detailScroll - (int) Math.round(amount * 24)));
             return true;
         }
@@ -734,11 +1166,27 @@ public class UnlockScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (search != null && search.isFocused()) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
+                search.setText("");
+                this.setFocused(null);
+                return true;
+            }
+            return super.keyPressed(keyCode, scanCode, modifiers);
+        }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && !contextMenu.isEmpty()) {
             contextMenu.clear();
             return true;
         }
+        if (keyCode == GLFW.GLFW_KEY_F && hasControlDown() && search != null) {
+            this.setFocused(search);
+            return true;
+        }
         if (editing) {
+            if (hasControlDown() && keyCode == GLFW.GLFW_KEY_Z) {
+                undoEdit();
+                return true;
+            }
             if (keyCode == GLFW.GLFW_KEY_V) {
                 setEditorTool(EditorTool.SELECT);
                 return true;
@@ -778,11 +1226,35 @@ public class UnlockScreen extends Screen {
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
-    private boolean insideDetails(double mouseX, double mouseY) {
-        return canvas != null && canvas.selected() != null
-                && mouseX >= detailLeft() && mouseX < panelRight - 29
-                && mouseY >= detailTop() && mouseY < detailBottom();
+    private boolean insideInspector(double mouseX, double mouseY) {
+        return showInspector && mouseX >= inspectorLeft && mouseX < inspectorRight
+                && mouseY >= bodyTop && mouseY < bodyBottom;
     }
+
+    @Override
+    public void resize(net.minecraft.client.MinecraftClient client, int width, int height) {
+        super.resize(client, width, height);
+        // Nach einer Groessenaenderung stimmt die Kameramitte noch, nur die Bildausschnitte
+        // sind neu — deshalb kein erneutes Anfahren der Fortschrittskante.
+        canvas.snapToTarget();
+    }
+
+    @Override
+    public void close() {
+        if (editing) {
+            editing = false;
+            draft = null;
+        }
+        contextMenu.clear();
+        super.close();
+    }
+
+    @Override
+    public boolean shouldPause() {
+        return false;
+    }
+
+    // --- Hilfsmittel ------------------------------------------------------
 
     static Text displayName(Optional<String> value, String fallback) {
         if (value.isEmpty()) {
@@ -791,6 +1263,39 @@ public class UnlockScreen extends Screen {
         String name = value.get();
         return I18n.hasTranslation(name) ? Text.translatable(name) : Text.literal(name);
     }
+
+    private static Text join(List<Text> parts) {
+        net.minecraft.text.MutableText joined = Text.empty();
+        for (int i = 0; i < parts.size(); i++) {
+            if (i > 0) {
+                joined.append(", ");
+            }
+            joined.append(parts.get(i));
+        }
+        return joined;
+    }
+
+    /** Kuerzt mit Auslassungszeichen. Vorher lief zu langer Text ueber seinen Hintergrund. */
+    private Text trim(Text text, int width) {
+        if (width <= 0) {
+            return Text.empty();
+        }
+        if (this.textRenderer.getWidth(text) <= width) {
+            return text;
+        }
+        String plain = text.getString();
+        int ellipsis = this.textRenderer.getWidth("...");
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < plain.length(); i++) {
+            if (this.textRenderer.getWidth(builder.toString() + plain.charAt(i)) + ellipsis > width) {
+                break;
+            }
+            builder.append(plain.charAt(i));
+        }
+        return Text.literal(builder.toString().stripTrailing() + "...");
+    }
+
+    // --- Rahmen und Flaechen ---------------------------------------------
 
     static void drawWoodPanel(DrawContext context, int left, int top, int right, int bottom) {
         context.fill(left + 4, top + 5, right + 4, bottom + 5, 0xB0000000);
@@ -821,73 +1326,47 @@ public class UnlockScreen extends Screen {
     }
 
     private static void drawCanvasFrame(DrawContext context, int left, int top, int right, int bottom) {
-        context.fill(left - 5, top - 5, right + 5, bottom + 5, 0xFF17100B);
+        context.fill(left - 4, top - 4, right + 4, bottom + 4, 0xFF17100B);
         context.fill(left - 3, top - 3, right + 3, bottom + 3, 0xFFBB9560);
         context.fill(left - 1, top - 1, right + 1, bottom + 1, 0xFF3A1E11);
     }
 
-    private static void drawToolbarPanel(DrawContext context, int left, int top, int right, int bottom) {
-        context.fill(left - 2, top - 2, right + 2, bottom + 2, 0xFF24120B);
-        context.fill(left, top, right, bottom, 0xFF7D502B);
-        context.drawTexture(DARK_WOOD, left + 2, top + 2, right - left - 4, bottom - top - 4,
-                0.0F, 0.0F, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE);
-        context.fill(left + 2, top + 2, right - 2, bottom - 2, 0x302B170E);
-    }
+    /**
+     * Knopf im Holz-Stil.
+     *
+     * Als eigene Klasse statt als Uebermalung: Frueher zeichnete erst der Vanilla-Knopf
+     * seine Textur samt Beschriftung, dann malte der Screen seine eigene darueber. Beides
+     * lag deckungsgleich uebereinander — doppelter Text und doppelte Zeichenarbeit.
+     */
+    private class RusticButton extends ButtonWidget {
 
-    private static void drawInspectorPanel(DrawContext context, int left, int top, int right, int bottom) {
-        context.fill(left + 3, top + 4, right + 5, bottom + 6, 0x78000000);
-        context.fill(left - 4, top - 4, right + 4, bottom + 4, 0xFF4C2A18);
-        drawLightPanel(context, left, top, right, bottom);
-        context.fill(left - 2, top - 2, right + 2, top, 0xFFF2DDA8);
-        context.fill(left - 2, bottom, right + 2, bottom + 2, 0xFFF2DDA8);
-        context.fill(left - 2, top, left, bottom, 0xFFF2DDA8);
-        context.fill(right, top, right + 2, bottom, 0xFFF2DDA8);
-    }
+        private boolean selected;
 
-    private void drawRusticButton(DrawContext context, ButtonWidget button, int mouseX, int mouseY) {
-        if (!button.visible) {
-            return;
+        RusticButton(int x, int y, int width, int height, Text message, PressAction onPress) {
+            super(x, y, width, height, message, onPress, DEFAULT_NARRATION_SUPPLIER);
         }
-        int left = button.getX();
-        int top = button.getY();
-        int right = left + button.getWidth();
-        int bottom = top + button.getHeight();
-        boolean hovered = mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom;
-        boolean selectedTab = button == selectedTreeTab;
-        boolean selectedTool = editorToolButtons.contains(button)
-                && ((button == selectToolButton && editorTool == EditorTool.SELECT)
-                        || (button == moveToolButton && editorTool == EditorTool.MOVE));
-        boolean selectedControl = selectedTab || selectedTool;
-        int face = selectedControl ? 0xFFD4AE69
-                : button.active ? (hovered ? 0xFF694224 : 0xFF4A2B19) : 0xFF2B1B13;
-        int edge = selectedControl ? 0xFFE6CA8F
-                : hovered && button.active ? 0xFFD7A65B : 0xFF24120B;
-        context.fill(left, top, right, bottom, edge);
-        context.fill(left + 2, top + 2, right - 2, bottom - 2, face);
-        context.fill(left + 3, top + 3, right - 3, top + 4,
-                selectedControl ? 0xFFF1DDA7 : 0xFF7D502B);
-        context.fill(left + 3, bottom - 4, right - 3, bottom - 3, 0xFF28140C);
-        if (button.active && hovered) {
-            context.fill(left + 2, top + 2, right - 2, bottom - 2, 0x1830FF8A);
-        }
-        context.drawCenteredTextWithShadow(this.textRenderer, button.getMessage(),
-                left + button.getWidth() / 2, top + (button.getHeight() - 8) / 2,
-                selectedControl ? COLOR_TEXT : button.active ? COLOR_LIGHT : 0xFF8C755A);
-    }
 
-    @Override
-    public void close() {
-        if (editing) {
-            editing = false;
-            draft = null;
+        @Override
+        public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+            int left = getX();
+            int top = getY();
+            int right = left + getWidth();
+            int bottom = top + getHeight();
+            boolean hovered = isHovered() && active;
+            int face = selected ? 0xFFD4AE69 : active ? (hovered ? 0xFF694224 : 0xFF4A2B19) : 0xFF2B1B13;
+            int edge = selected ? 0xFFE6CA8F : hovered ? 0xFFD7A65B : 0xFF24120B;
+            context.fill(left, top, right, bottom, edge);
+            context.fill(left + 2, top + 2, right - 2, bottom - 2, face);
+            context.fill(left + 3, top + 3, right - 3, top + 4, selected ? 0xFFF1DDA7 : 0xFF7D502B);
+            context.fill(left + 3, bottom - 4, right - 3, bottom - 3, 0xFF28140C);
+            if (hovered) {
+                context.fill(left + 2, top + 2, right - 2, bottom - 2, 0x1830FF8A);
+            }
+            int color = selected ? COLOR_TEXT : active ? COLOR_LIGHT : 0xFFAD9678;
+            context.drawCenteredTextWithShadow(UnlockScreen.this.textRenderer,
+                    trim(getMessage(), getWidth() - 8), left + getWidth() / 2,
+                    top + (getHeight() - 8) / 2, color);
         }
-        contextMenu.clear();
-        super.close();
-    }
-
-    @Override
-    public boolean shouldPause() {
-        return false;
     }
 
     private record EditorMenuEntry(Text label, Runnable action, boolean danger) {

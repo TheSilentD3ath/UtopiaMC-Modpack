@@ -4,7 +4,7 @@
   "order": 0,
   "nodes": {
     "basics": {
-      "name": "tree.utopia.create.basics", "icon": "create:shaft", "cost": 1, "level": 0,
+      "name": "tree.utopia.create.basics", "icon": "create:shaft", "shape": "gear", "cost": 1, "level": 0,
       "parents": [], "position": [0, 0],
       "unlocks": [
         "create:andesite_alloy", "create:andesite_casing", "create:shaft", "create:cogwheel",
@@ -12,7 +12,7 @@
       ]
     },
     "workshop_tools": {
-      "name": "tree.utopia.create.workshop_tools", "icon": "create:wrench", "cost": 1, "level": 2,
+      "name": "tree.utopia.create.workshop_tools", "icon": "create:wrench", "shape": "hexagon", "cost": 1, "level": 2,
       "parents": ["basics"], "position": [-2.33, -2.19],
       "unlocks": [
         "create:wrench", "create:goggles", "create:stressometer", "create:speedometer",
@@ -30,7 +30,7 @@
       ]
     },
     "power": {
-      "name": "tree.utopia.create.power", "icon": "create:water_wheel", "cost": 2, "level": 3,
+      "name": "tree.utopia.create.power", "icon": "create:water_wheel", "shape": "hexagon", "cost": 2, "level": 3,
       "parents": ["basics"], "position": [3.2, -0.08],
       "unlocks": [
         "create:water_wheel", "create:large_water_wheel", "create:windmill_bearing", "create:sail_frame",
@@ -41,14 +41,14 @@
       ]
     },
     "kinetic_control": {
-      "name": "tree.utopia.create.kinetic_control", "icon": "create:clutch", "cost": 2, "level": 4,
+      "name": "tree.utopia.create.kinetic_control", "icon": "create:clutch", "shape": "hexagon", "cost": 2, "level": 4,
       "parents": ["basics"], "position": [0.06, -3.2],
       "unlocks": [
         "create:clutch", "create:gearshift", "create:encased_chain_drive"
       ]
     },
     "logistics": {
-      "name": "tree.utopia.create.logistics", "icon": "create:belt_connector", "cost": 2, "level": 4,
+      "name": "tree.utopia.create.logistics", "icon": "create:belt_connector", "shape": "hexagon", "cost": 2, "level": 4,
       "parents": ["basics"], "position": [0.09, 3.2],
       "unlocks": [
         "create:belt_connector", "create:belt", "create:depot", "create:chute", "create:weighted_ejector",
@@ -57,7 +57,7 @@
       ]
     },
     "processing": {
-      "name": "tree.utopia.create.processing", "icon": "create:millstone", "cost": 2, "level": 5,
+      "name": "tree.utopia.create.processing", "icon": "create:millstone", "shape": "hexagon", "cost": 2, "level": 5,
       "parents": ["power"], "position": [5.48, -3.3],
       "unlocks": [
         "create:millstone", "create:mechanical_press", "create:basin", "create:mechanical_mixer",
@@ -75,7 +75,7 @@
       ]
     },
     "contraptions": {
-      "name": "tree.utopia.create.contraptions", "icon": "create:mechanical_bearing", "cost": 3, "level": 8,
+      "name": "tree.utopia.create.contraptions", "icon": "create:mechanical_bearing", "shape": "hexagon", "cost": 3, "level": 8,
       "parents": ["power"], "position": [5.07, 3.91],
       "unlocks": [
         "create:mechanical_bearing", "create:rope_pulley",
@@ -88,7 +88,7 @@
       ]
     },
     "fluids": {
-      "name": "tree.utopia.create.fluids", "icon": "create:fluid_pipe", "cost": 2, "level": 7,
+      "name": "tree.utopia.create.fluids", "icon": "create:fluid_pipe", "shape": "hexagon", "cost": 2, "level": 7,
       "parents": ["basics"], "position": [-2.22, 2.3],
       "unlocks": [
         "create:copper_casing", "create:fluid_pipe", "create:glass_fluid_pipe", "create:encased_fluid_pipe",
@@ -102,7 +102,7 @@
       ]
     },
     "portable_interfaces": {
-      "name": "tree.utopia.create.portable_interfaces", "icon": "create:portable_storage_interface", "cost": 3, "level": 11,
+      "name": "tree.utopia.create.portable_interfaces", "icon": "create:portable_storage_interface", "shape": "square", "cost": 3, "level": 11,
       "parents": ["contraptions", "logistics", "fluids"], "position": [8.13, 5.1],
       "unlocks": ["create:portable_storage_interface", "create:portable_fluid_interface"]
     },
@@ -119,18 +119,18 @@
       ]
     },
     "heating": {
-      "name": "tree.utopia.create.heating", "icon": "create:blaze_burner", "cost": 3, "level": 10,
+      "name": "tree.utopia.create.heating", "icon": "create:blaze_burner", "shape": "hexagon", "cost": 3, "level": 10,
       "parents": ["processing"], "position": [5.75, -7.69],
       "legacy_owners": ["create/mastery"],
       "unlocks": ["create:empty_blaze_burner", "create:blaze_burner"]
     },
     "electronics": {
-      "name": "tree.utopia.create.electronics", "icon": "create:electron_tube", "cost": 3, "level": 10,
+      "name": "tree.utopia.create.electronics", "icon": "create:electron_tube", "shape": "hexagon", "cost": 3, "level": 10,
       "parents": ["processing", "workshop_tools"], "position": [8.13, -5.11],
       "unlocks": ["create:rose_quartz", "create:polished_rose_quartz", "create:electron_tube"]
     },
     "controls": {
-      "name": "tree.utopia.create.controls", "icon": "create:redstone_link", "cost": 3, "level": 12,
+      "name": "tree.utopia.create.controls", "icon": "create:redstone_link", "shape": "hexagon", "cost": 3, "level": 12,
       "parents": ["electronics"], "position": [9.77, -7.2],
       "legacy_owners": ["create/mastery"],
       "unlocks": [
@@ -152,7 +152,7 @@
       ]
     },
     "brass": {
-      "name": "tree.utopia.create.brass", "icon": "create:brass_ingot", "cost": 3, "level": 12,
+      "name": "tree.utopia.create.brass", "icon": "create:brass_ingot", "shape": "hexagon", "cost": 3, "level": 12,
       "parents": ["heating"], "position": [6.37, -11.1],
       "legacy_owners": ["create/mastery"],
       "unlocks": [
@@ -161,7 +161,7 @@
       ]
     },
     "brass_automation": {
-      "name": "tree.utopia.create.brass_automation", "icon": "create:brass_funnel", "cost": 3, "level": 14,
+      "name": "tree.utopia.create.brass_automation", "icon": "create:brass_funnel", "shape": "square", "cost": 3, "level": 14,
       "parents": ["brass", "electronics", "logistics"], "position": [6.16, -15.26],
       "legacy_owners": ["create/mastery"],
       "unlocks": [
@@ -175,12 +175,12 @@
       "unlocks": ["create:smart_fluid_pipe"]
     },
     "deployer": {
-      "name": "tree.utopia.create.deployer", "icon": "create:deployer", "cost": 3, "level": 15,
+      "name": "tree.utopia.create.deployer", "icon": "create:deployer", "shape": "hexagon", "cost": 3, "level": 15,
       "parents": ["brass", "electronics"], "position": [7.8, -13.61],
       "unlocks": ["create:deployer"]
     },
     "mechanical_crafting": {
-      "name": "tree.utopia.create.mechanical_crafting", "icon": "create:mechanical_crafter", "cost": 3, "level": 15,
+      "name": "tree.utopia.create.mechanical_crafting", "icon": "create:mechanical_crafter", "shape": "hexagon", "cost": 3, "level": 15,
       "parents": ["brass", "electronics"], "position": [9.26, -13.6],
       "unlocks": ["create:mechanical_crafter", "create:crafter_slot_cover"]
     },
@@ -193,12 +193,12 @@
       ]
     },
     "pulse_control": {
-      "name": "tree.utopia.create.pulse_control", "icon": "create:pulse_timer", "cost": 3, "level": 16,
+      "name": "tree.utopia.create.pulse_control", "icon": "create:pulse_timer", "shape": "square", "cost": 3, "level": 16,
       "parents": ["controls", "brass"], "position": [13.06, -9.25],
       "unlocks": ["create:pulse_timer", "create:pulse_repeater", "create:pulse_extender"]
     },
     "networked_displays": {
-      "name": "tree.utopia.create.networked_displays", "icon": "create:display_link", "cost": 3, "level": 16,
+      "name": "tree.utopia.create.networked_displays", "icon": "create:display_link", "shape": "square", "cost": 3, "level": 16,
       "parents": ["displays", "brass", "controls"], "position": [13.89, -7.93],
       "unlocks": ["create:display_link"]
     },
@@ -208,17 +208,17 @@
       "unlocks": ["create:crushing_wheel", "create:powdered_obsidian", "create:cinder_flour"]
     },
     "precision": {
-      "name": "tree.utopia.create.precision", "icon": "create:precision_mechanism", "cost": 4, "level": 18,
+      "name": "tree.utopia.create.precision", "icon": "create:precision_mechanism", "shape": "hexagon", "cost": 4, "level": 18,
       "parents": ["deployer"], "position": [9.84, -17.62],
       "unlocks": ["create:incomplete_precision_mechanism", "create:precision_mechanism"]
     },
     "precision_machinery": {
-      "name": "tree.utopia.create.precision_machinery", "icon": "create:mechanical_arm", "cost": 4, "level": 20,
+      "name": "tree.utopia.create.precision_machinery", "icon": "create:mechanical_arm", "shape": "square", "cost": 4, "level": 20,
       "parents": ["precision", "mechanical_crafting"], "position": [11.34, -20.57],
       "unlocks": ["create:mechanical_arm", "create:rotation_speed_controller"]
     },
     "advanced_kinetics": {
-      "name": "tree.utopia.create.advanced_kinetics", "icon": "create:sequenced_gearshift", "cost": 3, "level": 16,
+      "name": "tree.utopia.create.advanced_kinetics", "icon": "create:sequenced_gearshift", "shape": "square", "cost": 3, "level": 16,
       "parents": ["kinetic_control", "brass", "electronics"], "position": [0.23, -6.4],
       "unlocks": [
         "create:adjustable_chain_gearshift", "create:sequenced_gearshift",
@@ -251,7 +251,7 @@
       ]
     },
     "factory_logistics": {
-      "name": "tree.utopia.create.factory_logistics", "icon": "create:stock_ticker", "cost": 4, "level": 22,
+      "name": "tree.utopia.create.factory_logistics", "icon": "create:stock_ticker", "shape": "square", "cost": 4, "level": 22,
       "parents": ["stock_network", "precision"], "position": [14.93, -5.75],
       "legacy_owners": ["create/mastery"],
       "unlocks": [
@@ -270,13 +270,13 @@
       "unlocks": ["create:blaze_cake_base", "create:blaze_cake"]
     },
     "steam_power": {
-      "name": "tree.utopia.create.steam_power", "icon": "create:steam_engine", "cost": 3, "level": 16,
+      "name": "tree.utopia.create.steam_power", "icon": "create:steam_engine", "shape": "square", "cost": 3, "level": 16,
       "parents": ["heating", "fluids"], "position": [10.17, -10.05],
       "legacy_owners": ["create/mastery"],
       "unlocks": ["create:steam_engine", "create:steam_whistle", "create:steam_whistle_extension", "create:flywheel"]
     },
     "sturdy_materials": {
-      "name": "tree.utopia.create.sturdy_materials", "icon": "create:sturdy_sheet", "cost": 4, "level": 23,
+      "name": "tree.utopia.create.sturdy_materials", "icon": "create:sturdy_sheet", "shape": "hexagon", "cost": 4, "level": 23,
       "parents": ["bulk_processing", "fluids"], "position": [13.28, -18.04],
       "unlocks": ["create:unprocessed_obsidian_sheet", "create:sturdy_sheet"]
     },
@@ -286,7 +286,7 @@
       "unlocks": ["create:incomplete_track", "create:track", "create:railway_casing"]
     },
     "railways": {
-      "name": "tree.utopia.create.railways", "icon": "create:track_station", "cost": 4, "level": 27,
+      "name": "tree.utopia.create.railways", "icon": "create:track_station", "shape": "hexagon", "cost": 4, "level": 27,
       "parents": ["rail_tracks"], "position": [11.99, -19.25],
       "legacy_owners": ["create/mastery"],
       "unlocks": [
@@ -303,12 +303,12 @@
       ]
     },
     "precision_tools": {
-      "name": "tree.utopia.create.precision_tools", "icon": "create:extendo_grip", "cost": 4, "level": 22,
+      "name": "tree.utopia.create.precision_tools", "icon": "create:extendo_grip", "shape": "square", "cost": 4, "level": 22,
       "parents": ["precision", "mechanical_crafting", "fluids"], "position": [10.57, -18.91],
       "unlocks": ["create:extendo_grip", "create:potato_cannon", "create:wand_of_symmetry"]
     },
     "pneumatic_tools": {
-      "name": "tree.utopia.create.pneumatic_tools", "icon": "create:netherite_backtank", "cost": 4, "level": 25,
+      "name": "tree.utopia.create.pneumatic_tools", "icon": "create:netherite_backtank", "shape": "square", "cost": 4, "level": 25,
       "parents": ["equipment"], "position": [-5.02, 8.18],
       "unlocks": [
         "create:netherite_backtank", "create:netherite_diving_helmet", "create:netherite_diving_boots"
@@ -339,7 +339,7 @@
       ]
     },
     "connected": {
-      "name": "tree.utopia.create.connected", "icon": "create_connected:control_chip", "cost": 4, "level": 22,
+      "name": "tree.utopia.create.connected", "icon": "create_connected:control_chip", "shape": "diamond", "cost": 4, "level": 22,
       "parents": ["connected_safety", "deployer", "precision"], "position": [-9.6, -0.01], "requires_mods": ["create_connected"],
       "unlocks": ["create_connected:*"],
       "excludes": [
@@ -376,7 +376,7 @@
       ]
     },
     "crafts_additions": {
-      "name": "tree.utopia.create.crafts_additions", "icon": "createaddition:electric_motor", "cost": 4, "level": 23,
+      "name": "tree.utopia.create.crafts_additions", "icon": "createaddition:electric_motor", "shape": "diamond", "cost": 4, "level": 23,
       "parents": ["crafts_additions_electrum", "mechanical_crafting", "brass"], "position": [15.55, -3.75], "requires_mods": ["createaddition"],
       "unlocks": ["createaddition:*"],
       "excludes": [
@@ -425,7 +425,7 @@
       ]
     },
     "new_age": {
-      "name": "tree.utopia.create.new_age", "icon": "create_new_age:reactor_casing", "cost": 6, "level": 33,
+      "name": "tree.utopia.create.new_age", "icon": "create_new_age:reactor_casing", "shape": "diamond", "cost": 6, "level": 33,
       "parents": ["new_age_motors", "sturdy_materials", "deployer"], "position": [10.06, 16.36], "requires_mods": ["create_new_age"],
       "unlocks": ["create_new_age:*"]
     },
@@ -483,7 +483,7 @@
       ]
     },
     "power_grid": {
-      "name": "tree.utopia.create.power_grid", "icon": "powergrid:electric_motor", "cost": 5, "level": 29,
+      "name": "tree.utopia.create.power_grid", "icon": "powergrid:electric_motor", "shape": "diamond", "cost": 5, "level": 29,
       "parents": ["power_grid_generation", "power_grid_storage", "power_grid_circuits"], "position": [16.63, -0.27], "requires_mods": ["powergrid"],
       "unlocks": ["powergrid:*"],
       "excludes": ["powergrid:creative_current_source", "powergrid:creative_voltage_source", "powergrid:creative_resistor", "powergrid:debug"]
@@ -507,7 +507,7 @@
       "unlocks": ["createhp:high_pressure_pump_3"]
     },
     "industrial_pressure": {
-      "name": "tree.utopia.create.industrial_pressure", "icon": "createhp:netherite_pressure_pump", "cost": 5, "level": 27,
+      "name": "tree.utopia.create.industrial_pressure", "icon": "createhp:netherite_pressure_pump", "shape": "square", "cost": 5, "level": 27,
       "parents": ["industrial_pressure_t3", "precision", "mechanical_crafting", "brass_fluid_logistics"], "position": [-13.13, 9.14], "requires_mods": ["createhp"],
       "unlocks": [
         "createhp:netherite_pressure_pipe", "createhp:netherite_glass_pipe",
@@ -524,7 +524,7 @@
       ]
     },
     "steam_rails": {
-      "name": "tree.utopia.create.steam_rails", "icon": "railways:fuel_tank", "cost": 4, "level": 34,
+      "name": "tree.utopia.create.steam_rails", "icon": "railways:fuel_tank", "shape": "square", "cost": 4, "level": 34,
       "parents": ["steam_rails_signals", "train_engineering"], "position": [15.52, -24.26], "requires_mods": ["railways"],
       "unlocks": [
         "railways:fuel_tank", "railways:handcar", "railways:conductor_vent", "railways:benchcart",
@@ -540,7 +540,7 @@
       ]
     },
     "railway_navigation": {
-      "name": "tree.utopia.create.railway_navigation", "icon": "createrailwaysnavigator:navigator", "cost": 4, "level": 30,
+      "name": "tree.utopia.create.railway_navigation", "icon": "createrailwaysnavigator:navigator", "shape": "diamond", "cost": 4, "level": 30,
       "parents": ["railways"], "position": [15.11, -22.33], "requires_mods": ["createrailwaysnavigator"],
       "unlocks": ["createrailwaysnavigator:*"]
     },
@@ -589,13 +589,13 @@
       ]
     },
     "big_cannons": {
-      "name": "tree.utopia.create.big_cannons", "icon": "createbigcannons:he_shell", "cost": 6, "level": 34,
+      "name": "tree.utopia.create.big_cannons", "icon": "createbigcannons:he_shell", "shape": "diamond", "cost": 6, "level": 34,
       "parents": ["big_cannons_handling", "deployer"], "position": [17.08, -14.49], "requires_mods": ["createbigcannons"],
       "unlocks": ["createbigcannons:*"],
       "excludes": ["createbigcannons:traffic_cone", "createbigcannons:creative_autocannon_ammo_container"]
     },
     "nuclear_engineering": {
-      "name": "tree.utopia.create.nuclear_engineering", "icon": "create_nuke:nuke_core", "cost": 7, "level": 38,
+      "name": "tree.utopia.create.nuclear_engineering", "icon": "create_nuke:nuke_core", "shape": "diamond", "cost": 7, "level": 38,
       "parents": ["new_age"], "position": [11.96, 18.94], "requires_mods": ["create_nuke", "create_new_age"],
       "unlocks": ["create_nuke:*"]
     }
