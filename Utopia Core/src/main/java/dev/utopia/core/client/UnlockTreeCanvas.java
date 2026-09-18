@@ -92,6 +92,8 @@ final class UnlockTreeCanvas {
     private static final int COLOR_HOVERED = 0xFFE8CE92;
     private static final int COLOR_SEARCH_MATCH = 0xFFFFD98A;
 
+    /** Nur fuer die Ersatzbeschriftung, wenn ein Knoten kein Item-Icon hat. */
+    private net.minecraft.client.font.TextRenderer textRenderer;
     private final List<Edge> edgeBuffer = new ArrayList<>();
     private final Set<String> highlightChain = new HashSet<>();
 
@@ -162,6 +164,9 @@ final class UnlockTreeCanvas {
 
     void render(DrawContext context, UnlockTree tree, StateProvider states, boolean editing,
             int mouseX, int mouseY) {
+        if (textRenderer == null) {
+            textRenderer = net.minecraft.client.MinecraftClient.getInstance().textRenderer;
+        }
         ease();
         context.enableScissor(left, top, right, bottom);
         drawBackground(context);
@@ -416,7 +421,8 @@ final class UnlockTreeCanvas {
         tinted(context, fillTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(fillColor(state), alpha));
 
         Item item = node.icon().map(Registries.ITEM::get).orElse(null);
-        if (item != null && item != net.minecraft.item.Items.AIR) {
+        boolean hasIcon = item != null && item != net.minecraft.item.Items.AIR;
+        if (hasIcon) {
             drawIcon(context, item, centerPixelX, centerPixelY, size);
         }
         if (state == State.BLOCKED) {
@@ -427,6 +433,40 @@ final class UnlockTreeCanvas {
 
         tinted(context, outlineTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(outlineColor(state), alpha));
         drawBadge(context, state, centerPixelX, centerPixelY, size, alpha);
+        if (!hasIcon && size >= 18) {
+            // Kein aufloesbares Icon — die Mod fehlt, oder beim Knoten ist keines gesetzt.
+            // Ohne Ersatz waere der Knoten eine leere Flaeche. Ganz zum Schluss gezeichnet,
+            // damit weder die Abdunklung gesperrter Knoten noch der Rahmen darueber liegen.
+            drawInitials(context, key, node, centerPixelX, centerPixelY, outlineColor(state), alpha);
+        }
+    }
+
+    /** Ersatzdarstellung, wenn kein Item-Icon vorliegt: die ersten Buchstaben des Namens. */
+    private void drawInitials(DrawContext context, String key, UnlockTree.Node node, int centerPixelX,
+            int centerPixelY, int color, int alpha) {
+        if (textRenderer == null) {
+            return;
+        }
+        // Den angezeigten Namen nehmen, nicht den Uebersetzungsschluessel: aus
+        // "tree.utopia.create.basics" wuerde sonst "B" statt "KB" fuer "Kinetic Basics".
+        String source = UnlockScreen.displayName(node.name(), key).getString();
+        int cut = source.lastIndexOf('.');
+        if (cut >= 0 && cut + 1 < source.length()) {
+            source = source.substring(cut + 1);
+        }
+        source = source.replace('_', ' ').trim();
+        if (source.isEmpty()) {
+            return;
+        }
+        StringBuilder initials = new StringBuilder();
+        for (String word : source.split(" ")) {
+            if (!word.isEmpty() && initials.length() < 2) {
+                initials.append(Character.toUpperCase(word.charAt(0)));
+            }
+        }
+        String text = initials.toString();
+        context.drawText(textRenderer, text, centerPixelX - textRenderer.getWidth(text) / 2,
+                centerPixelY - 4, withAlpha(color, alpha), false);
     }
 
     /**
