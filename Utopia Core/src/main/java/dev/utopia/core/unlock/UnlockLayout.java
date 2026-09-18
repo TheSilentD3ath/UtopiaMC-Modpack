@@ -175,7 +175,8 @@ public final class UnlockLayout {
                 // Ohne Nachbarn in dieser Richtung bleibt der Knoten, wo er ist.
                 barycentre.put(key, count == 0 ? position.getOrDefault(key, 0.5) : sum / count);
             }
-            members.sort(Comparator.comparingDouble(barycentre::get).thenComparing(key -> key));
+            members.sort(Comparator.<String>comparingDouble(barycentre::get)
+                    .thenComparing(Comparator.naturalOrder()));
             position = normalizedPositions(ranks);
         }
     }
