@@ -38,14 +38,17 @@ state, not a promise that they are already present in the downloadable pack.
 
 ## Unlock tree interface rework
 
-The Utopia Core unlock screen (`dev.utopia.core.client`) has been reworked. The
-change is source-only and has **not been compiled or run yet**, because the
-environment it was written in could not reach the Fabric, Yarn or Minecraft
-Maven repositories. Every API used was matched against call sites that already
-exist in this repository rather than from memory, and translation keys, texture
-paths, record constructors and cross-class calls were verified statically. A
-build and an in-game pass are still required before this can go into a release
-candidate.
+The Utopia Core unlock screen (`dev.utopia.core.client`) has been reworked. Both
+source projects build with JDK 17, and the screen has been exercised in a real
+client on a virtual display with software rendering: character creation, opening
+the tree on the progress frontier, the hover tooltip, the inspector, the editor
+with auto layout and undo, and discarding a draft. Four defects found that way
+are fixed.
+
+Still open: a pass on a real installation with Create and the addon mods present.
+In the development runtime those mods are absent, so 29 of the 68 nodes are
+filtered out by `requires_mods` and every node icon resolves to air, which makes
+the nodes render as empty shapes there. That will not happen in the pack itself.
 
 What changed:
 
@@ -72,11 +75,14 @@ What changed:
 - GUI textures dropped from 4.5 MB to 884 KB. The wood textures were 1254 px
   sources drawn at 130–455 px, which aliased visibly while zooming.
 
-Open items for the in-game pass: purchase feedback is currently the status line
-only (no sound — the `SoundEvents` API shape could not be verified without a
-compiler); the layered auto-layout is available as an editor button but has not
-been applied to `create.json`, which is still authored portrait (30 x 43 units)
-and therefore still needs a low zoom for the full overview.
+Open items: purchase feedback is the status line only, with no sound. The layered
+auto-layout is available as an editor button but has deliberately not been
+applied to `create.json`. That tree is still authored with every node 3.2 units
+from its neighbours across a 30 x 43 portrait span, which measured in-game means
+the map has to sit near 23 percent zoom before a node's own neighbours fit on
+screen, and a full overview does not fit at all. Running the auto layout turns it
+into a left-to-right flow of roughly 26 x 17 that fits at once. Whether to adopt
+that is a content decision for the pack author, not a code change.
 
 ## Release validation
 
