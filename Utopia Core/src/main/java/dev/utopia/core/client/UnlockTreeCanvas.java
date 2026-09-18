@@ -61,10 +61,10 @@ final class UnlockTreeCanvas {
     /** Zoomschritt je Mausrad-Raste. Deutlich groesser als frueher, sonst kurbelt man ewig. */
     private static final double ZOOM_STEP = 1.25;
     /** Knotengroesse bei 100 %. */
-    private static final int NODE_BASE = 44;
+    private static final int NODE_BASE = 54;
     private static final double DRAG_THRESHOLD = 4.0;
-    private static final double DASH_LENGTH = 7.0;
-    private static final double DASH_PERIOD = 12.0;
+    private static final double DASH_LENGTH = 6.0;
+    private static final double DASH_PERIOD = 14.0;
     /** Anteil, um den sich die Ansicht pro Bild dem Ziel naehert. */
     private static final float EASING = 0.4F;
 
@@ -288,12 +288,21 @@ final class UnlockTreeCanvas {
                 }
                 boolean primary = i == 0;
                 boolean lit = highlightChain.contains(childKey) && highlightChain.contains(parentKey);
+                // Zusaetzliche Voraussetzungen erscheinen NUR am betrachteten Knoten.
+                //
+                // Dauerhaft gezeichnet waren sie ein Netz gestrichelter Linien quer ueber die
+                // ganze Karte, dem man nicht ansah, wozu es gehoert — es verdeckte die Baumform,
+                // statt sie zu ergaenzen. Die Angabe geht dadurch nicht verloren: beim
+                // Darueberfahren leuchtet die vollstaendige Kette auf, und der Inspektor
+                // listet alle Vorgaenger mit Namen auf.
+                if (!primary && !lit) {
+                    continue;
+                }
                 int color = primary
                         ? (states.state(parentKey, parent) == State.OWNED ? COLOR_EDGE_OWNED : COLOR_EDGE_OPEN)
                         : COLOR_EDGE_SECONDARY;
                 if (!lit) {
-                    // Nicht betrachtete Kanten treten zurueck, bleiben aber sichtbar.
-                    color = withAlpha(color, primary ? 0xA8 : 0x38);
+                    color = withAlpha(color, 0xA0);
                 }
                 Edge edge = edge(parent, child, radius, primary, lit, color);
                 if (edge != null && edgeVisible(edge)) {
@@ -304,21 +313,27 @@ final class UnlockTreeCanvas {
         if (edgeBuffer.isEmpty()) {
             return;
         }
+        // Strichstaerke haengt an der Knotengroesse. Mit fester Staerke waren die Kanten
+        // beim Herauszoomen breiter als die Knoten, die sie verbinden — die Verbindungen
+        // schrien dann lauter als das, worum es geht.
+        int weight = Math.max(1, nodeSize() / 12);
         // Schatten zuerst, dann die Linien, hervorgehobene zuletzt: so liegt die Kette
         // des betrachteten Knotens immer obenauf.
         for (Edge edge : edgeBuffer) {
             if (edge.primary()) {
-                drawConnection(context, edge, 4, COLOR_EDGE_SHADOW, false);
+                drawConnection(context, edge, weight + 1, COLOR_EDGE_SHADOW, false);
             }
         }
         for (Edge edge : edgeBuffer) {
             if (!edge.lit()) {
-                drawConnection(context, edge, edge.primary() ? 2 : 1, edge.color(), !edge.primary());
+                drawConnection(context, edge, edge.primary() ? weight : Math.max(1, weight - 1),
+                        edge.color(), !edge.primary());
             }
         }
         for (Edge edge : edgeBuffer) {
             if (edge.lit()) {
-                drawConnection(context, edge, edge.primary() ? 3 : 2, edge.color(), !edge.primary());
+                drawConnection(context, edge, edge.primary() ? weight + 1 : weight,
+                        edge.color(), !edge.primary());
             }
         }
     }
