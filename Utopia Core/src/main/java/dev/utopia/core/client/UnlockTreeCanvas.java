@@ -141,9 +141,13 @@ final class UnlockTreeCanvas {
         selected = key;
     }
 
-    /** null oder leer = keine Suche aktiv; sonst werden Nichttreffer zurueckgenommen. */
+    /**
+     * null = keine Suche aktiv. Eine leere, aber vorhandene Menge bedeutet "gesucht und
+     * nichts gefunden" und nimmt alle Knoten zurueck — sonst waere eine Suche ohne Treffer
+     * von gar keiner Suche nicht zu unterscheiden.
+     */
     void searchMatches(Set<String> matches) {
-        this.searchMatches = matches == null || matches.isEmpty() ? null : matches;
+        this.searchMatches = matches;
     }
 
     boolean contains(double mouseX, double mouseY) {
@@ -380,7 +384,7 @@ final class UnlockTreeCanvas {
         int x = centerPixelX - size / 2;
         int y = centerPixelY - size / 2;
         NodeShape shape = node.shape();
-        int alpha = dim ? 0x55 : 0xFF;
+        int alpha = dim ? 0x30 : 0xFF;
 
         // Auswahl- und Zeigerring: derselbe Umriss, etwas groesser, hinter dem Knoten.
         if (isSelected || isHovered) {

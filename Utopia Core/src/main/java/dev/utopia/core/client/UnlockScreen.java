@@ -475,9 +475,26 @@ public class UnlockScreen extends Screen {
      * Hintergrund und wuerde den Platzhalter sonst wieder zudecken.
      */
     private void renderSearchPlaceholder(DrawContext context) {
-        if (search != null && search.getText().isEmpty() && !search.isFocused()) {
-            context.drawText(this.textRenderer, trim(Text.translatable("screen.utopia.unlocks.search"),
-                    search.getWidth() - 8), search.getX() + 4, search.getY() + 5, 0xFF8A7355, false);
+        if (search == null) {
+            return;
+        }
+        if (search.getText().isEmpty()) {
+            if (!search.isFocused()) {
+                context.drawText(this.textRenderer, trim(Text.translatable("screen.utopia.unlocks.search"),
+                        search.getWidth() - 8), search.getX() + 4, search.getY() + 5, 0xFF8A7355, false);
+            }
+            return;
+        }
+        // Trefferzahl direkt unter dem Suchfeld. In der Fusszeile stand sie zwar auch, wurde
+        // dort aber von der Legende verdraengt, sobald die Oberflaeche groesser skaliert war —
+        // und ohne Rueckmeldung weiss man bei null Treffern nicht, ob die Suche gegriffen hat.
+        int count = searchMatches == null ? 0 : searchMatches.size();
+        Text label = Text.translatable("screen.utopia.unlocks.search_result", count);
+        int y = search.getY() + search.getHeight() + 2;
+        if (y + 8 <= headerBottom) {
+            context.drawText(this.textRenderer, label,
+                    search.getX() + search.getWidth() - this.textRenderer.getWidth(label), y,
+                    count == 0 ? COLOR_WARN : COLOR_MUTED, false);
         }
     }
 
@@ -731,7 +748,6 @@ public class UnlockScreen extends Screen {
         });
         searchMatches = matches;
         canvas.searchMatches(matches);
-        status = Text.translatable("screen.utopia.unlocks.search_result", matches.size()).getString();
     }
 
     private boolean matches(String key, UnlockTree.Node node, String query) {
