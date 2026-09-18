@@ -24,6 +24,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -106,6 +107,8 @@ public class UnlockScreen extends Screen {
     private int contextMenuWidth;
     private int detailScroll;
     private String status;
+    /** Linke Kante der Fusszeilen-Knoepfe; Legende und Status enden davor. */
+    private int footerButtonsLeft;
 
     // Aufteilung; gesetzt in layout().
     private int panelLeft;
@@ -126,6 +129,8 @@ public class UnlockScreen extends Screen {
     private int inspectorRight;
     private int toolbarTop;
     private int footerTop;
+    /** Tatsaechliche Inspektorbreite dieses Aufbaus; INSPECTOR_WIDTH ist nur die Obergrenze. */
+    private int inspectorWidth;
     private boolean showSidebar;
     private boolean showInspector;
 
@@ -171,7 +176,11 @@ public class UnlockScreen extends Screen {
         showInspector = true;
 
         int available = innerRight - innerLeft;
-        int needed = MIN_CANVAS_WIDTH + (showSidebar ? SIDEBAR_WIDTH + GAP : 0) + INSPECTOR_WIDTH + GAP;
+        // Der Inspektor waechst mit, bleibt aber ein Beiwerk: bei fester Breite nahm er auf
+        // kleineren Oberflaechenskalierungen ueber 40 % des Panels ein, obwohl die Karte der
+        // eigentliche Inhalt ist.
+        inspectorWidth = MathHelper.clamp(available * 28 / 100, 150, INSPECTOR_WIDTH);
+        int needed = MIN_CANVAS_WIDTH + (showSidebar ? SIDEBAR_WIDTH + GAP : 0) + inspectorWidth + GAP;
         if (available < needed) {
             showInspector = false;
             needed = MIN_CANVAS_WIDTH + (showSidebar ? SIDEBAR_WIDTH + GAP : 0);
@@ -183,7 +192,7 @@ public class UnlockScreen extends Screen {
         sidebarLeft = innerLeft;
         sidebarRight = showSidebar ? sidebarLeft + SIDEBAR_WIDTH : sidebarLeft;
         inspectorRight = innerRight;
-        inspectorLeft = showInspector ? inspectorRight - INSPECTOR_WIDTH : inspectorRight;
+        inspectorLeft = showInspector ? inspectorRight - inspectorWidth : inspectorRight;
         canvasLeft = sidebarRight + (showSidebar ? GAP : 0);
         canvasRight = inspectorLeft - (showInspector ? GAP : 0);
         toolbarTop = bodyBottom - TOOLBAR_HEIGHT;
@@ -221,7 +230,7 @@ public class UnlockScreen extends Screen {
         buildFooter();
         if (showInspector) {
             purchaseButton = addRustic(new RusticButton(inspectorLeft + 8, bodyBottom - 26,
-                    INSPECTOR_WIDTH - 16, 22, Text.translatable("screen.utopia.unlocks.purchase"),
+                    inspectorWidth - 16, 22, Text.translatable("screen.utopia.unlocks.purchase"),
                     button -> purchaseSelected()));
         } else {
             purchaseButton = null;
@@ -319,6 +328,7 @@ public class UnlockScreen extends Screen {
                 button -> close());
         addRustic(done);
         x -= 74;
+        footerButtonsLeft = x;
         if (!UtopiaCoreClient.canEditTrees) {
             return;
         }
@@ -328,12 +338,14 @@ public class UnlockScreen extends Screen {
             x -= 80;
             addRustic(new RusticButton(x - 76, y, 76, 22,
                     Text.translatable("screen.utopia.unlocks.editor.save"), button -> saveTree()));
+            footerButtonsLeft = x - 76;
         } else {
             addRustic(new RusticButton(x - 96, y, 96, 22,
                     Text.translatable("screen.utopia.unlocks.editor.open"), button -> enterEditor()));
             x -= 100;
             addRustic(new RusticButton(x - 86, y, 86, 22,
                     Text.translatable("screen.utopia.unlocks.editor.new_tree"), button -> createTree()));
+            footerButtonsLeft = x - 86;
         }
     }
 
@@ -493,9 +505,10 @@ public class UnlockScreen extends Screen {
     private void renderFooter(DrawContext context) {
         int y = footerTop + (FOOTER_HEIGHT - 10) / 2;
         int x = innerLeft;
-        int limit = statusLeft();
+        int limit = footerContentRight();
         for (UnlockTreeCanvas.State state : UnlockTreeCanvas.State.values()) {
-            Text label = Text.translatable("screen.utopia.unlocks.state." + state.name().toLowerCase(Locale.ROOT));
+            // Eigene Kurzform: die vollen Zustandstexte passen nicht zu viert nebeneinander.
+            Text label = Text.translatable("screen.utopia.unlocks.legend." + state.name().toLowerCase(Locale.ROOT));
             int width = 12 + this.textRenderer.getWidth(label) + 10;
             if (x + width > limit) {
                 break;
@@ -511,21 +524,26 @@ public class UnlockScreen extends Screen {
             context.drawText(this.textRenderer, label, x + 13, y, COLOR_LIGHT, false);
             x += width;
         }
-        if (status != null) {
-            context.drawTextWithShadow(this.textRenderer, trim(Text.literal(status), innerRight - statusLeft()),
-                    statusLeft(), y, 0xFFFFC96A);
+        if (status != null && x < limit - 40) {
+            context.drawTextWithShadow(this.textRenderer, trim(Text.literal(status), limit - x - 8),
+                    x + 8, y, 0xFFFFC96A);
         }
     }
 
-    private int statusLeft() {
-        // Die Fusszeilen-Knoepfe stehen rechts; der Status endet davor.
-        int buttons = UtopiaCoreClient.canEditTrees ? (editing ? 234 : 258) : 74;
-        return Math.max(innerLeft, innerRight - buttons - 160);
+    /**
+     * Rechte Grenze fuer Legende und Status.
+     *
+     * Ergibt sich aus der tatsaechlichen linken Kante der Fusszeilen-Knoepfe. Eine geschaetzte
+     * Konstante hatte hier die Legende bis auf den ersten Eintrag abgeschnitten, sobald die
+     * Oberflaechenskalierung vom angenommenen Fall abwich.
+     */
+    private int footerContentRight() {
+        return footerButtonsLeft > innerLeft ? footerButtonsLeft - GAP : innerRight;
     }
 
     private void renderInspector(DrawContext context, UnlockTree tree) {
         int x = inspectorLeft + 8;
-        int width = INSPECTOR_WIDTH - 16;
+        int width = inspectorWidth - 16;
         String selected = canvas.selected();
         if (tree == null) {
             return;
@@ -1362,10 +1380,19 @@ public class UnlockScreen extends Screen {
             if (hovered) {
                 context.fill(left + 2, top + 2, right - 2, bottom - 2, 0x1830FF8A);
             }
-            int color = selected ? COLOR_TEXT : active ? COLOR_LIGHT : 0xFFAD9678;
-            context.drawCenteredTextWithShadow(UnlockScreen.this.textRenderer,
-                    trim(getMessage(), getWidth() - 8), left + getWidth() / 2,
-                    top + (getHeight() - 8) / 2, color);
+            Text label = trim(getMessage(), getWidth() - 8);
+            int textY = top + (getHeight() - 8) / 2;
+            int centerX = left + getWidth() / 2;
+            if (selected) {
+                // Dunkle Schrift auf heller Flaeche braucht keinen Schatten; mit Schatten
+                // sah die Beschriftung ausgewaehlter Knoepfe doppelt gedruckt aus.
+                context.drawText(UnlockScreen.this.textRenderer, label,
+                        centerX - UnlockScreen.this.textRenderer.getWidth(label) / 2, textY,
+                        COLOR_TEXT, false);
+            } else {
+                context.drawCenteredTextWithShadow(UnlockScreen.this.textRenderer, label, centerX,
+                        textY, active ? COLOR_LIGHT : 0xFFAD9678);
+            }
         }
     }
 

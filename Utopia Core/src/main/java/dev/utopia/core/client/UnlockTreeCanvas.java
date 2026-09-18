@@ -56,7 +56,7 @@ final class UnlockTreeCanvas {
     private static final int CANVAS_TILE_SIZE = 220;
 
     private static final double UNIT = 64.0;
-    private static final double MIN_ZOOM = 0.22;
+    private static final double MIN_ZOOM = 0.08;
     private static final double MAX_ZOOM = 2.0;
     /** Zoomschritt je Mausrad-Raste. Deutlich groesser als frueher, sonst kurbelt man ewig. */
     private static final double ZOOM_STEP = 1.25;
@@ -70,14 +70,20 @@ final class UnlockTreeCanvas {
 
     // Palette. Alle Werte gegen die gemessene Holzhelligkeit auf Kontrast geprueft;
     // die Zustandsrahmen erreichen mindestens 3,0:1 gegen den Hintergrund.
+    //
+    // BLOCKED ist bewusst ein heller, entsaettigter Ton und kein dunkler: Ein dunkler
+    // Rahmen auf dunklem Holz bestand zwar die Kontrastschwelle, verschluckte aber das
+    // Item-Icon im Knoten — gesperrte Knoten waren schwarze Kleckse, bei denen man nicht
+    // mehr erkannte, worum es ueberhaupt geht. Der Zustand tritt jetzt ueber die Saettigung
+    // zurueck, nicht ueber die Helligkeit.
     private static final int COLOR_OWNED_OUTLINE = 0xFFB8F0A0;
     private static final int COLOR_BUYABLE_OUTLINE = 0xFFFFE9A8;
     private static final int COLOR_EXPENSIVE_OUTLINE = 0xFFFCD5A6;
-    private static final int COLOR_BLOCKED_OUTLINE = 0xFF1A120C;
+    private static final int COLOR_BLOCKED_OUTLINE = 0xFFE7D8C3;
     private static final int COLOR_OWNED_FILL = 0xFF24401C;
     private static final int COLOR_BUYABLE_FILL = 0xFF453213;
     private static final int COLOR_EXPENSIVE_FILL = 0xFF3A2C1E;
-    private static final int COLOR_BLOCKED_FILL = 0xFF241C15;
+    private static final int COLOR_BLOCKED_FILL = 0xFF2E2823;
     private static final int COLOR_EDGE_OWNED = 0xFFA8E88C;
     private static final int COLOR_EDGE_OPEN = 0xFFFCD596;
     private static final int COLOR_EDGE_SECONDARY = 0xFFB4E0EC;
@@ -283,7 +289,7 @@ final class UnlockTreeCanvas {
                         : COLOR_EDGE_SECONDARY;
                 if (!lit) {
                     // Nicht betrachtete Kanten treten zurueck, bleiben aber sichtbar.
-                    color = withAlpha(color, primary ? 0xB0 : 0x70);
+                    color = withAlpha(color, primary ? 0xA8 : 0x38);
                 }
                 Edge edge = edge(parent, child, radius, primary, lit, color);
                 if (edge != null && edgeVisible(edge)) {
@@ -397,7 +403,7 @@ final class UnlockTreeCanvas {
         if (state == State.BLOCKED) {
             // Gesperrte Knoten werden zusaetzlich abgedunkelt; das Schloss allein
             // koennte man bei kleinem Zoom uebersehen.
-            tinted(context, fillTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(0xFF120C08, dim ? 0x50 : 0x99));
+            tinted(context, fillTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(0xFF120C08, dim ? 0x22 : 0x44));
         }
 
         tinted(context, outlineTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(outlineColor(state), alpha));
@@ -503,7 +509,7 @@ final class UnlockTreeCanvas {
             case OWNED -> COLOR_OWNED_OUTLINE;
             case BUYABLE -> COLOR_BUYABLE_OUTLINE;
             case TOO_EXPENSIVE -> COLOR_EXPENSIVE_OUTLINE;
-            case BLOCKED -> 0xFFB9A98F;
+            case BLOCKED -> COLOR_BLOCKED_OUTLINE;
         };
     }
 
@@ -657,9 +663,36 @@ final class UnlockTreeCanvas {
             fit(tree);
             return;
         }
+        // Den Wunschzoom so weit zuruecknehmen, dass die direkten Nachbarn mit im Bild
+        // sind. Ein fester Wert taugt dafuer nicht: Wie weit die Nachbarn entfernt sind,
+        // haengt vollstaendig davon ab, wie grosszuegig der Baum gesetzt wurde.
+        double radius = neighbourRadius(tree, key, node);
+        if (radius > 0.0) {
+            double halfShortSide = Math.min(right - left, bottom - top) / 2.0 - NODE_BASE * 0.5;
+            if (halfShortSide > 0.0) {
+                preferredZoom = Math.min(preferredZoom, halfShortSide / (radius * UNIT));
+            }
+        }
         zoom = MathHelper.clamp(preferredZoom, MIN_ZOOM, MAX_ZOOM);
         centerX = node.x();
         centerY = node.y();
+    }
+
+    /** Abstand zum entferntesten unmittelbaren Nachbarn, in Modelleinheiten. */
+    private static double neighbourRadius(UnlockTree tree, String key, UnlockTree.Node node) {
+        double radius = 0.0;
+        for (String parent : node.parents()) {
+            UnlockTree.Node other = tree.nodes().get(parent);
+            if (other != null) {
+                radius = Math.max(radius, Math.hypot(other.x() - node.x(), other.y() - node.y()));
+            }
+        }
+        for (UnlockTree.Node child : tree.nodes().values()) {
+            if (child.parents().contains(key)) {
+                radius = Math.max(radius, Math.hypot(child.x() - node.x(), child.y() - node.y()));
+            }
+        }
+        return radius;
     }
 
     /** Ohne Annaeherung an die Zielansicht springen — beim Oeffnen und Baumwechsel. */
@@ -716,7 +749,7 @@ final class UnlockTreeCanvas {
     /** Vielfaches von vier: die Formtexturen landen damit auf sauberen Rastergroessen. */
     private int nodeSize() {
         int raw = (int) Math.round(NODE_BASE * viewZoom);
-        return MathHelper.clamp((raw + 2) & ~3, 12, 88);
+        return MathHelper.clamp((raw + 2) & ~3, 8, 88);
     }
 
     private boolean nodeVisible(UnlockTree.Node node, int size) {
