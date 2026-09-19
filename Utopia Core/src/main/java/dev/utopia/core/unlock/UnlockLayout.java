@@ -10,27 +10,35 @@ import java.util.Map;
 /**
  * Geschichtetes Auto-Layout fuer Freischalt-Baeume.
  *
- * <p><b>Warum:</b> Von Hand gesetzte Positionen wachsen mit der Zeit in die Hoehe. Der
- * Create-Baum stand bei 30 x 43 Einheiten — Hochformat auf einem Querformat-Bildschirm.
- * Die Folge war, dass "alles einpassen" immer am Mindestzoom endete und niemand mehr
- * erkannte, was er vor sich hat.
+ * <p><b>Wozu:</b> Ein neu angelegter Baum hat keine Positionen, und ein von Hand
+ * gewachsener steht irgendwann im Hochformat auf einem Querformat-Bildschirm. Das
+ * Verfahren legt Spalten nach Fortschritt an, damit die Karte von links nach rechts
+ * gelesen werden kann.
  *
- * <p><b>Verfahren</b> (vereinfachtes Sugiyama, ohne Dummy-Knoten):
+ * <p><b>Verfahren</b>
  * <ol>
- * <li>Ebene je Knoten = laengster Pfad von einer Wurzel. Das ergibt Spalten, die den
- *     Fortschritt von links nach rechts erzaehlen.</li>
- * <li>Reihenfolge innerhalb einer Spalte ueber abwechselnde Baryzentrum-Durchlaeufe:
- *     ein Knoten wandert zur mittleren Hoehe seiner Nachbarn.</li>
- * <li>Uebernommen wird der Durchlauf mit der geringsten aufsummierten Kantenhoehe —
- *     das ist die Anordnung mit den wenigsten sichtbaren Ueberkreuzungen.</li>
+ * <li>Spalte je Knoten = laengster Pfad von einer Wurzel. Kein Knoten steht damit links
+ *     von einer seiner Voraussetzungen.</li>
+ * <li>Reihenfolge innerhalb der Spalte = Tiefensuche ueber die <em>erste</em> Elternkette.
+ *     Geschwisterzweige bleiben dadurch als Block beieinander.</li>
  * </ol>
  *
- * <p>Lange Kanten ueber mehrere Spalten laufen bewusst hinter den Knoten durch, statt
- * dass Zwischenknoten eingezogen werden: Die Karte soll die fachliche Struktur zeigen,
- * nicht die Hilfskonstruktion des Layouts.
+ * <p><b>Warum die erste Elternkette und nicht alle Kanten:</b> Die Karte zeichnet dauerhaft
+ * nur die erste Voraussetzung je Knoten; die uebrigen erscheinen erst beim Darueberfahren.
+ * Ein Baryzentrum-Verfahren ueber alle Kanten — der uebliche zweite Sugiyama-Schritt —
+ * optimiert also ueberwiegend Linien, die niemand sieht, und zerlegt dabei die, die man
+ * sieht. Auf dem Create-Baum gemessen: Baryzentrum ueber alle 141 Kanten ergibt 65
+ * Ueberkreuzungen unter den 67 gezeichneten, die Tiefensuche ueber die gezeichnete Kette
+ * ergibt 24.
  *
- * <p>Deterministisch: Gleiche Eingabe erzeugt dieselbe Ausgabe, damit ein erneuter
- * Aufruf im Editor keine Bewegung ohne Grund erzeugt.
+ * <p><b>Was es nicht kann:</b> Null Ueberkreuzungen sind so nicht erreichbar. Eine
+ * gezeichnete Kante ueberspringt immer dann Spalten, wenn der Knoten noch eine tiefer
+ * liegende zweite Voraussetzung hat — er kann dann nicht weiter nach links, ohne diese zu
+ * verletzen. Ein von Hand gesetzter Baum kann das besser: der Create-Baum steht auf 0.
+ * Das Verfahren ist ein Startpunkt, keine Verbesserung einer durchdachten Anordnung.
+ *
+ * <p>Deterministisch: Gleiche Eingabe erzeugt dieselbe Ausgabe, damit ein erneuter Aufruf
+ * im Editor keine Bewegung ohne Grund erzeugt.
  */
 public final class UnlockLayout {
 
@@ -39,13 +47,12 @@ public final class UnlockLayout {
     /**
      * Senkrechter Abstand zweier Knoten derselben Ebene.
      *
-     * Haengt an der Knotengroesse: ein Knoten ist eine Modelleinheit breit, bei 1,5
-     * bleibt eine halbe Knotenbreite Luft zwischen zwei Nachbarn. Enger wuerde die
-     * Spalte zu einer durchgehenden Kette verschmelzen.
+     * Haengt an der Knotengroesse: ein Knoten ist eine Modelleinheit breit, bei 1,5 bleibt
+     * eine halbe Knotenbreite Luft zwischen zwei Nachbarn. Enger wuerde die Spalte zu einer
+     * durchgehenden Kette verschmelzen.
      */
     public static final double ROW_SPACING = 1.5;
 
-    private static final int SWEEPS = 8;
     private static final int MAX_RANK_ITERATIONS = 512;
 
     private UnlockLayout() {
@@ -66,10 +73,10 @@ public final class UnlockLayout {
         }
 
         Map<String, List<String>> parents = new HashMap<>();
-        Map<String, List<String>> children = new HashMap<>();
+        Map<String, List<String>> drawnChildren = new HashMap<>();
         for (String key : nodes.keySet()) {
             parents.put(key, new ArrayList<>());
-            children.put(key, new ArrayList<>());
+            drawnChildren.put(key, new ArrayList<>());
         }
         nodes.forEach((key, node) -> {
             for (String parent : node.parents()) {
@@ -77,41 +84,49 @@ public final class UnlockLayout {
                 // werden sie hier still uebergangen statt das Layout scheitern zu lassen.
                 if (nodes.containsKey(parent)) {
                     parents.get(key).add(parent);
-                    children.get(parent).add(key);
                 }
+            }
+            String drawn = drawnParent(nodes, node);
+            if (drawn != null) {
+                drawnChildren.get(drawn).add(key);
             }
         });
 
         Map<String, Integer> rank = rank(nodes, parents);
-        List<List<String>> ranks = groupByRank(nodes, rank);
+        Map<String, Integer> order = walkOrder(nodes, drawnChildren);
 
-        List<List<String>> best = copy(ranks);
-        double bestCost = cost(best, parents);
-        for (int sweep = 0; sweep < SWEEPS; sweep++) {
-            order(ranks, sweep % 2 == 0 ? parents : children, sweep % 2 == 0);
-            double current = cost(ranks, parents);
-            if (current < bestCost) {
-                bestCost = current;
-                best = copy(ranks);
-            }
-        }
+        List<String> keys = new ArrayList<>(nodes.keySet());
+        keys.sort(Comparator.<String>comparingInt(order::get).thenComparing(Comparator.naturalOrder()));
 
-        Map<String, UnlockTree.Node> result = new LinkedHashMap<>();
+        Map<Integer, List<String>> columns = new LinkedHashMap<>();
+        keys.forEach(key -> columns.computeIfAbsent(rank.get(key), column -> new ArrayList<>()).add(key));
+
         Map<String, double[]> positions = new HashMap<>();
-        for (int column = 0; column < best.size(); column++) {
-            List<String> members = best.get(column);
+        columns.forEach((column, members) -> {
             double offset = (members.size() - 1) / 2.0;
             for (int row = 0; row < members.size(); row++) {
                 positions.put(members.get(row),
                         new double[] { column * columnSpacing, (row - offset) * rowSpacing });
             }
-        }
+        });
+
         // Ueber die Originalreihenfolge laufen, damit die JSON-Reihenfolge stabil bleibt.
+        Map<String, UnlockTree.Node> result = new LinkedHashMap<>();
         nodes.forEach((key, node) -> {
             double[] position = positions.get(key);
             result.put(key, position == null ? node : node.withPosition(round(position[0]), round(position[1])));
         });
         return result;
+    }
+
+    /** Die Voraussetzung, die auf der Karte dauerhaft als Linie erscheint. */
+    private static String drawnParent(Map<String, UnlockTree.Node> nodes, UnlockTree.Node node) {
+        for (String parent : node.parents()) {
+            if (nodes.containsKey(parent)) {
+                return parent;
+            }
+        }
+        return null;
     }
 
     /** Ebene = laengster Pfad von einer Wurzel. Wurzeln liegen auf Ebene 0. */
@@ -135,93 +150,72 @@ public final class UnlockLayout {
                 return rank;
             }
         }
-        // Nur erreichbar, wenn doch ein Zyklus durchgerutscht ist: die bis hier
-        // erreichten Ebenen sind dann brauchbar genug fuer eine Darstellung.
+        // Nur erreichbar, wenn doch ein Zyklus durchgerutscht ist: die bis hier erreichten
+        // Ebenen sind dann brauchbar genug fuer eine Darstellung.
         return rank;
     }
 
-    private static List<List<String>> groupByRank(Map<String, UnlockTree.Node> nodes,
-            Map<String, Integer> rank) {
-        int columns = rank.values().stream().mapToInt(Integer::intValue).max().orElse(0) + 1;
-        List<List<String>> ranks = new ArrayList<>(columns);
-        for (int i = 0; i < columns; i++) {
-            ranks.add(new ArrayList<>());
-        }
-        // Start aus der bestehenden Hoehe: Wer schon nebeneinander lag, bleibt es eher.
-        List<String> keys = new ArrayList<>(nodes.keySet());
-        keys.sort(Comparator.comparingDouble((String key) -> nodes.get(key).y()).thenComparing(key -> key));
-        keys.forEach(key -> ranks.get(rank.get(key)).add(key));
-        return ranks;
-    }
+    /**
+     * Besuchsreihenfolge einer Tiefensuche ueber die gezeichnete Elternkette.
+     *
+     * <p>Der dickste Zweig zuerst: dann steht der Hauptpfad des Baums oben und faechert
+     * nach unten auf, statt dass die Karte mit einer Sackgasse beginnt.
+     */
+    private static Map<String, Integer> walkOrder(Map<String, UnlockTree.Node> nodes,
+            Map<String, List<String>> drawnChildren) {
+        Map<String, Integer> weight = new HashMap<>();
+        nodes.keySet().forEach(key -> weight(key, drawnChildren, weight));
 
-    private static void order(List<List<String>> ranks, Map<String, List<String>> neighbours,
-            boolean forward) {
-        Map<String, Double> position = normalizedPositions(ranks);
-        List<Integer> columns = new ArrayList<>();
-        for (int i = 0; i < ranks.size(); i++) {
-            columns.add(forward ? i : ranks.size() - 1 - i);
-        }
-        for (int column : columns) {
-            List<String> members = ranks.get(column);
-            if (members.size() < 2) {
+        List<String> roots = new ArrayList<>();
+        nodes.forEach((key, node) -> {
+            if (drawnParent(nodes, node) == null) {
+                roots.add(key);
+            }
+        });
+        roots.sort(branchOrder(weight));
+
+        Map<String, Integer> order = new HashMap<>();
+        // Eigener Stapel statt Rekursion: ein beschaedigter Baum soll den Editor nicht
+        // mit einem Stapelueberlauf beenden.
+        List<String> stack = new ArrayList<>(roots);
+        java.util.Collections.reverse(stack);
+        while (!stack.isEmpty()) {
+            String key = stack.remove(stack.size() - 1);
+            if (order.containsKey(key)) {
                 continue;
             }
-            Map<String, Double> barycentre = new HashMap<>();
-            for (String key : members) {
-                List<String> related = neighbours.get(key);
-                double sum = 0.0;
-                int count = 0;
-                for (String neighbour : related) {
-                    Double value = position.get(neighbour);
-                    if (value != null) {
-                        sum += value;
-                        count++;
-                    }
-                }
-                // Ohne Nachbarn in dieser Richtung bleibt der Knoten, wo er ist.
-                barycentre.put(key, count == 0 ? position.getOrDefault(key, 0.5) : sum / count);
+            order.put(key, order.size());
+            List<String> children = new ArrayList<>(drawnChildren.get(key));
+            children.sort(branchOrder(weight));
+            for (int i = children.size() - 1; i >= 0; i--) {
+                stack.add(children.get(i));
             }
-            members.sort(Comparator.<String>comparingDouble(barycentre::get)
-                    .thenComparing(Comparator.naturalOrder()));
-            position = normalizedPositions(ranks);
         }
+        // Was die Kette nicht erreicht hat, haengt hinten dran statt zu verschwinden.
+        nodes.keySet().forEach(key -> order.putIfAbsent(key, order.size()));
+        return order;
     }
 
-    /** Hoehe je Knoten auf 0..1, damit unterschiedlich volle Spalten vergleichbar sind. */
-    private static Map<String, Double> normalizedPositions(List<List<String>> ranks) {
-        Map<String, Double> position = new HashMap<>();
-        for (List<String> members : ranks) {
-            double divisor = Math.max(1, members.size() - 1);
-            for (int i = 0; i < members.size(); i++) {
-                position.put(members.get(i), members.size() == 1 ? 0.5 : i / divisor);
-            }
-        }
-        return position;
+    private static Comparator<String> branchOrder(Map<String, Integer> weight) {
+        return Comparator.<String>comparingInt(key -> -weight.getOrDefault(key, 1))
+                .thenComparing(Comparator.naturalOrder());
     }
 
-    /** Aufsummierte Hoehendifferenz aller Kanten: je kleiner, desto ruhiger die Karte. */
-    private static double cost(List<List<String>> ranks, Map<String, List<String>> parents) {
-        Map<String, Double> position = normalizedPositions(ranks);
-        double total = 0.0;
-        for (Map.Entry<String, List<String>> entry : parents.entrySet()) {
-            Double child = position.get(entry.getKey());
-            if (child == null) {
-                continue;
-            }
-            for (String parent : entry.getValue()) {
-                Double value = position.get(parent);
-                if (value != null) {
-                    total += Math.abs(child - value);
-                }
-            }
+    /** Anzahl Knoten im Zweig unterhalb dieses Knotens, ihn selbst eingeschlossen. */
+    private static int weight(String key, Map<String, List<String>> drawnChildren,
+            Map<String, Integer> cache) {
+        Integer known = cache.get(key);
+        if (known != null) {
+            return known;
         }
+        // Vorbelegen: bricht die Rekursion, falls doch ein Zyklus in den Daten steht.
+        cache.put(key, 1);
+        int total = 1;
+        for (String child : drawnChildren.get(key)) {
+            total += weight(child, drawnChildren, cache);
+        }
+        cache.put(key, total);
         return total;
-    }
-
-    private static List<List<String>> copy(List<List<String>> ranks) {
-        List<List<String>> out = new ArrayList<>(ranks.size());
-        ranks.forEach(members -> out.add(new ArrayList<>(members)));
-        return out;
     }
 
     /** Eine Nachkommastelle: die gespeicherte Datei bleibt lesbar und diff-freundlich. */

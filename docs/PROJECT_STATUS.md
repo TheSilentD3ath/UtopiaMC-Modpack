@@ -99,14 +99,32 @@ What changed:
 - The shadow under every edge is gone. It existed to lift bright lines off bright
   wood and was a second line per edge on a dark canvas.
 
-Open items: purchase feedback is the status line only, with no sound. The layered
-auto-layout is available as an editor button but has deliberately not been
-applied to `create.json`. That tree is still authored with every node 3.2 units
-from its neighbours across a 30 x 43 portrait span, which measured in-game means
-the map has to sit near 23 percent zoom before a node's own neighbours fit on
-screen, and a full overview does not fit at all. Running the auto layout turns it
-into a left-to-right flow of roughly 26 x 17 that fits at once. Whether to adopt
-that is a content decision for the pack author, not a code change.
+The auto layout is no longer proposed for `create.json`, and the reason is worth
+recording because it was measured, not guessed. The map draws only the first
+prerequisite of each node as a permanent line — 67 of the 141 edges; the rest
+appear on hover. Counting crossings among the lines that are actually drawn:
+
+| layout | crossings | extent |
+| --- | --- | --- |
+| authored by hand | 0 | 30 x 43, portrait |
+| auto layout, barycentre over all edges | 65 | 26 x 17 |
+| auto layout, ordered along the drawn chain | 24 | 29 x 20 |
+
+The authored tree is already optimal for what is on screen. The barycentre pass —
+the usual second Sugiyama step — was optimising the 74 edges nobody sees and took
+apart the 67 everybody does. It has been replaced by a depth-first walk along the
+drawn parent chain, which keeps sibling branches together and cuts crossings from
+65 to 24. Zero is not reachable that way: a drawn edge skips columns whenever its
+node also has a deeper second prerequisite, and it cannot move further left
+without violating that one.
+
+So the button is a starting point for a new or unpositioned tree, not an
+improvement on a considered arrangement, and it says so in its own documentation.
+
+Open items: purchase feedback is the status line only, with no sound. The
+overview of `create.json` sits at 10 percent zoom on a 507 x 212 logical canvas
+and is a navigation aid rather than a reading mode; the default view opens on the
+progress frontier at working zoom instead.
 
 ## Release validation
 
