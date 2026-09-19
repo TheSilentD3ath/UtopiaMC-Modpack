@@ -307,6 +307,11 @@ public class UnlockScreen extends Screen {
         y += 22;
         undoButton = addRustic(new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 20,
                 Text.translatable("screen.utopia.unlocks.editor.undo"), button -> undoEdit()));
+        y += 26;
+        // Steht hier statt in der Fussleiste: einen neuen Baum legt nur an, wer ohnehin
+        // schon bearbeitet.
+        addRustic(new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 20,
+                Text.translatable("screen.utopia.unlocks.editor.new_tree"), button -> createTree()));
     }
 
     /** Eine Leiste unten: Zoom links, Legende mittig, Aktionen rechts. */
@@ -323,24 +328,19 @@ public class UnlockScreen extends Screen {
         addRustic(new RusticButton(x - 56, y, 56, h, Text.translatable("gui.done"), button -> close()));
         x -= 60;
         footerButtonsLeft = x;
-        if (!UtopiaCoreClient.canEditTrees) {
+        // Kein Weg in den Bearbeitungsmodus ueber die Leiste. Wer spielt, veraendert die
+        // Baeume nicht, und ein Knopf, den der Spieler nie drueckt, kostet trotzdem Platz
+        // und Aufmerksamkeit. Hinein geht es ueber die Taste aus den Steuerungs-
+        // einstellungen; heraus ueber Sichern oder Verwerfen, die nur dann hier stehen.
+        if (!editing || !UtopiaCoreClient.canEditTrees) {
             return;
         }
-        if (editing) {
-            addRustic(new RusticButton(x - 62, y, 62, h,
-                    Text.translatable("screen.utopia.unlocks.editor.discard"), button -> discardEditor()));
-            x -= 66;
-            addRustic(new RusticButton(x - 62, y, 62, h,
-                    Text.translatable("screen.utopia.unlocks.editor.save"), button -> saveTree()));
-            footerButtonsLeft = x - 62;
-        } else {
-            addRustic(new RusticButton(x - 76, y, 76, h,
-                    Text.translatable("screen.utopia.unlocks.editor.open"), button -> enterEditor()));
-            x -= 80;
-            addRustic(new RusticButton(x - 68, y, 68, h,
-                    Text.translatable("screen.utopia.unlocks.editor.new_tree"), button -> createTree()));
-            footerButtonsLeft = x - 68;
-        }
+        addRustic(new RusticButton(x - 62, y, 62, h,
+                Text.translatable("screen.utopia.unlocks.editor.discard"), button -> discardEditor()));
+        x -= 66;
+        addRustic(new RusticButton(x - 62, y, 62, h,
+                Text.translatable("screen.utopia.unlocks.editor.save"), button -> saveTree()));
+        footerButtonsLeft = x - 62;
     }
 
     private <T extends ButtonWidget> T addRustic(T button) {
@@ -1214,6 +1214,13 @@ public class UnlockScreen extends Screen {
         }
         if (keyCode == GLFW.GLFW_KEY_ESCAPE && !contextMenu.isEmpty()) {
             contextMenu.clear();
+            return true;
+        }
+        // Nach dem Suchfeld geprueft: wer tippt, loest keine Kurzbefehle aus.
+        if (!editing && UtopiaCoreClient.isEditorKey(keyCode, scanCode)) {
+            // Ohne Serverrecht passiert nichts und es steht auch nichts davon im Fenster —
+            // der Bearbeitungsmodus soll fuer den normalen Spieler nicht existieren.
+            enterEditor();
             return true;
         }
         if (keyCode == GLFW.GLFW_KEY_F && hasControlDown() && search != null) {

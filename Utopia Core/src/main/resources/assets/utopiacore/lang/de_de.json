@@ -1,6 +1,7 @@
 {
   "key.categories.utopia": "Utopia",
   "key.utopia.open_trees": "Technikbäume öffnen",
+  "key.utopia.edit_trees": "Technikbäume bearbeiten",
   "key.utopia.toggle_abilities": "Fähigkeiten umschalten",
   "message.utopia.unlock.already": "Bereits freigeschaltet",
   "message.utopia.unlock.bought": "Freigeschaltet: %s",
@@ -53,7 +54,6 @@
   "screen.utopia.unlocks.editor.node_added": "Knoten im Entwurf angelegt",
   "screen.utopia.unlocks.editor.node_updated": "Knoten im Entwurf aktualisiert",
   "screen.utopia.unlocks.editor.not_saved": "Nicht gespeichert: %s",
-  "screen.utopia.unlocks.editor.open": "Editor öffnen",
   "screen.utopia.unlocks.editor.removed": "Knoten %s aus dem Entwurf entfernt",
   "screen.utopia.unlocks.editor.save": "Speichern",
   "screen.utopia.unlocks.editor.select_active": "Auswahl aktiv – Ziehen verschiebt nur die Ansicht",

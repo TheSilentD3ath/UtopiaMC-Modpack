@@ -18,10 +18,14 @@ while this public repository is migrated to the current structure.
 
 ## Current work
 
-- Utopia Core `0.10.11` builds successfully from this repository. Its
-  repository-built JAR is byte-identical to the verified development artifact.
-  Pack-level runtime verification and final public release integration remain
-  separate gates.
+- Utopia Core `0.10.11` builds successfully from this repository. Its declared
+  toolchain has been moved up to the one the pack actually ships — Fabric Loader
+  0.18.4 and Fabric API 0.92.2 instead of the 2023 versions it still named, plus
+  Loom 1.7 and Gradle 8.8 to carry them. The old declaration described a
+  configuration nobody runs and kept Create out of the development client.
+  The byte-identity of the repository-built JAR against the development artifact
+  therefore has to be re-established on the same toolchain. Pack-level runtime
+  verification and final public release integration remain separate gates.
 - Create Industrial Pressure builds successfully from this repository. Its
   repository-built JAR is byte-identical to the current development artifact;
   the remaining gate is its full in-game client/server smoke test.
@@ -120,6 +124,19 @@ without violating that one.
 
 So the button is a starting point for a new or unpositioned tree, not an
 improvement on a considered arrangement, and it says so in its own documentation.
+
+The editing mode is no longer reachable from the screen itself. A player never
+changes a tree, so the two buttons that led there sat in the bottom bar for an
+audience that has no use for them; removing them is also what finally made room
+for the whole state legend, which had been truncated to two of its four entries.
+The mode now opens with a rebindable key, `key.utopia.edit_trees`, default F8,
+listed under the Utopia category in Controls. The key is checked inside the
+screen because key presses go to an open screen rather than to the client tick,
+and it is checked after the search field so that typing never triggers it. The
+server-side `canEditTrees` permission still gates everything; without it the key
+does nothing and the screen says nothing about it. Leaving is still by Save or
+Discard, which only exist while editing. "New tree" moved into the editor
+sidebar.
 
 Open items: purchase feedback is the status line only, with no sound. The
 overview of `create.json` sits at 10 percent zoom on a 507 x 212 logical canvas
