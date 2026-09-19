@@ -35,9 +35,15 @@ import java.util.Map;
 public final class UnlockLayout {
 
     /** Waagerechter Abstand zweier Fortschrittsebenen, in Modelleinheiten. */
-    public static final double COLUMN_SPACING = 2.4;
-    /** Senkrechter Abstand zweier Knoten derselben Ebene. */
-    public static final double ROW_SPACING = 1.3;
+    public static final double COLUMN_SPACING = 2.6;
+    /**
+     * Senkrechter Abstand zweier Knoten derselben Ebene.
+     *
+     * Haengt an der Knotengroesse: ein Knoten ist eine Modelleinheit breit, bei 1,5
+     * bleibt eine halbe Knotenbreite Luft zwischen zwei Nachbarn. Enger wuerde die
+     * Spalte zu einer durchgehenden Kette verschmelzen.
+     */
+    public static final double ROW_SPACING = 1.5;
 
     private static final int SWEEPS = 8;
     private static final int MAX_RANK_ITERATIONS = 512;

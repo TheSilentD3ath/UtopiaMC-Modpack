@@ -54,6 +54,16 @@ final class UnlockTreeCanvas {
     private static final int SHAPE_TEXTURE = 64;
     private static final int BADGE_TEXTURE = 32;
     private static final int CANVAS_TILE_SIZE = 220;
+    /**
+     * Faktor, mit dem die Holztextur der Karte abgedunkelt wird.
+     *
+     * Die Textur selbst bleibt unveraendert — sie wird auch anderswo hell gebraucht.
+     * 0,45 bringt die Karte von relativer Leuchtdichte 0,176 auf 0,032: dunkel genug,
+     * dass Item-Icons und Rahmen die hellsten Dinge im Bild sind, aber noch drei Mal
+     * heller als das Holz des Rahmens (0,014), damit die Karte eine eigene Flaeche
+     * bleibt und nicht mit ihrer Umrandung verschwimmt.
+     */
+    private static final float CANVAS_SHADE = 0.45F;
 
     private static final double UNIT = 64.0;
     private static final double MIN_ZOOM = 0.08;
@@ -61,33 +71,36 @@ final class UnlockTreeCanvas {
     /** Zoomschritt je Mausrad-Raste. Deutlich groesser als frueher, sonst kurbelt man ewig. */
     private static final double ZOOM_STEP = 1.25;
     /** Knotengroesse bei 100 %. */
-    private static final int NODE_BASE = 54;
+    private static final int NODE_BASE = 72;
     private static final double DRAG_THRESHOLD = 4.0;
     private static final double DASH_LENGTH = 6.0;
     private static final double DASH_PERIOD = 14.0;
     /** Anteil, um den sich die Ansicht pro Bild dem Ziel naehert. */
     private static final float EASING = 0.4F;
 
-    // Palette. Alle Werte gegen die gemessene Holzhelligkeit auf Kontrast geprueft;
-    // die Zustandsrahmen erreichen mindestens 3,0:1 gegen den Hintergrund.
+    // Palette, gerechnet gegen die abgedunkelte Karte (relative Leuchtdichte 0,032).
     //
-    // BLOCKED ist bewusst ein heller, entsaettigter Ton und kein dunkler: Ein dunkler
-    // Rahmen auf dunklem Holz bestand zwar die Kontrastschwelle, verschluckte aber das
-    // Item-Icon im Knoten — gesperrte Knoten waren schwarze Kleckse, bei denen man nicht
-    // mehr erkannte, worum es ueberhaupt geht. Der Zustand tritt jetzt ueber die Saettigung
-    // zurueck, nicht ueber die Helligkeit.
-    private static final int COLOR_OWNED_OUTLINE = 0xFFB8F0A0;
-    private static final int COLOR_BUYABLE_OUTLINE = 0xFFFFE9A8;
-    private static final int COLOR_EXPENSIVE_OUTLINE = 0xFFFCD5A6;
-    private static final int COLOR_BLOCKED_OUTLINE = 0xFFE7D8C3;
-    private static final int COLOR_OWNED_FILL = 0xFF24401C;
-    private static final int COLOR_BUYABLE_FILL = 0xFF453213;
-    private static final int COLOR_EXPENSIVE_FILL = 0xFF3A2C1E;
-    private static final int COLOR_BLOCKED_FILL = 0xFF2E2823;
+    // Die Rahmen bilden bewusst eine Helligkeitsleiter statt nur verschiedener Farbtoene,
+    // damit der Zustand auch ohne Farbsehen ankommt:
+    //   gesperrt 3,2:1  <  zu teuer 5,7:1  <  kaufbar 9,3:1  ~  freigeschaltet 8,9:1
+    // Die beiden oberen Stufen sind absichtlich gleich hell — sie sind beide "gut" und
+    // werden durch Farbton (gruen/gold) und Abzeichen (Haken/Plus) auseinandergehalten,
+    // nicht durch Helligkeit. Alle vier liegen ueber der 3:1-Schwelle fuer Bedienelemente.
+    //
+    // Gesperrte Knoten treten ueber einen dunkleren Rahmen zurueck, ihr Item-Icon bleibt
+    // aber sichtbar: der Abdunkler darueber liegt bei 0x44, nicht bei 0x99. Mit 0x99 waren
+    // sie schwarze Kleckse, bei denen man nicht mehr erkannte, worum es ueberhaupt geht.
+    private static final int COLOR_OWNED_OUTLINE = 0xFFA6E88A;
+    private static final int COLOR_BUYABLE_OUTLINE = 0xFFFFD866;
+    private static final int COLOR_EXPENSIVE_OUTLINE = 0xFFC8A87A;
+    private static final int COLOR_BLOCKED_OUTLINE = 0xFF8C7E6C;
+    private static final int COLOR_OWNED_FILL = 0xFF324A26;
+    private static final int COLOR_BUYABLE_FILL = 0xFF54401C;
+    private static final int COLOR_EXPENSIVE_FILL = 0xFF4A3B24;
+    private static final int COLOR_BLOCKED_FILL = 0xFF3B342C;
     private static final int COLOR_EDGE_OWNED = 0xFFA8E88C;
     private static final int COLOR_EDGE_OPEN = 0xFFFCD596;
     private static final int COLOR_EDGE_SECONDARY = 0xFFB4E0EC;
-    private static final int COLOR_EDGE_SHADOW = 0xB8120A06;
     private static final int COLOR_SELECTED = 0xFFFFF3C4;
     private static final int COLOR_HOVERED = 0xFFE8CE92;
     private static final int COLOR_SEARCH_MATCH = 0xFFFFD98A;
@@ -215,13 +228,14 @@ final class UnlockTreeCanvas {
         int originY = screenY(0.0);
         int startX = left + Math.floorMod(originX - left, tile) - tile;
         int startY = top + Math.floorMod(originY - top, tile) - tile;
+        context.setShaderColor(CANVAS_SHADE, CANVAS_SHADE * 0.96F, CANVAS_SHADE * 0.92F, 1.0F);
         for (int x = startX; x < right; x += tile) {
             for (int y = startY; y < bottom; y += tile) {
                 context.drawTexture(CANVAS_WOOD, x, y, tile, tile,
                         0.0F, 0.0F, WOOD_TEXTURE, WOOD_TEXTURE, WOOD_TEXTURE, WOOD_TEXTURE);
             }
         }
-        context.fill(left, top, right, bottom, 0x14180E08);
+        context.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         drawVignette(context);
     }
 
@@ -241,11 +255,13 @@ final class UnlockTreeCanvas {
         int spacing = Math.max(10, (int) Math.round(UNIT * 0.5 * viewZoom));
         int originX = screenX(0.0);
         int originY = screenY(0.0);
+        // Helle Linien mit wenig Deckkraft. Dunkle Linien waren auf der abgedunkelten
+        // Karte nicht mehr zu sehen — das Raster war da, half aber beim Setzen nicht.
         for (int x = left + Math.floorMod(originX - left, spacing); x < right; x += spacing) {
-            context.fill(x, top, x + 1, bottom, 0x263C281A);
+            context.fill(x, top, x + 1, bottom, 0x22C8A87A);
         }
         for (int y = top + Math.floorMod(originY - top, spacing); y < bottom; y += spacing) {
-            context.fill(left, y, right, y + 1, 0x263C281A);
+            context.fill(left, y, right, y + 1, 0x22C8A87A);
         }
     }
 
@@ -321,14 +337,12 @@ final class UnlockTreeCanvas {
         // Strichstaerke haengt an der Knotengroesse. Mit fester Staerke waren die Kanten
         // beim Herauszoomen breiter als die Knoten, die sie verbinden — die Verbindungen
         // schrien dann lauter als das, worum es geht.
-        int weight = Math.max(1, nodeSize() / 12);
-        // Schatten zuerst, dann die Linien, hervorgehobene zuletzt: so liegt die Kette
-        // des betrachteten Knotens immer obenauf.
-        for (Edge edge : edgeBuffer) {
-            if (edge.primary()) {
-                drawConnection(context, edge, weight + 1, COLOR_EDGE_SHADOW, false);
-            }
-        }
+        int weight = Math.max(1, nodeSize() / 16);
+        // Ohne Schlagschatten: der lag frueher unter jeder Kante, um helle Linien von
+        // hellem Holz abzuheben. Auf der abgedunkelten Karte heben sich helle Linien von
+        // selbst ab, und der Schatten war nur eine zweite Linie je Kante.
+        // Erst die ruhenden Kanten, die hervorgehobenen zuletzt: so liegt die Kette des
+        // betrachteten Knotens immer obenauf.
         for (Edge edge : edgeBuffer) {
             if (!edge.lit()) {
                 drawConnection(context, edge, edge.primary() ? weight : Math.max(1, weight - 1),
@@ -425,15 +439,29 @@ final class UnlockTreeCanvas {
         if (hasIcon) {
             drawIcon(context, item, centerPixelX, centerPixelY, size);
         }
-        if (state == State.BLOCKED) {
-            // Gesperrte Knoten werden zusaetzlich abgedunkelt; das Schloss allein
-            // koennte man bei kleinem Zoom uebersehen.
-            tinted(context, fillTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(0xFF120C08, dim ? 0x22 : 0x44));
+        // Abdunkeln, in zwei Staerken.
+        //
+        // Ueber dem Item, nicht per Alpha: Item-Modelle werden mit ihrem eigenen Shader
+        // gezeichnet und nehmen die Einfaerbung des Knotens nicht an. Ohne diese Schicht
+        // blieben zurueckgestellte Knoten bei der Suche mit voll leuchtendem Icon stehen,
+        // waehrend Rahmen und Abzeichen verblassten — genau die falsche Haelfte.
+        int shade = 0;
+        if (dim) {
+            // Von der Suche zurueckgestellt: der ganze Knoten tritt zurueck.
+            shade = 0xA0;
+        } else if (state == State.BLOCKED && hasIcon) {
+            // Gesperrt: nur so weit, dass man noch erkennt, worum es geht. Nur mit Icon —
+            // ohne eines wuerde die Fuellung getroffen und der Knoten saehe auf der
+            // dunklen Karte wie ein Loch im Brett aus statt wie eine Platte.
+            shade = 0x44;
+        }
+        if (shade > 0) {
+            tinted(context, fillTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(0xFF120C08, shade));
         }
 
         tinted(context, outlineTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(outlineColor(state), alpha));
         drawBadge(context, state, centerPixelX, centerPixelY, size, alpha);
-        if (!hasIcon && size >= 18) {
+        if (!hasIcon && size >= 16) {
             // Kein aufloesbares Icon — die Mod fehlt, oder beim Knoten ist keines gesetzt.
             // Ohne Ersatz waere der Knoten eine leere Flaeche. Ganz zum Schluss gezeichnet,
             // damit weder die Abdunklung gesperrter Knoten noch der Rahmen darueber liegen.
@@ -477,15 +505,18 @@ final class UnlockTreeCanvas {
      * Hier rastet die Skalierung auf saubere Stufen ein, unabhaengig vom Zoom.
      */
     private static void drawIcon(DrawContext context, Item item, int centerPixelX, int centerPixelY, int size) {
-        float available = size * 0.62F;
+        // Das Item soll die Form weitgehend fuellen. Mit 0,62 blieb bei einem 20-px-Knoten
+        // ein 8-px-Icon uebrig, das im Rahmen verschwand; der Knoten sah leer aus, obwohl
+        // ein Icon da war.
+        float available = size * 0.80F;
         float scale;
-        if (available >= 30.0F) {
+        if (available >= 32.0F) {
             scale = 2.0F;
-        } else if (available >= 22.0F) {
+        } else if (available >= 24.0F) {
             scale = 1.5F;
-        } else if (available >= 15.0F) {
+        } else if (available >= 16.0F) {
             scale = 1.0F;
-        } else if (available >= 11.0F) {
+        } else if (available >= 12.0F) {
             scale = 0.75F;
         } else {
             scale = 0.5F;
@@ -508,16 +539,29 @@ final class UnlockTreeCanvas {
         tinted(context, badgeTexture(state), x, y, badge, BADGE_TEXTURE, withAlpha(badgeColor(state), alpha));
     }
 
+    /**
+     * Texturkachel eingefaerbt zeichnen.
+     *
+     * <p>Das {@code enableBlend} hier ist nicht vorsorglich: {@code DrawContext.drawTexture}
+     * schaltet das Blending in 1.20.1 nicht selbst ein, und ohne eingeschaltetes Blending
+     * verwirft die Grafikkarte den Alphawert aus {@code setShaderColor} kommentarlos. Der
+     * Aufruf lief also durch, das Ergebnis war aber immer volle Deckkraft — gesperrte Knoten
+     * wurden nicht abgedunkelt und die Suche stellte nicht passende Knoten nicht zurueck.
+     * Beides sah nach einem Farbfehler aus und war ein Zustandsfehler.
+     */
     private static void tinted(DrawContext context, Identifier texture, int x, int y, int size,
             int textureSize, int color) {
         float a = (color >>> 24) / 255.0F;
         float r = (color >> 16 & 255) / 255.0F;
         float g = (color >> 8 & 255) / 255.0F;
         float b = (color & 255) / 255.0F;
+        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+        com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
         context.setShaderColor(r, g, b, a);
         context.drawTexture(texture, x, y, size, size, 0.0F, 0.0F, textureSize, textureSize,
                 textureSize, textureSize);
         context.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
     private static int withAlpha(int color, int alpha) {

@@ -1346,7 +1346,8 @@ public class UnlockScreen extends Screen {
         context.fill(left + 5, top + 6, right + 5, bottom + 6, 0xA0000000);
         context.drawTexture(DARK_WOOD, left, top, right - left, bottom - top,
                 0.0F, 0.0F, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE);
-        // Leicht abdunkeln, damit die Karte als hellste Flaeche stehen bleibt.
+        // Leicht abdunkeln: der Rahmen bleibt die dunkelste Flaeche im Bild, damit die
+        // Karte trotz ihrer eigenen Abdunklung noch als eigene Ebene darueber liegt.
         context.fill(left, top, right, bottom, 0x50120C08);
         context.fill(left, top, right, top + 1, 0xFFC89B5E);
         context.fill(left, bottom - 1, right, bottom, 0xFF120C08);
