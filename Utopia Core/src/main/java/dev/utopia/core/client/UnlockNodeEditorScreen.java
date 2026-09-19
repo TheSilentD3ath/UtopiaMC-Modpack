@@ -1,5 +1,6 @@
 package dev.utopia.core.client;
 
+import dev.utopia.core.unlock.NodeShape;
 import dev.utopia.core.unlock.UnlockTree;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -32,16 +33,20 @@ final class UnlockNodeEditorScreen extends Screen {
     private TextFieldWidget excludes;
     private TextFieldWidget requiredMods;
     private TextFieldWidget legacyOwners;
+    private NodeShape shape;
+    private ButtonWidget shapeButton;
     private String error;
 
     UnlockNodeEditorScreen(Screen parent, String key, UnlockTree.Node node, boolean newNode,
             BiConsumer<String, UnlockTree.Node> onSave) {
-        super(Text.literal(newNode ? "Knoten anlegen" : "Knoten bearbeiten"));
+        super(Text.translatable(newNode ? "screen.utopia.unlocks.editor.node.new"
+                : "screen.utopia.unlocks.editor.node.edit"));
         this.parent = parent;
         this.originalKey = key;
         this.original = node;
         this.newNode = newNode;
         this.onSave = onSave;
+        this.shape = node.shape();
     }
 
     @Override
@@ -62,8 +67,10 @@ final class UnlockNodeEditorScreen extends Screen {
         excludes = field(right, 116, columnWidth, String.join(", ", original.excludes()), 32767);
         requiredMods = field(right, 148, columnWidth, String.join(", ", original.requiresMods()), 8192);
         legacyOwners = field(right, 180, columnWidth, String.join(", ", original.legacyOwners()), 8192);
+        shapeButton = addDrawableChild(ButtonWidget.builder(shapeLabel(), button -> cycleShape())
+                .dimensions(right, 212, columnWidth, 20).build());
 
-        addDrawableChild(ButtonWidget.builder(Text.literal("Uebernehmen"), button -> save())
+        addDrawableChild(ButtonWidget.builder(Text.translatable("screen.utopia.unlocks.editor.apply"), button -> save())
                 .dimensions(this.width / 2 - 104, this.height - 34, 100, 20).build());
         addDrawableChild(ButtonWidget.builder(Text.translatable("gui.cancel"), button -> close())
                 .dimensions(this.width / 2 + 4, this.height - 34, 100, 20).build());
@@ -77,15 +84,28 @@ final class UnlockNodeEditorScreen extends Screen {
         return addDrawableChild(widget);
     }
 
+    private void cycleShape() {
+        NodeShape[] values = NodeShape.values();
+        shape = values[(shape.ordinal() + 1) % values.length];
+        if (shapeButton != null) {
+            shapeButton.setMessage(shapeLabel());
+        }
+    }
+
+    private Text shapeLabel() {
+        return Text.translatable("screen.utopia.unlocks.editor.shape",
+                Text.translatable("shape.utopia." + shape.id()));
+    }
+
     private void save() {
         String nodeKey = key.getText().trim();
         Identifier iconId = icon.getText().isBlank() ? null : Identifier.tryParse(icon.getText().trim());
         if (nodeKey.isBlank()) {
-            error = "Die Knoten-ID darf nicht leer sein";
+            error = "screen.utopia.unlocks.editor.error.key";
             return;
         }
         if (!icon.getText().isBlank() && iconId == null) {
-            error = "Ungueltige Icon-ID";
+            error = "screen.utopia.unlocks.editor.error.icon";
             return;
         }
         int parsedCost;
@@ -94,13 +114,13 @@ final class UnlockNodeEditorScreen extends Screen {
             parsedCost = Integer.parseInt(cost.getText().trim());
             parsedLevel = Integer.parseInt(level.getText().trim());
         } catch (NumberFormatException ignored) {
-            error = "Kosten und Level muessen ganze Zahlen sein";
+            error = "screen.utopia.unlocks.editor.error.number";
             return;
         }
         UnlockTree.Node node = new UnlockTree.Node(optional(name.getText()), optional(description.getText()),
-                Optional.ofNullable(iconId), parsedCost, parsedLevel, entries(parents.getText()), original.position(),
-                entries(unlocks.getText()), entries(excludes.getText()), entries(legacyOwners.getText()),
-                entries(requiredMods.getText()));
+                Optional.ofNullable(iconId), shape, parsedCost, parsedLevel, entries(parents.getText()),
+                original.position(), entries(unlocks.getText()), entries(excludes.getText()),
+                entries(legacyOwners.getText()), entries(requiredMods.getText()));
         onSave.accept(nodeKey, node);
         close();
     }
@@ -128,25 +148,28 @@ final class UnlockNodeEditorScreen extends Screen {
         int columnWidth = Math.min(310, (this.width - 54) / 2);
         int left = this.width / 2 - columnWidth - 9;
         int right = this.width / 2 + 9;
-        label(context, "Knoten-ID", left, 42);
-        label(context, "Name / Uebersetzungsschluessel", left, 74);
-        label(context, "Beschreibung", left, 106);
-        label(context, "Icon (namespace:item)", left, 138);
-        label(context, "Kosten", left, 170);
-        label(context, "Mindestlevel", left, 202);
-        label(context, "Vorgaenger (Komma-Liste)", right, 42);
-        label(context, "Freischaltungen (Komma-Liste)", right, 74);
-        label(context, "Ausnahmen (Komma-Liste)", right, 106);
-        label(context, "Benoetigte Mods (Komma-Liste)", right, 138);
-        label(context, "Alte Besitzer-IDs (Komma-Liste)", right, 170);
+        label(context, "key", left, 42);
+        label(context, "name", left, 74);
+        label(context, "description", left, 106);
+        label(context, "icon", left, 138);
+        label(context, "cost", left, 170);
+        label(context, "level", left, 202);
+        label(context, "parents", right, 42);
+        label(context, "unlocks", right, 74);
+        label(context, "excludes", right, 106);
+        label(context, "mods", right, 138);
+        label(context, "legacy", right, 170);
+        label(context, "shape", right, 202);
         if (error != null) {
-            context.drawCenteredTextWithShadow(this.textRenderer, error, this.width / 2, this.height - 48, 0xFFFF7777);
+            context.drawCenteredTextWithShadow(this.textRenderer, Text.translatable(error),
+                    this.width / 2, this.height - 48, 0xFFFF7777);
         }
         super.render(context, mouseX, mouseY, delta);
     }
 
-    private void label(DrawContext context, String value, int x, int y) {
-        context.drawTextWithShadow(this.textRenderer, Text.literal(value), x, y, 0xFFF4D69B);
+    private void label(DrawContext context, String key, int x, int y) {
+        context.drawTextWithShadow(this.textRenderer,
+                Text.translatable("screen.utopia.unlocks.editor.field." + key), x, y, 0xFFF4D69B);
     }
 
     @Override

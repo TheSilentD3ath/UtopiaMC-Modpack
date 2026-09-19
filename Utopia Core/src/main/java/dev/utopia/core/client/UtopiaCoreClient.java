@@ -28,6 +28,17 @@ public class UtopiaCoreClient implements ClientModInitializer {
     /** Nur der Server entscheidet, ob der lokale Spieler Baeume bearbeiten darf. */
     public static boolean canEditTrees;
 
+    /**
+     * Ob dieser Tastendruck den Bearbeitungsmodus oeffnen soll.
+     *
+     * <p>Nicht ueber {@code wasPressed} abgefragt: Solange ein Fenster offen ist, laufen
+     * Tastendruecke dorthin und nicht in den Client-Tick. Das Baumfenster fragt deshalb
+     * selbst nach.
+     */
+    public static boolean isEditorKey(int keyCode, int scanCode) {
+        return editorKey != null && editorKey.matchesKey(keyCode, scanCode);
+    }
+
     /** Der Server will die Auswahl sehen - geoeffnet wird erst, wenn die Welt steht. */
     private static boolean pendingOpen;
     private static int openDelay;
@@ -37,6 +48,18 @@ public class UtopiaCoreClient implements ClientModInitializer {
     private static net.minecraft.client.option.KeyBinding abilityKey;
     /** Standardmaessig U - oeffnet die Freischalt-Baeume. */
     private static net.minecraft.client.option.KeyBinding treeKey;
+    /**
+     * Standardmaessig F8 - schaltet im Baumfenster den Bearbeitungsmodus frei.
+     *
+     * <p>Bewusst kein Knopf im Fenster: Wer spielt, veraendert die Baeume nicht. Der
+     * Bearbeitungsmodus richtet sich an den Packautor und an alle, die sich aus dem Mod
+     * etwas eigenes bauen, und die finden die Taste in den Steuerungseinstellungen.
+     *
+     * <p>Eine Funktionstaste, weil die Taste im Baumfenster ausgewertet wird, wo das
+     * Suchfeld jeden Buchstaben fuer sich beansprucht. Umbelegen laesst sie sich trotzdem
+     * frei; liegt sie dann auf einem Buchstaben, greift sie nur ausserhalb des Suchfelds.
+     */
+    private static net.minecraft.client.option.KeyBinding editorKey;
 
     @Override
     public void onInitializeClient() {
@@ -48,6 +71,10 @@ public class UtopiaCoreClient implements ClientModInitializer {
         treeKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
                 new net.minecraft.client.option.KeyBinding("key.utopia.open_trees",
                         org.lwjgl.glfw.GLFW.GLFW_KEY_U, "key.categories.utopia"));
+
+        editorKey = net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper.registerKeyBinding(
+                new net.minecraft.client.option.KeyBinding("key.utopia.edit_trees",
+                        org.lwjgl.glfw.GLFW.GLFW_KEY_F8, "key.categories.utopia"));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (treeKey.wasPressed()) {

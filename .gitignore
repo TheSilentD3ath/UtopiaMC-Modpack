@@ -34,3 +34,7 @@ out/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Python-Zwischenstände der Werkzeugskripte
+__pycache__/
+*.pyc

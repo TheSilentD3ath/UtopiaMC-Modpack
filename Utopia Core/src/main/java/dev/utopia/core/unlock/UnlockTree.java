@@ -26,11 +26,17 @@ public record UnlockTree(Optional<String> name, Optional<String> description, Op
             Codec.unboundedMap(Codec.STRING, Node.CODEC).fieldOf("nodes").forGetter(UnlockTree::nodes))
             .apply(instance, UnlockTree::new));
 
+    public UnlockTree withNodes(Map<String, Node> replacement) {
+        return new UnlockTree(name, description, icon, order, replacement);
+    }
+
     /**
      * Ein Knoten im Baum.
      *
      * @param cost     Freischaltpunkte
      * @param level    Mindest-Gesamtlevel
+     * @param shape    Umriss auf der Karte; kennzeichnet die Art des Knotens,
+     *                 nicht seinen Zustand
      * @param parents  Knoten desselben Baums, die vorher stehen muessen
      * @param position freie Canvas-Koordinaten {@code [x, y]}; ein moegliches
      *                 Editor-Raster ist keine Spieler-Darstellung
@@ -43,14 +49,15 @@ public record UnlockTree(Optional<String> name, Optional<String> description, Op
      * @param requiresMods optionale Fabric-Mod-Ids; fehlt eine, wird der Knoten
      *                     vor Indexierung und Sync entfernt
      */
-    public record Node(Optional<String> name, Optional<String> description, Optional<Identifier> icon, int cost,
-            int level, List<String> parents, List<Double> position, List<String> unlocks, List<String> excludes,
-            List<String> legacyOwners, List<String> requiresMods) {
+    public record Node(Optional<String> name, Optional<String> description, Optional<Identifier> icon,
+            NodeShape shape, int cost, int level, List<String> parents, List<Double> position, List<String> unlocks,
+            List<String> excludes, List<String> legacyOwners, List<String> requiresMods) {
 
         public static final Codec<Node> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.optionalFieldOf("name").forGetter(Node::name),
                 Codec.STRING.optionalFieldOf("description").forGetter(Node::description),
                 Identifier.CODEC.optionalFieldOf("icon").forGetter(Node::icon),
+                NodeShape.CODEC.optionalFieldOf("shape", NodeShape.DEFAULT).forGetter(Node::shape),
                 Codec.INT.optionalFieldOf("cost", 1).forGetter(Node::cost),
                 Codec.INT.optionalFieldOf("level", 0).forGetter(Node::level),
                 Codec.STRING.listOf().optionalFieldOf("parents", List.of()).forGetter(Node::parents),
@@ -70,7 +77,12 @@ public record UnlockTree(Optional<String> name, Optional<String> description, Op
         }
 
         public Node withPosition(double x, double y) {
-            return new Node(name, description, icon, cost, level, parents, List.of(x, y), unlocks, excludes,
+            return new Node(name, description, icon, shape, cost, level, parents, List.of(x, y), unlocks, excludes,
+                    legacyOwners, requiresMods);
+        }
+
+        public Node withParents(List<String> replacement) {
+            return new Node(name, description, icon, shape, cost, level, replacement, position, unlocks, excludes,
                     legacyOwners, requiresMods);
         }
     }
