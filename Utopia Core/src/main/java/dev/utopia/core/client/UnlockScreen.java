@@ -66,6 +66,10 @@ public class UnlockScreen extends Screen {
     /** Eine gemeinsame Leiste unten: Zoom links, Legende mittig, Aktionen rechts. */
     private static final int BAR_HEIGHT = 24;
     private static final int SIDEBAR_WIDTH = 140;
+    /** Breite der eingeklappten Baumleiste: genug fuer ein Item-Icon, sonst nichts. */
+    private static final int SIDEBAR_RAIL = 26;
+    /** Anteil, um den sich die Leiste pro Bild ihrer Zielbreite naehert. */
+    private static final float SIDEBAR_EASING = 0.35F;
     private static final int INSPECTOR_WIDTH = 190;
     private static final int MIN_CANVAS_WIDTH = 150;
     private static final int ENTRY_HEIGHT = 20;
@@ -104,6 +108,7 @@ public class UnlockScreen extends Screen {
     private ButtonWidget selectedTreeTab;
     private ButtonWidget selectToolButton;
     private ButtonWidget moveToolButton;
+    private ButtonWidget pinButton;
     private EditorTool editorTool = EditorTool.SELECT;
 
     private int contextMenuX;
@@ -138,6 +143,16 @@ public class UnlockScreen extends Screen {
     private int inspectorWidth;
     private boolean showSidebar;
     private boolean showInspector;
+    /**
+     * Ausklappgrad der Baumleiste, 0 = Leiste, 1 = volle Breite.
+     *
+     * Angeheftet steht er fest auf 1; abgeheftet folgt er dem Zeiger. Die Karte richtet
+     * sich nur nach der Spaltenbreite aus {@link #layout()}, nicht nach diesem Wert — die
+     * ausgeklappte Liste legt sich als Auflage darueber, statt die Karte beim Vorbeifahren
+     * mit dem Zeiger umzubrechen.
+     */
+    private float sidebarReveal;
+    private boolean sidebarHover;
 
     public UnlockScreen() {
         super(Text.translatable("screen.utopia.unlocks"));
@@ -160,6 +175,35 @@ public class UnlockScreen extends Screen {
      * Angaben stehen auch im Tooltip), dann die Seitenleiste. Die Karte behaelt immer
      * mindestens {@link #MIN_CANVAS_WIDTH}.
      */
+    /**
+     * Angeheftet? Im Bearbeitungsmodus immer — dort steht die Werkzeugspalte in derselben
+     * Leiste, und Werkzeuge, die beim Wegfahren des Zeigers verschwinden, sind unbrauchbar.
+     */
+    private boolean sidebarPinnedNow() {
+        return editing || UtopiaClientSettings.sidebarPinned();
+    }
+
+    /** Breite, die die Leiste der Karte dauerhaft wegnimmt. */
+    private int sidebarColumnWidth() {
+        return sidebarPinnedNow() ? SIDEBAR_WIDTH : SIDEBAR_RAIL;
+    }
+
+    /** Aktuell gezeichnete Breite; waehrend des Aufklappens auch Zwischenwerte. */
+    private int sidebarDrawWidth() {
+        if (!showSidebar) {
+            return 0;
+        }
+        if (sidebarPinnedNow()) {
+            return SIDEBAR_WIDTH;
+        }
+        return Math.round(SIDEBAR_RAIL + (SIDEBAR_WIDTH - SIDEBAR_RAIL) * sidebarReveal);
+    }
+
+    /** Ob die Liste gerade breit genug ist, um Beschriftungen zu zeigen. */
+    private boolean sidebarShowsLabels() {
+        return sidebarDrawWidth() > SIDEBAR_RAIL + 24;
+    }
+
     private void layout() {
         int panelWidth = Math.min(MAX_PANEL_WIDTH, Math.max(240, this.width - 8));
         int panelHeight = Math.min(MAX_PANEL_HEIGHT, Math.max(180, this.height - 8));
@@ -176,13 +220,18 @@ public class UnlockScreen extends Screen {
         bodyTop = headerBottom + GAP;
         bodyBottom = footerTop - GAP;
 
-        showSidebar = UnlockTrees.ordered().size() > 1 || editing;
+        // Die Baumliste bleibt immer da: Sie ist der einzige Weg, den Baum zu wechseln,
+        // und sie zeigt auch bei einem einzigen Baum, dass es dort spaeter mehr gibt.
+        // Eingeklappt belegt sie nur die Leistenbreite, die Karte bekommt den Rest.
+        showSidebar = !UnlockTrees.ordered().isEmpty() || editing;
+        int column = sidebarColumnWidth();
         int available = innerRight - innerLeft;
-        if (showSidebar && available < MIN_CANVAS_WIDTH + SIDEBAR_WIDTH + GAP) {
+        if (showSidebar && available < MIN_CANVAS_WIDTH + column + GAP) {
+            // Selbst die Leiste passt nicht mehr: dann hat die Karte Vorrang.
             showSidebar = false;
         }
         sidebarLeft = innerLeft;
-        sidebarRight = showSidebar ? sidebarLeft + SIDEBAR_WIDTH : sidebarLeft;
+        sidebarRight = showSidebar ? sidebarLeft + column : sidebarLeft;
 
         // Die Karte bekommt die gesamte verbleibende Breite. Der Inspektor liegt als
         // Auflage ueber ihrem rechten Rand und nur dann, wenn wirklich etwas ausgewaehlt
@@ -205,6 +254,7 @@ public class UnlockScreen extends Screen {
         selectedTreeTab = null;
         selectToolButton = null;
         moveToolButton = null;
+        pinButton = null;
         if (canvas == null) {
             canvas = new UnlockTreeCanvas();
         }
@@ -265,8 +315,9 @@ public class UnlockScreen extends Screen {
         for (Identifier id : ids) {
             UnlockTree tree = id.equals(currentTree) ? currentTreeData() : UnlockTrees.tree(id);
             Text label = tree == null ? Text.literal(id.getPath()) : displayName(tree.name(), id.getPath());
-            RusticButton tab = new RusticButton(sidebarLeft, y, SIDEBAR_WIDTH, 22, label,
-                    button -> selectTree(id));
+            Item icon = tree == null ? null : tree.icon().map(Registries.ITEM::get).orElse(null);
+            TreeTab tab = new TreeTab(sidebarLeft, y, sidebarColumnWidth(), 22, label,
+                    icon == net.minecraft.item.Items.AIR ? null : icon, button -> selectTree(id));
             tab.selected = id.equals(currentTree);
             tab.active = !editing && !id.equals(currentTree);
             addRustic(tab);
@@ -275,6 +326,18 @@ public class UnlockScreen extends Screen {
                 selectedTreeTab = tab;
             }
             y += 24;
+        }
+        // Der Anheft-Knopf steht unten in der Leiste, wie im Browser. Beim Bearbeiten
+        // entfaellt er: dort ist die Leiste ohnehin festgestellt.
+        if (!editing) {
+            pinButton = new RusticButton(sidebarLeft, bodyBottom - 20, sidebarColumnWidth(), 20,
+                    Text.literal(sidebarPinnedNow() ? "\u00AB" : "\u00BB"), button -> togglePin());
+            pinButton.setTooltip(net.minecraft.client.gui.tooltip.Tooltip.of(Text.translatable(
+                    sidebarPinnedNow() ? "screen.utopia.unlocks.sidebar.unpin"
+                            : "screen.utopia.unlocks.sidebar.pin")));
+            addRustic(pinButton);
+        } else {
+            pinButton = null;
         }
 
         if (!editing || !UtopiaCoreClient.canEditTrees) {
@@ -397,6 +460,7 @@ public class UnlockScreen extends Screen {
         renderBackground(context);
         UnlockTree tree = currentTreeData();
         updateSearch(tree);
+        updateSidebar(mouseX, mouseY);
 
         // Eine durchgehende dunkle Grundflaeche. Vorher standen hier fuenf einzeln
         // gerahmte Platten in vier verschiedenen Holztoenen nebeneinander; das las sich
@@ -422,6 +486,9 @@ public class UnlockScreen extends Screen {
 
         renderFooter(context);
         updateButtonState(tree);
+        // Vor den Widgets: die ausgeklappte Liste liegt als Auflage ueber der Karte, ihre
+        // Knoepfe zeichnet gleich super.render darauf.
+        renderSidebarSurface(context);
         super.render(context, mouseX, mouseY, delta);
         renderSearchPlaceholder(context);
 
@@ -435,6 +502,78 @@ public class UnlockScreen extends Screen {
         context.getMatrices().translate(0.0F, 0.0F, 600.0F);
         renderContextMenu(context, mouseX, mouseY);
         context.getMatrices().pop();
+    }
+
+    /**
+     * Ausklappgrad fortschreiben und die Breite an die Knoepfe weitergeben.
+     *
+     * <p>Der Bereich, der als "Zeiger ist drauf" gilt, waechst mit der Auflage mit. Bliebe
+     * er auf der Leistenbreite, wuerde die Liste in dem Moment wieder zuklappen, in dem
+     * man auf einen Eintrag zusteuert.
+     */
+    private void updateSidebar(int mouseX, int mouseY) {
+        if (!showSidebar || sidebarPinnedNow()) {
+            sidebarHover = false;
+            sidebarReveal = 1.0F;
+            applySidebarWidth();
+            return;
+        }
+        int width = Math.max(SIDEBAR_RAIL, sidebarDrawWidth());
+        // Beim Schwenken nicht aufklappen: Wer die Karte nach links zieht, faehrt
+        // zwangslaeufig ueber die Leiste und will dort keine Liste aufgehen sehen.
+        sidebarHover = !canvas.panning()
+                && mouseX >= sidebarLeft && mouseX < sidebarLeft + width
+                && mouseY >= bodyTop && mouseY < bodyBottom;
+        float target = sidebarHover ? 1.0F : 0.0F;
+        sidebarReveal += (target - sidebarReveal) * SIDEBAR_EASING;
+        if (Math.abs(target - sidebarReveal) < 0.004F) {
+            sidebarReveal = target;
+        }
+        applySidebarWidth();
+    }
+
+    private void applySidebarWidth() {
+        int width = Math.max(SIDEBAR_RAIL, sidebarDrawWidth());
+        treeTabs.forEach(tab -> tab.setWidth(width));
+        if (pinButton != null) {
+            pinButton.setWidth(width);
+        }
+    }
+
+    /** Die ausgeklappte Liste als Auflage ueber der Karte. */
+    private void renderSidebarSurface(DrawContext context) {
+        if (!showSidebar || sidebarPinnedNow()) {
+            return;
+        }
+        int right = sidebarLeft + sidebarDrawWidth();
+        if (right <= sidebarLeft + SIDEBAR_RAIL) {
+            return;
+        }
+        // Eigene Flaeche plus Schlagschatten: Ohne sie staende die Liste unmittelbar auf
+        // der Karte und man saehe die Knoten zwischen den Eintraegen durchscheinen.
+        context.fill(sidebarLeft - 2, bodyTop, right, bodyBottom, 0xF41A120B);
+        context.fill(right, bodyTop, right + 3, bodyBottom, 0x66000000);
+        context.fill(right, bodyTop, right + 1, bodyBottom, COLOR_RULE);
+    }
+
+    private void togglePin() {
+        if (editing) {
+            return;
+        }
+        boolean next = !UtopiaClientSettings.sidebarPinned();
+        UtopiaClientSettings.sidebarPinned(next);
+        // Von offen aus einklappen: Der Zeiger steht beim Umschalten auf der Leiste, die
+        // soll deshalb erst zugehen, wenn er sie verlaesst.
+        sidebarReveal = 1.0F;
+        // Die Spaltenbreite bestimmt die Kartenbreite, deshalb ein voller Neuaufbau.
+        clearAndInit();
+    }
+
+    /** Liegt der Zeiger auf der ausgeklappten Auflage? */
+    private boolean insideSidebarOverlay(double mouseX, double mouseY) {
+        return showSidebar && !sidebarPinnedNow() && sidebarDrawWidth() > SIDEBAR_RAIL
+                && mouseX >= sidebarLeft && mouseX < sidebarLeft + sidebarDrawWidth()
+                && mouseY >= bodyTop && mouseY < bodyBottom;
     }
 
     private void renderHeader(DrawContext context, UnlockTree tree) {
@@ -1139,7 +1278,7 @@ public class UnlockScreen extends Screen {
         if (super.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
-        if (insideInspector(mouseX, mouseY)) {
+        if (insideInspector(mouseX, mouseY) || insideSidebarOverlay(mouseX, mouseY)) {
             // Die Auflage liegt ueber der Karte; ein Klick darin darf dort nichts ausloesen.
             return true;
         }
@@ -1377,14 +1516,14 @@ public class UnlockScreen extends Screen {
      */
     private class RusticButton extends ButtonWidget {
 
-        private boolean selected;
+        protected boolean selected;
 
         RusticButton(int x, int y, int width, int height, Text message, PressAction onPress) {
             super(x, y, width, height, message, onPress, DEFAULT_NARRATION_SUPPLIER);
         }
 
-        @Override
-        public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+        /** Nur die Flaeche; die Beschriftung setzt jede Auspraegung selbst. */
+        protected void drawFace(DrawContext context) {
             int left = getX();
             int top = getY();
             int right = left + getWidth();
@@ -1396,11 +1535,64 @@ public class UnlockScreen extends Screen {
             int edge = selected ? COLOR_ACCENT : hovered ? 0xFF8A6B44 : 0xFF3A2A1C;
             context.fill(left, top, right, bottom, edge);
             context.fill(left + 1, top + 1, right - 1, bottom - 1, face);
+        }
+
+        protected int labelColor() {
+            return selected ? COLOR_HEADING : active ? COLOR_LIGHT : COLOR_DISABLED;
+        }
+
+        @Override
+        public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+            drawFace(context);
             Text label = trim(getMessage(), getWidth() - 8);
-            int textY = top + (getHeight() - 8) / 2;
-            int centerX = left + getWidth() / 2;
-            context.drawCenteredTextWithShadow(UnlockScreen.this.textRenderer, label, centerX, textY,
-                    selected ? COLOR_HEADING : active ? COLOR_LIGHT : COLOR_DISABLED);
+            context.drawCenteredTextWithShadow(UnlockScreen.this.textRenderer, label,
+                    getX() + getWidth() / 2, getY() + (getHeight() - 8) / 2, labelColor());
+        }
+    }
+
+    /**
+     * Ein Eintrag der Baumliste: Icon links, Name daneben.
+     *
+     * <p>Das Icon steht immer, der Name nur, wenn die Leiste breit genug ist. Damit bleibt
+     * der Eintrag auch eingeklappt erkennbar — ein auf "..." gekuerzter Name waere es nicht.
+     */
+    private class TreeTab extends RusticButton {
+
+        private final Item icon;
+
+        TreeTab(int x, int y, int width, int height, Text message, Item icon, PressAction onPress) {
+            super(x, y, width, height, message, onPress);
+            this.icon = icon;
+        }
+
+        @Override
+        public void renderButton(DrawContext context, int mouseX, int mouseY, float delta) {
+            drawFace(context);
+            int textY = getY() + (getHeight() - 8) / 2;
+            int textLeft = getX() + 5;
+            if (icon != null) {
+                context.drawItem(new ItemStack(icon), getX() + 4, getY() + (getHeight() - 16) / 2);
+                textLeft = getX() + 24;
+            }
+            if (!sidebarShowsLabels()) {
+                if (icon == null) {
+                    // Ohne Icon traegt der Anfangsbuchstabe den Eintrag.
+                    String initial = getMessage().getString();
+                    if (!initial.isEmpty()) {
+                        String glyph = initial.substring(0, 1).toUpperCase(Locale.ROOT);
+                        context.drawTextWithShadow(UnlockScreen.this.textRenderer, glyph,
+                                getX() + getWidth() / 2 - UnlockScreen.this.textRenderer.getWidth(glyph) / 2,
+                                textY, labelColor());
+                    }
+                }
+                return;
+            }
+            int room = getX() + getWidth() - 5 - textLeft;
+            if (room <= 0) {
+                return;
+            }
+            context.drawTextWithShadow(UnlockScreen.this.textRenderer, trim(getMessage(), room),
+                    textLeft, textY, labelColor());
         }
     }
 

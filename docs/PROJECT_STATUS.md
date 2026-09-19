@@ -83,9 +83,17 @@ What changed:
 - All prerequisite edges are drawn. Previously only the first parent edge was
   shown, so for 45 of 68 nodes the drawn structure was not the real one.
 - The inspector is a column beside the canvas instead of a panel floating over
-  it, the sidebar collapses when there is only one tree, and a selection can be
-  cleared again — previously it could not, which left part of the canvas
-  permanently covered and unclickable.
+  it, and a selection can be cleared again — previously it could not, which left
+  part of the canvas permanently covered and unclickable.
+- The tree list is always present. It used to disappear whenever a world had
+  only one tree, which hid the only control for switching trees and gave no hint
+  that more were coming. It now works like a browser sidebar: pinned by default,
+  or collapsed to a 26 px rail that shows each tree's item icon and opens on
+  hover. Collapsed, it opens as an overlay rather than pushing the map aside, so
+  passing the pointer over it does not reflow what you were looking at, and it
+  stays shut while the map is being dragged. The choice is remembered per client
+  in `config/utopiacore-client.json`. Editing forces it open — tools that vanish
+  when the pointer leaves are not tools.
 - Added: node search (by name, description, entry id and item name), a state
   legend, per-frame state caching, editor undo, and a layered auto-layout
   action that rearranges a tree by progression tier.

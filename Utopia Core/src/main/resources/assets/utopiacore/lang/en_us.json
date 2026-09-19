@@ -109,6 +109,8 @@
   "screen.utopia.unlocks.purchase": "Unlock",
   "screen.utopia.unlocks.requires": "Requires: %s",
   "screen.utopia.unlocks.search": "Search",
+  "screen.utopia.unlocks.sidebar.pin": "Keep the tree list open",
+  "screen.utopia.unlocks.sidebar.unpin": "Collapse the tree list",
   "screen.utopia.unlocks.search_result": "%s matches",
   "screen.utopia.unlocks.sent": "Request sent",
   "screen.utopia.unlocks.state.blocked": "Requirements not met",

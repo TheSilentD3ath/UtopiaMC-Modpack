@@ -84,6 +84,8 @@
   "screen.utopia.unlocks.purchase": "Freischalten",
   "screen.utopia.unlocks.requires": "Setzt voraus: %s",
   "screen.utopia.unlocks.search": "Suchen",
+  "screen.utopia.unlocks.sidebar.pin": "Baumliste offen lassen",
+  "screen.utopia.unlocks.sidebar.unpin": "Baumliste einklappen",
   "screen.utopia.unlocks.search_result": "%s Treffer",
   "screen.utopia.unlocks.sent": "Anfrage gesendet",
   "screen.utopia.unlocks.state.blocked": "Voraussetzungen fehlen",

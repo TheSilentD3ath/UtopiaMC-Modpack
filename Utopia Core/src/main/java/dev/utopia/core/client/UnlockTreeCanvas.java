@@ -125,6 +125,7 @@ final class UnlockTreeCanvas {
     private double viewZoom = 1.0;
 
     private boolean panning;
+
     private String draggedNode;
     private String pressedNode;
     private boolean gestureActive;
@@ -171,6 +172,11 @@ final class UnlockTreeCanvas {
 
     int zoomPercent() {
         return (int) Math.round(zoom * 100.0);
+    }
+
+    /** Ob die Karte gerade geschwenkt wird. */
+    boolean panning() {
+        return panning;
     }
 
     // --- Zeichnen ---------------------------------------------------------
