@@ -1,21 +1,55 @@
-MIT License
+Create: Industrial Pressure
+Copyright (c) 2026 Shiro. All rights reserved.
 
-Copyright (c) 2026 Shiro
+This software, including its source code, textures, models, sounds, data and
+other assets (together "the Mod"), is protected by copyright. The source code
+is published so that it can be read and reviewed. Publishing it does not grant
+any licence beyond the permissions listed below.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+PERMITTED WITHOUT ASKING
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+  1. Downloading the Mod from an official source (the Modrinth page or the
+     GitHub releases of this repository) and playing with it.
+  2. Including the unmodified Mod in modpacks, public or private. Where the
+     platform allows it, the modpack should download the Mod from an official
+     source instead of bundling the file. Where bundling is required, the
+     modpack must name the Mod and link to an official source.
+  3. Showing the Mod in videos, streams, screenshots and reviews.
+  4. Reading the source code and building it for your own private use, for
+     example to test or debug it.
+  5. Proposing changes through pull requests to this repository (see
+     CONTRIBUTIONS below).
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+NOT PERMITTED WITHOUT PRIOR WRITTEN PERMISSION OF THE COPYRIGHT HOLDER
+
+  1. Redistributing the Mod or any part of it, modified or unmodified, outside
+     of permission 2, including re-uploading it to any website or platform.
+  2. Publishing modified versions, ports to other loaders or game versions,
+     or other works that reuse the Mod's code or assets.
+  3. Presenting the Mod, or any part of it, as your own work.
+  4. Using the Mod's name or logo for other projects.
+
+CONTRIBUTIONS
+
+By submitting a contribution to this repository you confirm that you have the
+right to do so, and you grant the copyright holder a perpetual, worldwide,
+irrevocable, royalty-free licence to use, modify, sublicense and distribute
+your contribution under any terms, including this licence and future ones.
+
+EARLIER VERSIONS
+
+Versions of the Mod published up to and including commit 0285f9b of this
+repository were released under the MIT License. That permission cannot be
+withdrawn for those versions, and it continues to apply to them. This licence
+applies to every later version.
+
+DISCLAIMER
+
+THE MOD IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER
+BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE MOD
+OR THE USE OR OTHER DEALINGS IN THE MOD.
+
+For permission requests, open an issue in this repository.

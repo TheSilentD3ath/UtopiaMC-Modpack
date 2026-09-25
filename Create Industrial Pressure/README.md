@@ -76,4 +76,6 @@ do not expose the active custom pump.
   remap, although the clean build succeeds
 - the custom attachment model uses an API deprecated by the current dependency set
 
-License: MIT.
+License: All rights reserved, source available. Playing it and including the unmodified
+mod in modpacks is allowed; redistributing it or publishing modified versions is not. See
+[LICENSE](LICENSE). Versions up to commit `0285f9b` were released under MIT and stay MIT.
