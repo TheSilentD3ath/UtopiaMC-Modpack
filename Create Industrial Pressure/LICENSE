@@ -2,9 +2,10 @@ Create: Industrial Pressure
 Copyright (c) 2026 Shiro. All rights reserved.
 
 This software, including its source code, textures, models, sounds, data and
-other assets (together "the Mod"), is protected by copyright. The source code
-is published so that it can be read and reviewed. Publishing it does not grant
-any licence beyond the permissions listed below.
+other assets (together "the Mod"), is protected by copyright, except for the
+third-party material listed under THIRD-PARTY MATERIAL, which stays under its
+own licence. The source code is published so that it can be read and reviewed.
+Publishing it does not grant any licence beyond the permissions listed below.
 
 PERMITTED WITHOUT ASKING
 
@@ -42,6 +43,40 @@ Versions of the Mod published up to and including commit 0285f9b of this
 repository were released under the MIT License. That permission cannot be
 withdrawn for those versions, and it continues to apply to them. This licence
 applies to every later version.
+
+THIRD-PARTY MATERIAL
+
+These textures follow the pipe textures of Create closely, because Create's
+pipe models expect that exact texture layout:
+
+  assets/createhp/textures/block/pipes_connected.png
+  assets/createhp/textures/block/netherite_pipes_connected.png
+  assets/createhp/textures/block/glass_fluid_pipe.png
+  assets/createhp/textures/block/netherite_glass_fluid_pipe.png
+
+As far as they are based on Create, they are used under Create's licence:
+
+    MIT License
+
+    Copyright (c) 2019 simibubi
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 
 DISCLAIMER
 
