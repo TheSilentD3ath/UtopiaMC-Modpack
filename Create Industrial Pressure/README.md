@@ -8,8 +8,8 @@ Fabric addon for Create 6 that adds pressure-rated pipe materials and five mecha
 |---|---|
 | Minecraft | 1.20.1 |
 | Java | 17 |
-| Fabric Loader | 0.16.9 |
-| Fabric API | 0.92.2+1.20.1 |
+| Fabric Loader | 0.17.2 (minimum required by Create 6.0.8.1) |
+| Fabric API | 0.92.6+1.20.1 (minimum required by Create 6.0.8.1) |
 | Create Fabric | 6.0.8.1 build 1744 |
 | Fabric Loom | 1.8.13 |
 | Gradle | 8.10.2 |
@@ -69,7 +69,8 @@ do not expose the active custom pump.
 
 ## Known risks
 
-- no automated or GameTest coverage exists yet
+- no automated or GameTest coverage exists yet; a manual client and server smoke test against Create
+  6.0.8.1 was run on 2026-09-25, results and open defects in `../docs/PROJECT_STATUS.md`
 - mixins use `require = 0` where Create patch-version drift should degrade gracefully; runtime smoke
   tests are still required after dependency upgrades
 - the Create dependency graph currently emits duplicate Flywheel-class warnings during Loom's first

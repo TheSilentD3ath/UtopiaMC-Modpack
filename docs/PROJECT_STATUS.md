@@ -1,6 +1,6 @@
 # Utopia 3.0 project status
 
-Status date: 2026-09-24
+Status date: 2026-09-25
 
 The current verified release baseline is Utopia 3.0.0 for Minecraft 1.20.1
 with Fabric Loader 0.18.4. Development continues in a separate working copy
@@ -26,9 +26,12 @@ while this public repository is migrated to the current structure.
   The byte-identity of the repository-built JAR against the development artifact
   therefore has to be re-established on the same toolchain. Pack-level runtime
   verification and final public release integration remain separate gates.
-- Create Industrial Pressure builds successfully from this repository. Its
-  repository-built JAR is byte-identical to the current development artifact;
-  the remaining gate is its full in-game client/server smoke test.
+- Create Industrial Pressure builds successfully from this repository and has
+  now been smoke-tested in a client and on a dedicated server (see the section
+  below). The repository-built JAR is no longer byte-identical to the
+  development artifact: the smoke-test fixes changed its declared dependencies,
+  added a German translation and a block tag, and fixed pick-block on glass
+  pipes. Before a release, the open defects listed there need a decision.
 - Guidebook generation works, but final in-game validation remains pending.
 - Heracles quest data has passed its current static validation.
 - The approved client performance baseline for the next build includes
@@ -219,15 +222,175 @@ list opened over the map. The client log has the same twelve environment lines a
 before the change (no audio device, no narrator library, duplicate classes in the
 development mods) and nothing from the changed classes.
 
+## Create Industrial Pressure smoke test (2026-09-25)
+
+The first in-game test of the mod, run against the exact Create it builds
+against: Create Fabric 6.0.8.1 build 1744 (the Modrinth JAR and the Maven
+artifact are the same file, SHA-1 `f750d019…`).
+
+Environments:
+
+- Development client (`./gradlew runClient`, Fabric API 0.92.6), on Loader
+  0.18.4 for the main pass and on 0.17.2 for the re-check after the fixes.
+  Software OpenGL on a virtual display.
+- Dedicated Fabric server, Loader 0.18.4, with Fabric API 0.92.6, the Create JAR
+  and the release JAR from `./gradlew build`, so the mixins ran on production
+  mappings through the refmap.
+- A production client with the same three mods, connected to that server.
+
+### Tested and working
+
+- All seven items can be placed by hand. The creative tab holds them in order;
+  names are correct in English and German.
+- Connection: a hand-placed row alternating Create pipe, high pressure pipe and
+  netherite pipe joins into one straight pipe. Create's own mechanical pump
+  moves water through a high pressure pipe, both glass variants, a netherite
+  pipe, a Create glass pipe and a Create pipe into a tank.
+- Every pump tier moves fluid; water is visible in the glass pipes, and lava was
+  moved by the tier 5 pump on the dedicated server.
+- Throughput and stress, measured on the server as tank content over game time,
+  at 64 RPM with pipes on both sides of the pump:
+
+  | pump | mB per tick | stress |
+  | --- | --- | --- |
+  | Create mechanical pump | 32 | 256 SU |
+  | tier 1 | 128 | 1,024 SU |
+  | tier 2 | 256 | 2,048 SU |
+  | tier 3 | 512 | 4,096 SU |
+  | tier 4 (netherite) | 1,024 | 8,192 SU |
+  | tier 5 (advanced netherite) | 2,048 | 16,384 SU |
+
+  Exactly the documented factors of 4 to 64, for both throughput and stress.
+- Reach scales with speed as documented: tier 1 at 64 RPM does not fill a tank
+  30 pipes away, at 128 RPM it does; at 256 RPM it reaches 60 but not 70. Tier 2
+  at 256 RPM reaches 70. Create's pump reaches 14 but not 30.
+- The wrench turns both solid pipes into their glass variant and back, in
+  singleplayer and on the dedicated server.
+- Breaking any of the nine blocks with `/setblock … destroy` drops the right
+  item; glass pipes drop their solid pipe. (Mining by hand: see the fixes.)
+- Bursting: in a high pressure pump's network, Create fluid pipes and Create glass
+  pipes crack and break after a few seconds and drop their item. The mod's own
+  pipes survive, and a Create pipe on Create's pump survives.
+- A tank added to a running line 10 pipes from a high pressure pump starts
+  filling without restarting the pump.
+- Mixins: 11 of the 12 injectors are woven, identically in the development
+  client and on production mappings, checked in the classes exported
+  with `-Dmixin.debug.export=true`.
+- Multiplayer: the production client joins, registries sync, and placing,
+  wrenching and rendering work.
+- All seven recipes load without errors. None was crafted.
+
+### Fixed in this pass
+
+- The build declared Loader 0.16.9 and Fabric API 0.92.2 and forced that loader,
+  but Create 6.0.8.1 requires at least 0.17.2 and 0.92.6. `runClient` therefore
+  stopped at mod resolution; the development client cannot have run in this
+  configuration. The build now uses those minimums, and `fabric.mod.json`
+  declares them, which Create enforces anyway.
+- The mod shipped no `mineable/pickaxe` tag. In survival, no tool counted as the
+  right one: a high pressure pipe still stood after 6 seconds with a diamond
+  pickaxe, broke within 22, and dropped nothing. Create tags its own pipes and
+  pumps the same way. All nine blocks are now tagged, without a tool tier.
+  Checked on the dedicated server with the production client: all nine break
+  with a diamond pickaxe and drop the right item.
+- Pick-block (middle click) on a glass pipe gave Create's copper fluid pipe. It
+  now gives the solid pipe of the same material.
+- `de_de.json` with all 10 keys, using Create's own German terms: Rohr, Glasrohr,
+  Netherit- with a hyphen, Erweitert for advanced.
+
+### Open defects, not changed
+
+These need a decision before a release.
+
+1. **Pumps with a tank directly on a face.** Measured at 64 RPM, in mB per tick:
+
+   | setup | Create pump | tier 3 now | tier 3 with proposed fix |
+   | --- | --- | --- | --- |
+   | pipes on both sides | 32 | 512 | 512 |
+   | source directly on the intake | 32 | 32 | 512 |
+   | tank directly on the output | 32 | **0** | 512 |
+   | both directly attached | 32 | not measured | 512 |
+
+   With a tank on its output, a high pressure pump moves nothing at all. With a
+   source on its intake, it moves no more than Create's pump while costing 16
+   times the stress. Two mixin bugs in `PumpSourcePressureMixin` cause this. The
+   `getSpeed()` redirect names `KineticBlockEntity` as owner, but the bytecode
+   calls `PumpBlockEntity.getSpeed()`, so it never applies; `require = 0` hides
+   that. The `ordinal = 1` redirect raises the slot that Create zeroes on *both*
+   pump faces, not only on the output. That reverses the pressure on both faces,
+   the flows turn around (visible in the pump's NBT), and pump and neighbour push
+   against each other. Proposed fix: retarget the `getSpeed()` redirect to
+   `PumpBlockEntity`, and remove the `ordinal = 1` redirect together with
+   `CHPPumpContext`. It was built and measured outside the repository (third
+   column); piped throughput for tiers 3 and 5 and bursting are unchanged. It is
+   not committed because it removes a documented feature. The feature's premise,
+   that Create's pump fills a directly attached tank only at a floor rate, does
+   not hold on 6.0.8.1: Create's pump moves 32 mB per tick into it, the same as
+   through pipes.
+2. **Network changes far from the pump.** `FluidPropagatorPumpMixin` makes high
+   pressure pumps hear about network changes, but Create's search for pumps stops
+   at its own 16-block range along pipes that carry no pressure. A tank placed at
+   the end of a 25-pipe dead end, on a tier 1 pump at 128 RPM (reach 32), stays
+   empty until the pump is restarted. Options: widen that search while it runs,
+   which costs a longer search on every pipe change, or accept and document it.
+3. **Which pipes burst.** Encased fluid pipes, smart fluid pipes and fluid valves
+   in a high pressure network do not burst, while plain and glass Create pipes do.
+   Encasing a pipe in copper is therefore a free way around the mechanic. The
+   README says regular Create-compatible pipes burst.
+4. **Silent mixins.** Every behaviour mixin uses `require = 0`, which is how
+   defect 1 went unnoticed; `fabric.mod.json` also accepts Create 6.0.0 and later
+   while only 6.0.8.1 was tested. Options: `require = 1` for the injection points
+   confirmed on 6.0.8.1, or a check at startup.
+5. **Design points.** Netherite pipes copy the netherite block's hardness 50
+   (about 9.4 seconds per pipe with a diamond pickaxe by the formula) and blast
+   resistance 1200.
+   No block needs a tool tier; vanilla wants diamond for netherite and stone for
+   copper, while Create's pipes accept any pickaxe. Tiers 1 to 3 look identical,
+   as do tiers 4 and 5, and no tooltip explains tier, reach or stress.
+
+### Environment notes
+
+- On software OpenGL, Flywheel's indirect backend does not draw pump cogs,
+  Create's own pump included. `/flywheel backend flywheel:instancing` fixes it.
+  Not a defect of the mod.
+- The development client cannot join a production server: Loom resolves Porting
+  Lib from Maven with a different set of modules than the one nested in Create's
+  JAR, and the client lacks `porting_lib:area_selector`. Multiplayer tests need a
+  production client.
+- In one development session, after a language switch and `/reload`, high
+  pressure pumps could not be mined at all (one swing, no progress) while
+  Create's pump broke normally. It did not happen again in a fresh client, after
+  F3+T, after `/reload`, or with either Flywheel backend. Unexplained; worth
+  watching in the playtest.
+- Create 6.0.8.1 requires Fabric API 0.92.6 or later, while this file and the
+  root `CLAUDE.md` name 0.92.2. If the pack really ships 0.92.2 next to Create
+  6.0.8.1, it cannot start. Check the canonical pack configuration.
+
+### Not tested
+
+- Crafting the recipes in game, and how recipe viewers show them.
+- Picking blocks up by sneaking with the wrench: the simulated sneak key did not
+  work in this environment, not even on Create's own pump.
+- Survival progression and balance, stress in real networks with other
+  consumers, the cost of the burst scan on large networks, chunk unloading with
+  running pumps, pipes on contraptions, schematics and the Schematicannon, and
+  fluids other than water and lava.
+- Any Create version other than 6.0.8.1, and the mod inside the full pack.
+- The names of the two glass pipes: they have no item and appear nowhere without
+  an info mod. Only the presence of their keys was checked.
+
+Screenshots of every block and of the setups were handed over in the session;
+they are not in the repository.
+
 ## Open items from the 2026-09-24 review
 
 - Translations. `de_de.json` of Utopia Core lacks 130 of 232 keys: the 69 tree
   and node names, but also the classes (20), origins (10) and genders (6) of the
-  character creation screen, the first screen a player sees. Create Industrial
-  Pressure has no German file (10 keys), and neither has the LevelZ namespace
-  (286 keys, 95 of them the configuration screen). If the pack ships translations
-  through a resource pack that is not in this repository, part of this may be
-  covered there.
+  character creation screen, the first screen a player sees. The LevelZ
+  namespace has no German file (286 keys, 95 of them the configuration screen).
+  Create Industrial Pressure now has one (all 10 keys, see the smoke test). If
+  the pack ships translations through a resource pack that is not in this
+  repository, part of this may be covered there.
 - There is no CI: nothing builds the two mods on push.
 - The Trinkets compatibility mixin warns about missing obfuscation mappings for
   two `@Shadow` fields. It is harmless — they are Trinkets fields, not Minecraft
