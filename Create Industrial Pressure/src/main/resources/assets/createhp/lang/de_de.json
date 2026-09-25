@@ -1,0 +1,12 @@
+{
+  "itemGroup.createhp": "Create: Industrial Pressure",
+  "block.createhp.high_pressure_pipe": "Hochdruckrohr",
+  "block.createhp.high_pressure_pump": "Hochdruckpumpe (Stufe 1)",
+  "block.createhp.high_pressure_pump_2": "Hochdruckpumpe (Stufe 2)",
+  "block.createhp.high_pressure_pump_3": "Hochdruckpumpe (Stufe 3)",
+  "block.createhp.high_pressure_glass_pipe": "Hochdruck-Glasrohr",
+  "block.createhp.netherite_pressure_pipe": "Netherit-Druckrohr",
+  "block.createhp.netherite_glass_pipe": "Netherit-Glasdruckrohr",
+  "block.createhp.netherite_pressure_pump": "Netherit-Druckpumpe",
+  "block.createhp.advanced_netherite_pump": "Erweiterte Netherit-Druckpumpe"
+}
