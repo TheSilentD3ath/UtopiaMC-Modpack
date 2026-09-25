@@ -1,6 +1,6 @@
 # Utopia 3.0 project status
 
-Status date: 2026-09-24
+Status date: 2026-09-25
 
 The current verified release baseline is Utopia 3.0.0 for Minecraft 1.20.1
 with Fabric Loader 0.18.4. Development continues in a separate working copy
@@ -219,15 +219,88 @@ list opened over the map. The client log has the same twelve environment lines a
 before the change (no audio device, no narrator library, duplicate classes in the
 development mods) and nothing from the changed classes.
 
+## German translation of Utopia Core
+
+Utopia Core's `de_de.json` is complete: 232 of 232 keys. A script check shows it
+has the same keys as `en_us.json`, in the same order, with the same placeholders
+and no duplicates. Six values are the same as in English on purpose: Utopia,
+Create, Big Cannons, Neko, Tank, and the editor field "Icon (namespace:item)".
+
+Terms for machines, items and mechanics come from Create's own German file
+(Create 6.0.8.1) and from the German files of the addons (Connected, Crafts &
+Additions, Power Grid, Steam 'n' Rails, Railways Navigator, Big Cannons), so the
+tree reads like the rest of the game: Vorrichtung for contraption, Lohe for blaze,
+"Das Messingzeitalter" as in Create's advancement. Create: New Age has no German
+file; its node names are ours. The maintainer decided four points: class names in
+the generic masculine, "Trans Mädchen", "Fertigkeitspunkte" for skill points, and
+mod names left untranslated.
+
+Checked in the development client in German (1600 x 900, GUI scale 3): all five
+origins, three genders and ten classes, the buttons, and the unlock screen's
+inspector. Nothing is cut off. The fullest page is the Survivor: ten effect lines
+under a two-line description, with one line to spare. The first wording took three
+lines and left no spare line, so a word that is not in the English text was
+dropped. Two counts that were wrong in the singular ("1 Gegenstände", "+1
+Fertigkeitspunkte") were reworded. The client log has three entries at ERROR level:
+no audio device, no narrator, and an empty Porting Lib registry. None of them comes
+from Utopia Core.
+
+A bug turned up in the process and is fixed. The effect lines built an attribute's
+translation key from the id's path, so the four Utopia attributes showed as raw
+keys (`attribute.name.fire_resistance`) in every language. Attributes from mods
+that are not installed are now left out, because `CharacterStateApplier` skips
+them as well.
+
+Some text on the German screen is still English, because it comes from ids, not
+from a language file:
+
+- skill names in the effect lines ("Mining beginnt auf Level 8"), from the LevelZ
+  skill id;
+- the summary of earlier choices under the buttons ("Villager · Transfem"), from
+  the trait id.
+
+The numbers in the same lines have two formatting problems, in English as well:
+
+- An attribute that is a fraction shows as that fraction, rounded to one decimal.
+  The Melon Citizen's 15 percent less fire damage reads "+0.2 Feuerresistenz".
+- Some experience bonuses read "+10.0%" where others read "+25%", because 1.1 − 1
+  leaves a floating-point remainder.
+
+These are code issues, not translation issues, and they are not changed here.
+
+Node names on the map were measured with the glyph widths of the Minecraft font and
+a copy of the canvas's wrap (`tools/LabelFit.java`). Its prediction matches the
+client: "Ingenieurs…" and "Drucklufta…" at the default view.
+
+| line width | English cut | German cut |
+| --- | --- | --- |
+| 66 font px (default view, 34 percent) | 10 of 68 | 44 of 68 |
+| 102 font px | 0 | 14 |
+| 165 font px (full zoom) | 0 | 0 |
+
+The wrap breaks lines only at spaces. At the default view, single German compounds
+such as "Flüssigkeitstechnik" or "Präzisionsgetriebe" are wider than a line.
+Rewording cannot fix that without dropping Create's terms. The inspector and search
+still show and find the full name.
+
+Testing note: this container had neither xdotool nor ImageMagick, and installing
+them was refused. `tools/Drive.java` drives Xvfb with `java.awt.Robot` from the JDK
+instead (keys, clicks, PNG screenshots). Without a window manager, the client
+window stays at 854 x 480 unless it is started with `--width 1600 --height 900`.
+
 ## Open items from the 2026-09-24 review
 
-- Translations. `de_de.json` of Utopia Core lacks 130 of 232 keys: the 69 tree
-  and node names, but also the classes (20), origins (10) and genders (6) of the
-  character creation screen, the first screen a player sees. Create Industrial
-  Pressure has no German file (10 keys), and neither has the LevelZ namespace
-  (286 keys, 95 of them the configuration screen). If the pack ships translations
-  through a resource pack that is not in this repository, part of this may be
-  covered there.
+- Translations. Utopia Core is done (see above). Create Industrial Pressure has no
+  German file (10 keys), and neither has the LevelZ namespace (286 keys, 95 of them
+  the configuration screen). If the pack ships translations through a resource
+  pack that is not in this repository, part of this may be covered there.
+- German node names are cut at the default map zoom: 44 of 68, against 10 in
+  English. Possible remedies: break long words at hyphens or with a hyphen at the
+  line end, a wider minimum label width, or a third line. This is a design
+  decision for the maintainer.
+- Character creation still shows skill names and earlier choices from ids (English
+  in every language), shows fractional attributes as rounded fractions instead of
+  percentages, and prints some bonuses as "+10.0%" (see the translation section).
 - There is no CI: nothing builds the two mods on push.
 - The Trinkets compatibility mixin warns about missing obfuscation mappings for
   two `@Shadow` fields. It is harmless — they are Trinkets fields, not Minecraft

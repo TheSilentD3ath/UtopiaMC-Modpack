@@ -40,15 +40,20 @@ requires Loader 0.18.4 and does not start on the old public pack (Loader 0.15.11
 
 `run/` is not versioned, so a fresh container has no test runtime. Utopia Core needs:
 
-- in `Utopia Core/run/mods/`: create-fabric 0.5.1-j build 1631, porting_lib 2.3.15,
-  ForgeConfigAPIPort 8.0.3 and milk-lib 1.2.60 (Modrinth), plus a singleplayer world.
+- in `Utopia Core/run/mods/`: create-fabric 0.5.1-j build 1631, porting_lib 2.3.15
+  and ForgeConfigAPIPort 8.0.3 (Modrinth), plus a singleplayer world. milk-lib 1.2.60
+  ships inside the Create jar; the Modrinth project called milk-lib is another mod.
   This is older than the Create 6.0.8.1 the pack uses; tree nodes for Create 6
   features (packaging, stock network, …) show initials instead of item icons there.
 - Xvfb on `:99` at 1600x900x24 (software OpenGL is enough), then from `Utopia Core/`:
-  `DISPLAY=:99 ./gradlew runClient --args="--quickPlaySingleplayer 'New World'"`.
-- Drive it with `xdotool`, capture with `import -window root`. GUI scale is 3 at that
-  size. In the world, `U` opens the unlock trees and `F8` the tree editor. Key presses
-  sent while the world is still loading are lost.
+  `DISPLAY=:99 ./gradlew runClient --args="--width 1600 --height 900 --quickPlaySingleplayer 'New World'"`.
+  Without a window manager the window otherwise stays at 854x480. A world created in
+  a German client is called `Neue Welt`. For German, put `lang:de_de` in
+  `run/options.txt`. `/utopia character reset` (needs cheats) reopens character creation.
+- Drive it with `xdotool`, capture with `import -window root`. If they are missing,
+  `Utopia Core/tools/Drive.java` does both with the JDK's `java.awt.Robot`. GUI scale is 3 at
+  that size. In the world, `U` opens the unlock trees and `F8` the tree editor. Key
+  presses sent while the world is still loading are lost.
 - Stop the client by killing only the java process whose command line contains
   `KnotClient`. `pkill -f` with a pattern like `Xvfb` also matches your own shell.
 - The client log always has about twelve harmless error lines (no audio device, no

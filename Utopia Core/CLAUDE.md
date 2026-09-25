@@ -37,8 +37,12 @@ Rendering rules learned the hard way:
 
 ## Known gaps
 
-- `de_de.json` lacks 130 of 232 keys: the 69 tree and node names, and the classes,
-  origins and genders of character creation. The `levelz` namespace has no German file.
+- `de_de.json` is complete (232 of 232 keys). The `levelz` namespace has no German file.
+  German node names are cut at the default map zoom (44 of 68, English 10), because
+  the label wrap breaks only at spaces; `tools/LabelFit.java` measures it.
+- Character creation takes skill names and the summary of earlier choices from ids,
+  so they stay English, and shows fractional attributes as rounded fractions
+  ("+0.2" for 15 percent).
 - `SurvivalTrinketSlotMixin` warns about two `@Shadow` fields. Fix it with
   `@Shadow(remap = false)` on those fields, not on the class: `canInsert` overrides a
   Minecraft method and needs the mapping.
