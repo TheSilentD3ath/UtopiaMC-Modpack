@@ -22,9 +22,11 @@ Minecraft 1.20.1 Fabric modpack "Utopia". Two mod sources live here:
 
 ## Toolchain
 
-JDK 17, Fabric Loader 0.18.4, Fabric API 0.92.2+1.20.1, Loom 1.7, Gradle 8.8.
+JDK 17, Fabric Loader 0.18.4, Fabric API 0.92.6+1.20.1, Loom 1.7, Gradle 8.8.
 Build each mod from its own folder with `./gradlew build`. The built Utopia Core
 requires Loader 0.18.4 and does not start on the old public pack (Loader 0.15.11).
+Fabric API 0.92.6 is the minimum Create 6.0.8.1 accepts; with 0.92.2 the game
+refuses to start.
 
 ## Licences — do not change casually
 

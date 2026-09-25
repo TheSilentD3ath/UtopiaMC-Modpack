@@ -21,7 +21,8 @@ while this public repository is migrated to the current structure.
 - Utopia Core `0.10.11` builds successfully from this repository. Its declared
   toolchain has been moved up to the one the pack actually ships — Fabric Loader
   0.18.4 and Fabric API 0.92.2 instead of the 2023 versions it still named, plus
-  Loom 1.7 and Gradle 8.8 to carry them. The old declaration described a
+  Loom 1.7 and Gradle 8.8 to carry them. On 2026-09-25 the Fabric API was raised
+  to 0.92.6, the minimum Create 6.0.8.1 accepts (see the smoke test below). The old declaration described a
   configuration nobody runs and kept Create out of the development client.
   The byte-identity of the repository-built JAR against the development artifact
   therefore has to be re-established on the same toolchain. Pack-level runtime
@@ -362,9 +363,15 @@ These need a decision before a release.
   Create's pump broke normally. It did not happen again in a fresh client, after
   F3+T, after `/reload`, or with either Flywheel backend. Unexplained; worth
   watching in the playtest.
-- Create 6.0.8.1 requires Fabric API 0.92.6 or later, while this file and the
-  root `CLAUDE.md` name 0.92.2. If the pack really ships 0.92.2 next to Create
-  6.0.8.1, it cannot start. Check the canonical pack configuration.
+- Create 6.0.8.1 requires Fabric API 0.92.6 or later. Utopia Core and the root
+  `CLAUDE.md` named 0.92.2; both now say 0.92.6, and Utopia Core declares it as
+  its minimum. Checked on the dedicated server: with Fabric API 0.92.6, Utopia
+  Core, Create Industrial Pressure and Create 6.0.8.1 start together (plus Cloth
+  Config 11.1.136 and LibZ 1.0.3), and both Create's pump and a tier 3 pump
+  still move 32 and 512 mB per tick. With 0.92.2 the server refuses to start:
+  Create, Ponder and Create Industrial Pressure all ask for 0.92.6 or later.
+  The canonical pack configuration is not in this repository; it has to ship
+  0.92.6 or later as well.
 
 ### Not tested
 
