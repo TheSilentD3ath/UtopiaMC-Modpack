@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "createhp:high_pressure_pipe",
+    "createhp:high_pressure_glass_pipe",
+    "createhp:netherite_pressure_pipe",
+    "createhp:netherite_glass_pipe",
+    "createhp:high_pressure_pump",
+    "createhp:high_pressure_pump_2",
+    "createhp:high_pressure_pump_3",
+    "createhp:netherite_pressure_pump",
+    "createhp:advanced_netherite_pump"
+  ]
+}
