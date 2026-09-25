@@ -10,6 +10,7 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.entity.attribute.EntityAttribute;
 import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.item.Item;
@@ -122,8 +123,17 @@ public class CharacterCreationScreen extends Screen {
     /** Uebersetzt die Trait-Daten in lesbare Zeilen - das ersetzt Origins' "Impact"-Anzeige. */
     private void buildEffectLines(CharacterTrait trait) {
         for (CharacterTrait.AttributeMod mod : trait.attributes()) {
-            String key = "attribute.name." + mod.attribute().getPath();
-            Text name = Text.translatable(key);
+            // Der Uebersetzungsschluessel kommt vom Attribut selbst. Aus der ID
+            // zusammengesetzt ging der Namensraum verloren: utopiacore:fire_resistance
+            // wurde zu attribute.name.fire_resistance, das es nicht gibt, und die
+            // Zeile zeigte den rohen Schluessel.
+            EntityAttribute attribute = Registries.ATTRIBUTE.get(mod.attribute());
+            if (attribute == null) {
+                // Mod nicht installiert: CharacterStateApplier ueberspringt das
+                // Attribut ebenfalls, also wird es hier auch nicht versprochen.
+                continue;
+            }
+            Text name = Text.translatable(attribute.getTranslationKey());
             String value;
             if (mod.operation() == EntityAttributeModifier.Operation.ADDITION) {
                 value = format(mod.value(), false);
