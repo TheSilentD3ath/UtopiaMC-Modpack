@@ -234,6 +234,11 @@ development mods) and nothing from the changed classes.
   fields — and the fix is `@Shadow(remap = false)` on those two fields. Not on the
   class: `canInsert` overrides a Minecraft method and needs the mapping.
 - Unlocking still gives no sound.
+- The Utopia Core development client runs Create Fabric 0.5.1, while Create
+  Industrial Pressure builds against Create 6.0.8.1. Tree nodes for Create 6
+  features (packaging, stock network and others) therefore show initials instead
+  of item icons in that client. In-game checks of the tree are only
+  representative once the development runtime uses Create 6 as well.
 
 ## Release validation
 
