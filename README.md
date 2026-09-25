@@ -48,7 +48,7 @@ cd "Utopia Core"
 ### Create: Industrial Pressure
 
 [`Create Industrial Pressure/`](Create%20Industrial%20Pressure/) is the
-MIT-licensed Create addon for high-pressure pipes, tiered pumps, larger fluid
+Create addon (all rights reserved, source available) for high-pressure pipes, tiered pumps, larger fluid
 networks and an endgame Netherite tier.
 
 Build with JDK 17:

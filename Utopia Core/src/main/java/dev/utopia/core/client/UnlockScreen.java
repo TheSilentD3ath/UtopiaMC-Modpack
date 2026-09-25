@@ -199,6 +199,19 @@ public class UnlockScreen extends Screen {
         return Math.round(SIDEBAR_RAIL + (SIDEBAR_WIDTH - SIDEBAR_RAIL) * sidebarReveal);
     }
 
+    /**
+     * Rechter Rand der aufgeklappten Liste, solange sie ueber der Karte liegt, sonst
+     * {@link Integer#MIN_VALUE}. Die Karte spart diesen Streifen aus: Die Liste liegt
+     * tiefer als die Item-Icons der Karte, und ohne Aussparung schienen die durch.
+     */
+    private int sidebarOverlayRight() {
+        if (!showSidebar || sidebarPinnedNow()) {
+            return Integer.MIN_VALUE;
+        }
+        int right = sidebarLeft + sidebarDrawWidth();
+        return right > canvasLeft ? right : Integer.MIN_VALUE;
+    }
+
     /** Ob die Liste gerade breit genug ist, um Beschriftungen zu zeigen. */
     private boolean sidebarShowsLabels() {
         return sidebarDrawWidth() > SIDEBAR_RAIL + 24;
@@ -481,6 +494,7 @@ public class UnlockScreen extends Screen {
                     Text.translatable("screen.utopia.unlocks.empty"),
                     (canvasLeft + canvasRight) / 2, (bodyTop + bodyBottom) / 2, COLOR_LIGHT);
         } else {
+            canvas.occludeLeft(sidebarOverlayRight());
             canvas.render(context, tree, this::state, editing, mouseX, mouseY);
         }
 
@@ -660,12 +674,8 @@ public class UnlockScreen extends Screen {
             if (x + width > limit) {
                 break;
             }
-            int color = UnlockTreeCanvas.outlineColor(state);
-            context.setShaderColor((color >> 16 & 255) / 255.0F, (color >> 8 & 255) / 255.0F,
-                    (color & 255) / 255.0F, 1.0F);
-            context.drawTexture(UnlockTreeCanvas.badgeTexture(state), x, y - 1, 9, 9,
-                    0.0F, 0.0F, 32, 32, 32, 32);
-            context.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            // Dasselbe Abzeichen wie auf der Karte, damit die Legende genau das zeigt, was man sieht.
+            UnlockTreeCanvas.drawBadge(context, state, x + 4.5, y + 3.5, 9.0);
             context.drawText(this.textRenderer, label, x + 12, y, COLOR_MUTED, false);
             x += width;
         }

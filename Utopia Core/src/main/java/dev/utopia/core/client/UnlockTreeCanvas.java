@@ -1,17 +1,19 @@
 package dev.utopia.core.client;
 
-import dev.utopia.core.UtopiaCore;
 import dev.utopia.core.unlock.NodeShape;
 import dev.utopia.core.unlock.UnlockTree;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
-import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RotationAxis;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,14 +22,27 @@ import java.util.Set;
 /**
  * Karte des Freischaltbaums: frei schwenk- und zoombar, Knoten als Form mit Item-Icon.
  *
- * <p><b>Warum keine Beschriftung auf der Karte:</b> 68 Knoten mit Textkasten brauchen rund
- * das Doppelte der verfuegbaren Flaeche. Solange jeder Knoten ein Label traegt, endet
- * "alles einpassen" zwangslaeufig am Mindestzoom und niemand erkennt mehr etwas. Das Item
- * <em>ist</em> die Beschriftung; der Name kommt beim Darueberfahren und im Inspektor.
+ * <p><b>Warum alles als Vektorform:</b> Formen, Rahmen, Linien und Abzeichen waren
+ * Texturen von 32 bis 64 px, die beim Hineinzoomen auf fast das Dreifache vergroessert
+ * wurden — mit sichtbaren Treppenkanten. Jetzt rechnet {@link SmoothPainter} sie in jeder
+ * Groesse neu und glaettet die Kanten auf einen Bildschirmpixel genau.
  *
- * <p><b>Warum Form und Abzeichen statt nur Farbe:</b> Auf Holzmaserung und bei 16 px
- * Knotengroesse ist Farbe der schwaechste Kanal. Die vorherigen Zustandsfarben lagen bei
- * 1,18:1 zueinander — "schon gekauft" und "jetzt kaufbar" waren praktisch nicht
+ * <p><b>Warum es jetzt fluessig laeuft:</b> Positionen wurden auf ganze GUI-Pixel
+ * gerundet. Bei GUI-Massstab 3 sind das drei Bildschirmpixel, die ganze Karte ruckte beim
+ * Schwenken also in Dreiersprüngen hinter dem Mauszeiger her. Jetzt wird auf echte
+ * Bildschirmpixel gerundet. Die Knotengroesse rastete auf Vielfache von vier ein und
+ * sprang beim Zoomen sichtbar; jetzt waechst sie stetig. Und die Annaeherung an den
+ * Zielzoom lief pro Bild statt pro Zeit — bei 144 Bildern je Sekunde viermal so schnell
+ * wie bei 30, bei schwankender Bildrate ruckelnd.
+ *
+ * <p><b>Beschriftung:</b> Namen stehen unter den Knoten, aber nur, wo Platz ist. 68
+ * Knoten mit Textkasten brauchen rund das Doppelte der Flaeche; deshalb blenden die Namen
+ * unterhalb von 24 GUI-Einheiten Knotengroesse aus, und ein Name, der einen anderen
+ * Knoten oder Namen verdecken wuerde, entfaellt. Vorrang haben Auswahl, Zeiger,
+ * Suchtreffer und dann das, was man als Naechstes kaufen kann.
+ *
+ * <p><b>Warum Form und Abzeichen statt nur Farbe:</b> Die frueheren Zustandsfarben
+ * lagen bei 1,18:1 zueinander — "schon gekauft" und "jetzt kaufbar" waren praktisch nicht
  * unterscheidbar, fuer Rot-Gruen-Schwaeche gar nicht. Zustand laeuft deshalb ueber das
  * Abzeichen (Haken, Plus, Muenze, Schloss), die Form ueber die Art des Knotens.
  *
@@ -47,45 +62,67 @@ final class UnlockTreeCanvas {
         void move(String key, double x, double y);
     }
 
-    private static final Identifier CANVAS_WOOD = UtopiaCore.id("textures/gui/unlock/canvas_wood.png");
-    /** Kantenlaenge der Holztextur. */
-    private static final int WOOD_TEXTURE = 512;
-    /** Kantenlaenge der Form- und Rahmentexturen. */
-    private static final int SHAPE_TEXTURE = 64;
-    private static final int BADGE_TEXTURE = 32;
-    private static final int CANVAS_TILE_SIZE = 220;
-    /**
-     * Faktor, mit dem die Holztextur der Karte abgedunkelt wird.
-     *
-     * Die Textur selbst bleibt unveraendert — sie wird auch anderswo hell gebraucht.
-     * 0,45 bringt die Karte von relativer Leuchtdichte 0,176 auf 0,032: dunkel genug,
-     * dass Item-Icons und Rahmen die hellsten Dinge im Bild sind, aber noch drei Mal
-     * heller als das Holz des Rahmens (0,014), damit die Karte eine eigene Flaeche
-     * bleibt und nicht mit ihrer Umrandung verschwimmt.
-     */
-    private static final float CANVAS_SHADE = 0.45F;
-
     private static final double UNIT = 64.0;
     private static final double MIN_ZOOM = 0.08;
     private static final double MAX_ZOOM = 2.0;
-    /** Zoomschritt je Mausrad-Raste. Deutlich groesser als frueher, sonst kurbelt man ewig. */
-    private static final double ZOOM_STEP = 1.25;
+    /** Zoomschritt je Mausrad-Raste. */
+    private static final double ZOOM_STEP = 1.2;
     /** Knotengroesse bei 100 %. */
-    private static final int NODE_BASE = 72;
+    private static final double NODE_BASE = 72.0;
     private static final double DRAG_THRESHOLD = 4.0;
-    private static final double DASH_LENGTH = 6.0;
-    private static final double DASH_PERIOD = 14.0;
-    /** Anteil, um den sich die Ansicht pro Bild dem Ziel naehert. */
-    private static final float EASING = 0.4F;
+    private static final float DASH_LENGTH = 6.0F;
+    private static final float DASH_PERIOD = 14.0F;
+    /** Anteil, um den sich die Ansicht je Sechzigstelsekunde dem Ziel naehert. */
+    private static final double EASING = 0.4;
+    /**
+     * Geschwindigkeit des Flusses entlang der hervorgehobenen Kette, GUI-Einheiten je
+     * Sekunde. Das Muster stammt aus FTB Quests: Es zeigt die Richtung vom Vorgaenger zum
+     * Nachfolger. Anders als dort laeuft es nur an der betrachteten Kette — in Ruhe steht
+     * die Karte still. 0 schaltet es ab.
+     */
+    private static final double FLOW_SPEED = 18.0;
 
-    // Palette, gerechnet gegen die abgedunkelte Karte (relative Leuchtdichte 0,032).
-    //
-    // Die Rahmen bilden bewusst eine Helligkeitsleiter statt nur verschiedener Farbtoene,
-    // damit der Zustand auch ohne Farbsehen ankommt:
-    //   gesperrt 3,2:1  <  zu teuer 5,7:1  <  kaufbar 9,3:1  ~  freigeschaltet 8,9:1
+    // Formmasse als Anteil der Knotengroesse, von den frueheren 64-px-Texturen abgenommen,
+    // damit sich nur die Kantenschaerfe aendert und nicht die Gestalt.
+    private static final double SHAPE_RADIUS = 0.469;
+    private static final double SQUARE_HALF = 0.422;
+    private static final double RSQUARE_HALF = 0.4375;
+    private static final double RSQUARE_CORNER = 0.27;
+    private static final double GEAR_ROOT = 0.352;
+    private static final double GEAR_TOOTH_HALF = 0.078;
+    private static final int GEAR_TEETH = 8;
+    private static final double OUTLINE = 0.075;
+    /** Icongroesse im Verhaeltnis zum Knoten. */
+    private static final double ICON = 0.78;
+    /** Abzeichen: Durchmesser und Mittelpunkt (rechts unten) im Verhaeltnis zum Knoten. */
+    private static final double BADGE = 0.42;
+    private static final double BADGE_OFFSET = 0.30;
+
+    /** Unterhalb dieser Knotengroesse (GUI-Einheiten) keine Namen; darueber blenden sie ein. */
+    private static final double LABEL_FADE_START = 18.0;
+    private static final double LABEL_FADE_END = 24.0;
+
+    /** Tiefe fuer alles, was ueber den Item-Icons liegen muss (die liegen bei etwa 150). */
+    private static final float Z_OVER_ICON = 200.0F;
+
+    /**
+     * Flache Kartenflaeche.
+     *
+     * Derselbe Farbton wie das abgedunkelte Holz vorher (gemessen #42321D), aber ohne
+     * Maserung und etwas dunkler: relative Leuchtdichte 0,022 statt 0,035. Das ist naeher
+     * am Mockup und bleibt heller als der Holzrahmen (0,014), damit die Karte eine eigene
+     * Flaeche bleibt. Alle Rahmenkontraste steigen dadurch: gesperrt 3,7:1 (vorher 3,2),
+     * zu teuer 6,5:1, freigeschaltet 10,1:1, kaufbar 10,6:1. Die Reihenfolge der
+     * Helligkeitsleiter bleibt erhalten, und die Fuellung gesperrter Knoten (0,036) liegt
+     * weiter ueber dem Grund — sie liest sich als Platte, nicht als Loch.
+     */
+    private static final int COLOR_CANVAS = 0xFF342716;
+
+    // Palette. Die Rahmen bilden bewusst eine Helligkeitsleiter statt nur verschiedener
+    // Farbtoene, damit der Zustand auch ohne Farbsehen ankommt:
+    //   gesperrt  <  zu teuer  <  kaufbar  ~  freigeschaltet
     // Die beiden oberen Stufen sind absichtlich gleich hell — sie sind beide "gut" und
-    // werden durch Farbton (gruen/gold) und Abzeichen (Haken/Plus) auseinandergehalten,
-    // nicht durch Helligkeit. Alle vier liegen ueber der 3:1-Schwelle fuer Bedienelemente.
+    // werden durch Farbton (gruen/gold) und Abzeichen (Haken/Plus) auseinandergehalten.
     //
     // Gesperrte Knoten treten ueber einen dunkleren Rahmen zurueck, ihr Item-Icon bleibt
     // aber sichtbar: der Abdunkler darueber liegt bei 0x44, nicht bei 0x99. Mit 0x99 waren
@@ -101,19 +138,29 @@ final class UnlockTreeCanvas {
     private static final int COLOR_EDGE_OWNED = 0xFFA8E88C;
     private static final int COLOR_EDGE_OPEN = 0xFFFCD596;
     private static final int COLOR_EDGE_SECONDARY = 0xFFB4E0EC;
+    private static final int COLOR_FLOW = 0xFFFFF3C4;
     private static final int COLOR_SELECTED = 0xFFFFF3C4;
     private static final int COLOR_HOVERED = 0xFFE8CE92;
     private static final int COLOR_SEARCH_MATCH = 0xFFFFD98A;
+    private static final int COLOR_SHADE = 0xFF120C08;
+    private static final int COLOR_BADGE_GROUND = 0xFF140E08;
+    private static final int COLOR_GRID = 0x22C8A87A;
+    /** Namen: 10:1 gegen den Grund; gesperrte gedaempft, aber noch 4,9:1. */
+    private static final int COLOR_LABEL = 0xFFE9D6B0;
+    private static final int COLOR_LABEL_BLOCKED = 0xFFA39480;
 
-    /** Nur fuer die Ersatzbeschriftung, wenn ein Knoten kein Item-Icon hat. */
-    private net.minecraft.client.font.TextRenderer textRenderer;
+    private TextRenderer textRenderer;
     private final List<Edge> edgeBuffer = new ArrayList<>();
     private final Set<String> highlightChain = new HashSet<>();
+    private final List<double[]> placedLabels = new ArrayList<>();
+    private final Map<String, String[]> wrapCache = new HashMap<>();
 
     private int left;
     private int top;
     private int right;
     private int bottom;
+    /** Links davon liegt gerade die aufgeklappte Baumliste ueber der Karte. */
+    private int occludeLeft = Integer.MIN_VALUE;
 
     /** Ziel der Kamera: Modellkoordinate, die in der Canvas-Mitte liegen soll. */
     private double centerX;
@@ -123,6 +170,18 @@ final class UnlockTreeCanvas {
     private double viewCenterX;
     private double viewCenterY;
     private double viewZoom = 1.0;
+    private long lastFrameNanos;
+
+    /**
+     * Zoom mit festgehaltenem Punkt: Waehrend der Annaeherung bleibt der Modellpunkt, auf
+     * den das Mausrad zielte, genau unter dem Zeiger. Vorher naeherten sich Mitte und
+     * Zoom getrennt an, und der Punkt unter dem Zeiger wanderte waehrend der Animation.
+     */
+    private boolean anchored;
+    private double anchorScreenX;
+    private double anchorScreenY;
+    private double anchorModelX;
+    private double anchorModelY;
 
     private boolean panning;
 
@@ -143,6 +202,15 @@ final class UnlockTreeCanvas {
         this.top = top;
         this.right = Math.max(left + 1, right);
         this.bottom = Math.max(top + 1, bottom);
+    }
+
+    /**
+     * Bis wohin von links die aufgeklappte Baumliste die Karte gerade verdeckt, oder
+     * {@link Integer#MIN_VALUE}. Darunter wird nicht gezeichnet und nichts getroffen —
+     * sonst schienen Item-Icons, die tiefer liegen als die Liste, durch sie hindurch.
+     */
+    void occludeLeft(int x) {
+        this.occludeLeft = x;
     }
 
     String selected() {
@@ -167,7 +235,7 @@ final class UnlockTreeCanvas {
     }
 
     boolean contains(double mouseX, double mouseY) {
-        return mouseX >= left && mouseX < right && mouseY >= top && mouseY < bottom;
+        return mouseX >= Math.max(left, occludeLeft) && mouseX < right && mouseY >= top && mouseY < bottom;
     }
 
     int zoomPercent() {
@@ -184,11 +252,15 @@ final class UnlockTreeCanvas {
     void render(DrawContext context, UnlockTree tree, StateProvider states, boolean editing,
             int mouseX, int mouseY) {
         if (textRenderer == null) {
-            textRenderer = net.minecraft.client.MinecraftClient.getInstance().textRenderer;
+            textRenderer = MinecraftClient.getInstance().textRenderer;
         }
         ease();
-        context.enableScissor(left, top, right, bottom);
-        drawBackground(context);
+        int clipLeft = Math.max(left, occludeLeft);
+        if (clipLeft >= right) {
+            return;
+        }
+        context.enableScissor(clipLeft, top, right, bottom);
+        context.fill(clipLeft, top, right, bottom, COLOR_CANVAS);
         if (editing) {
             drawEditorGrid(context);
         }
@@ -198,23 +270,46 @@ final class UnlockTreeCanvas {
 
         drawEdges(context, tree, states);
 
-        int size = nodeSize();
+        double size = nodeSize();
+        List<Map.Entry<String, UnlockTree.Node>> visible = new ArrayList<>();
         for (Map.Entry<String, UnlockTree.Node> entry : tree.nodes().entrySet()) {
-            UnlockTree.Node node = entry.getValue();
-            if (!nodeVisible(node, size)) {
-                continue;
+            if (nodeVisible(entry.getValue(), size)) {
+                visible.add(entry);
             }
-            String key = entry.getKey();
-            drawNode(context, key, node, states.state(key, node), size,
-                    key.equals(hovered), key.equals(selected), dimmed(key));
         }
+        drawNodes(context, visible, states, size);
+        drawLabels(context, visible, states, size);
         context.disableScissor();
     }
 
     private void ease() {
-        viewCenterX += (centerX - viewCenterX) * EASING;
-        viewCenterY += (centerY - viewCenterY) * EASING;
-        viewZoom += (zoom - viewZoom) * EASING;
+        long now = Util.getMeasuringTimeNano();
+        double seconds = lastFrameNanos == 0L ? 0.0 : Math.min(0.1, (now - lastFrameNanos) / 1.0E9);
+        lastFrameNanos = now;
+        // Dieselbe Annaeherung wie frueher bei 60 Bildern je Sekunde, aber an der Zeit statt
+        // an der Bildzahl gemessen: gleich schnell bei 30 und bei 144 Bildern.
+        double t = 1.0 - Math.pow(1.0 - EASING, seconds * 60.0);
+
+        // Zoom auf logarithmischer Skala: jede Raste fuehlt sich gleich an, egal wie nah.
+        double logView = Math.log(viewZoom);
+        viewZoom = Math.exp(logView + (Math.log(zoom) - logView) * t);
+        boolean zoomDone = Math.abs(zoom - viewZoom) < 0.0005;
+        if (zoomDone) {
+            viewZoom = zoom;
+        }
+
+        if (anchored) {
+            viewCenterX = anchorModelX - (anchorScreenX - midX()) / (UNIT * viewZoom);
+            viewCenterY = anchorModelY - (anchorScreenY - midY()) / (UNIT * viewZoom);
+            if (zoomDone) {
+                anchored = false;
+                viewCenterX = centerX;
+                viewCenterY = centerY;
+            }
+            return;
+        }
+        viewCenterX += (centerX - viewCenterX) * t;
+        viewCenterY += (centerY - viewCenterY) * t;
         // Restweg abschneiden, damit die Ansicht nicht ewig um Bruchteile zittert.
         if (Math.abs(centerX - viewCenterX) < 0.0005) {
             viewCenterX = centerX;
@@ -222,62 +317,35 @@ final class UnlockTreeCanvas {
         if (Math.abs(centerY - viewCenterY) < 0.0005) {
             viewCenterY = centerY;
         }
-        if (Math.abs(zoom - viewZoom) < 0.0005) {
-            viewZoom = zoom;
-        }
-    }
-
-    /** Die Holzplatte liegt im Baum-Koordinatenraum und bewegt sich beim Schwenken mit. */
-    private void drawBackground(DrawContext context) {
-        int tile = MathHelper.clamp((int) Math.round(CANVAS_TILE_SIZE * viewZoom), 96, 384);
-        int originX = screenX(0.0);
-        int originY = screenY(0.0);
-        int startX = left + Math.floorMod(originX - left, tile) - tile;
-        int startY = top + Math.floorMod(originY - top, tile) - tile;
-        context.setShaderColor(CANVAS_SHADE, CANVAS_SHADE * 0.96F, CANVAS_SHADE * 0.92F, 1.0F);
-        for (int x = startX; x < right; x += tile) {
-            for (int y = startY; y < bottom; y += tile) {
-                context.drawTexture(CANVAS_WOOD, x, y, tile, tile,
-                        0.0F, 0.0F, WOOD_TEXTURE, WOOD_TEXTURE, WOOD_TEXTURE, WOOD_TEXTURE);
-            }
-        }
-        context.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        drawVignette(context);
-    }
-
-    private void drawVignette(DrawContext context) {
-        int depth = Math.min(18, Math.min((right - left) / 5, (bottom - top) / 5));
-        for (int inset = 0; inset < depth; inset += 2) {
-            int alpha = Math.max(0, 60 - inset * 3);
-            int color = alpha << 24 | 0x00170B06;
-            context.fill(left + inset, top + inset, right - inset, top + inset + 2, color);
-            context.fill(left + inset, bottom - inset - 2, right - inset, bottom - inset, color);
-            context.fill(left + inset, top + inset + 2, left + inset + 2, bottom - inset - 2, color);
-            context.fill(right - inset - 2, top + inset + 2, right - inset, bottom - inset - 2, color);
-        }
     }
 
     private void drawEditorGrid(DrawContext context) {
-        int spacing = Math.max(10, (int) Math.round(UNIT * 0.5 * viewZoom));
-        int originX = screenX(0.0);
-        int originY = screenY(0.0);
-        // Helle Linien mit wenig Deckkraft. Dunkle Linien waren auf der abgedunkelten
-        // Karte nicht mehr zu sehen — das Raster war da, half aber beim Setzen nicht.
-        for (int x = left + Math.floorMod(originX - left, spacing); x < right; x += spacing) {
-            context.fill(x, top, x + 1, bottom, 0x22C8A87A);
+        double spacing = Math.max(10.0, UNIT * 0.5 * viewZoom);
+        double pixel = SmoothPainter.pixel();
+        double originX = screenX(0.0);
+        double originY = screenY(0.0);
+        // Haarlinien, auf Pixelmitte gesetzt: auf der Pixelgrenze waeren es zwei halbe
+        // Pixel und damit ein verwaschener Streifen.
+        SmoothPainter painter = SmoothPainter.begin(context, 0.0F);
+        double startX = left + (((originX - left) % spacing) + spacing) % spacing;
+        for (double x = startX; x < right; x += spacing) {
+            double px = SmoothPainter.snap(x) + pixel * 0.5;
+            painter.line(px, top, px, bottom, (float) pixel, COLOR_GRID);
         }
-        for (int y = top + Math.floorMod(originY - top, spacing); y < bottom; y += spacing) {
-            context.fill(left, y, right, y + 1, 0x22C8A87A);
+        double startY = top + (((originY - top) % spacing) + spacing) % spacing;
+        for (double y = startY; y < bottom; y += spacing) {
+            double py = SmoothPainter.snap(y) + pixel * 0.5;
+            painter.line(left, py, right, py, (float) pixel, COLOR_GRID);
         }
+        painter.end();
     }
 
     /**
      * Alle Voraussetzungen des betrachteten Knotens, transitiv.
      *
-     * Frueher zeigte die Karte nur die erste Elternkante je Knoten. Bei 45 von 68 Knoten
-     * mit mehreren Eltern war die gezeichnete Form damit nicht die tatsaechliche Struktur —
-     * man konnte nicht planen, weil man nicht sah, was noch fehlt. Jetzt sind alle Kanten
-     * da, und die Kette des betrachteten Knotens wird zusaetzlich hervorgehoben.
+     * Dauerhaft gezeichnet wird nur die erste Voraussetzung jedes Knotens. Die Kette hier
+     * bestimmt, welche Kanten zusaetzlich erscheinen und hervorgehoben werden, damit man
+     * beim Planen sieht, was insgesamt noch fehlt.
      */
     private void buildHighlightChain(UnlockTree tree, String focus) {
         highlightChain.clear();
@@ -302,7 +370,7 @@ final class UnlockTreeCanvas {
 
     private void drawEdges(DrawContext context, UnlockTree tree, StateProvider states) {
         edgeBuffer.clear();
-        int radius = nodeSize() / 2 + 2;
+        double radius = nodeSize() * 0.5 + 1.5;
         for (Map.Entry<String, UnlockTree.Node> entry : tree.nodes().entrySet()) {
             String childKey = entry.getKey();
             UnlockTree.Node child = entry.getValue();
@@ -340,31 +408,43 @@ final class UnlockTreeCanvas {
         if (edgeBuffer.isEmpty()) {
             return;
         }
-        // Strichstaerke haengt an der Knotengroesse. Mit fester Staerke waren die Kanten
-        // beim Herauszoomen breiter als die Knoten, die sie verbinden — die Verbindungen
-        // schrien dann lauter als das, worum es geht.
-        int weight = Math.max(1, nodeSize() / 16);
-        // Ohne Schlagschatten: der lag frueher unter jeder Kante, um helle Linien von
-        // hellem Holz abzuheben. Auf der abgedunkelten Karte heben sich helle Linien von
-        // selbst ab, und der Schatten war nur eine zweite Linie je Kante.
+        // Strichstaerke haengt an der Knotengroesse, damit Kanten beim Herauszoomen nicht
+        // breiter wirken als die Knoten, die sie verbinden. Mindestens zwei Bildschirmpixel,
+        // sonst verschwinden sie im Grund.
+        float weight = (float) Math.max(SmoothPainter.pixel() * 2.0, nodeSize() / 20.0);
+        float phase = (float) (-(Util.getMeasuringTimeMs() / 1000.0) * FLOW_SPEED);
+        SmoothPainter painter = SmoothPainter.begin(context, 0.0F);
         // Erst die ruhenden Kanten, die hervorgehobenen zuletzt: so liegt die Kette des
         // betrachteten Knotens immer obenauf.
         for (Edge edge : edgeBuffer) {
             if (!edge.lit()) {
-                drawConnection(context, edge, edge.primary() ? weight : Math.max(1, weight - 1),
-                        edge.color(), !edge.primary());
+                drawConnection(painter, edge, edge.primary() ? weight : weight * 0.8F, 0.0F);
             }
         }
         for (Edge edge : edgeBuffer) {
             if (edge.lit()) {
-                drawConnection(context, edge, edge.primary() ? weight + 1 : weight,
-                        edge.color(), !edge.primary());
+                drawConnection(painter, edge, edge.primary() ? weight * 1.4F : weight, phase);
             }
+        }
+        painter.end();
+    }
+
+    private static void drawConnection(SmoothPainter painter, Edge edge, float width, float phase) {
+        if (!edge.primary()) {
+            painter.dashed(edge.x1(), edge.y1(), edge.x2(), edge.y2(), width, DASH_LENGTH, DASH_PERIOD,
+                    phase, edge.color());
+            return;
+        }
+        painter.line(edge.x1(), edge.y1(), edge.x2(), edge.y2(), width, edge.color());
+        if (edge.lit() && FLOW_SPEED > 0.0) {
+            // Heller Fluss auf der Linie, vom Vorgaenger zum Nachfolger.
+            painter.dashed(edge.x1(), edge.y1(), edge.x2(), edge.y2(), Math.max(width * 0.5F,
+                    SmoothPainter.pixel()), DASH_PERIOD * 0.35F, DASH_PERIOD, phase, withAlpha(COLOR_FLOW, 0x90));
         }
     }
 
     /** Kante zwischen zwei Knotenraendern statt zwischen den Mittelpunkten. */
-    private Edge edge(UnlockTree.Node parent, UnlockTree.Node child, int radius, boolean primary,
+    private Edge edge(UnlockTree.Node parent, UnlockTree.Node child, double radius, boolean primary,
             boolean lit, int color) {
         double x1 = screenX(parent.x());
         double y1 = screenY(parent.y());
@@ -378,120 +458,175 @@ final class UnlockTreeCanvas {
         }
         double ux = dx / length;
         double uy = dy / length;
-        return new Edge((int) Math.round(x1 + ux * radius), (int) Math.round(y1 + uy * radius),
-                (int) Math.round(x2 - ux * radius), (int) Math.round(y2 - uy * radius), primary, lit, color);
+        return new Edge(x1 + ux * radius, y1 + uy * radius, x2 - ux * radius, y2 - uy * radius, primary, lit,
+                color);
     }
 
-    private static void drawConnection(DrawContext context, Edge edge, int thickness, int color,
-            boolean dashed) {
-        if (!dashed) {
-            drawSegment(context, edge.x1(), edge.y1(), edge.x2(), edge.y2(), thickness, color);
-            return;
+    /**
+     * Knoten in drei Lagen: erst alle Flaechen, dann die Item-Icons, dann alles, was ueber
+     * den Icons liegen muss (Abdunklung, Rahmen, Abzeichen). Jede Vektorlage geht in einem
+     * einzigen Aufruf an die Grafikkarte.
+     */
+    private void drawNodes(DrawContext context, List<Map.Entry<String, UnlockTree.Node>> visible,
+            StateProvider states, double size) {
+        SmoothPainter base = SmoothPainter.begin(context, 0.0F);
+        for (Map.Entry<String, UnlockTree.Node> entry : visible) {
+            String key = entry.getKey();
+            UnlockTree.Node node = entry.getValue();
+            State state = states.state(key, node);
+            double cx = screenX(node.x());
+            double cy = screenY(node.y());
+            int alpha = dimmed(key) ? 0x30 : 0xFF;
+            boolean isSelected = key.equals(selected);
+            if (isSelected || key.equals(hovered)) {
+                // Auswahl- und Zeigerring: dieselbe Form, etwas groesser, hinter dem Knoten.
+                double ring = size + 6.0;
+                float[][] halo = shape(node.shape(), cx, cy, ring);
+                base.ring(halo[0], halo[1], (float) (ring * OUTLINE),
+                        withAlpha(isSelected ? COLOR_SELECTED : COLOR_HOVERED, alpha));
+            }
+            if (searchMatches != null && searchMatches.contains(key)) {
+                double ring = size + 10.0;
+                float[][] halo = shape(node.shape(), cx, cy, ring);
+                base.ring(halo[0], halo[1], (float) (ring * OUTLINE), COLOR_SEARCH_MATCH);
+            }
+            float[][] body = shape(node.shape(), cx, cy, size);
+            base.fill(body[0], body[1], (float) cx, (float) cy, withAlpha(fillColor(state), alpha));
         }
-        double deltaX = edge.x2() - edge.x1();
-        double deltaY = edge.y2() - edge.y1();
-        double length = Math.hypot(deltaX, deltaY);
-        if (length < 0.001) {
-            return;
+        base.end();
+
+        boolean[] hasIcon = new boolean[visible.size()];
+        for (int i = 0; i < visible.size(); i++) {
+            UnlockTree.Node node = visible.get(i).getValue();
+            Item item = node.icon().map(Registries.ITEM::get).orElse(null);
+            hasIcon[i] = item != null && item != net.minecraft.item.Items.AIR;
+            if (hasIcon[i]) {
+                drawIcon(context, item, screenX(node.x()), screenY(node.y()), size);
+            }
         }
-        double unitX = deltaX / length;
-        double unitY = deltaY / length;
-        for (double offset = 0.0; offset < length; offset += DASH_PERIOD) {
-            double end = Math.min(length, offset + DASH_LENGTH);
-            drawSegment(context, edge.x1() + unitX * offset, edge.y1() + unitY * offset,
-                    edge.x1() + unitX * end, edge.y1() + unitY * end, thickness, color);
+
+        SmoothPainter over = SmoothPainter.begin(context, Z_OVER_ICON);
+        for (int i = 0; i < visible.size(); i++) {
+            String key = visible.get(i).getKey();
+            UnlockTree.Node node = visible.get(i).getValue();
+            State state = states.state(key, node);
+            double cx = screenX(node.x());
+            double cy = screenY(node.y());
+            boolean dim = dimmed(key);
+            int alpha = dim ? 0x30 : 0xFF;
+            float[][] body = shape(node.shape(), cx, cy, size);
+            // Abdunkeln, in zwei Staerken.
+            //
+            // Ueber dem Item, nicht per Alpha: Item-Modelle werden mit ihrem eigenen Shader
+            // gezeichnet und nehmen die Einfaerbung des Knotens nicht an. Ohne diese Schicht
+            // blieben zurueckgestellte Knoten bei der Suche mit voll leuchtendem Icon stehen,
+            // waehrend Rahmen und Abzeichen verblassten — genau die falsche Haelfte.
+            int shade = 0;
+            if (dim) {
+                shade = 0xA0;
+            } else if (state == State.BLOCKED && hasIcon[i]) {
+                // Gesperrt: nur so weit, dass man noch erkennt, worum es geht. Nur mit Icon —
+                // ohne eines wuerde die Fuellung getroffen und der Knoten saehe auf der
+                // dunklen Karte wie ein Loch im Brett aus statt wie eine Platte.
+                shade = 0x44;
+            }
+            if (shade > 0) {
+                over.fill(body[0], body[1], (float) cx, (float) cy, withAlpha(COLOR_SHADE, shade));
+            }
+            over.ring(body[0], body[1], (float) (size * OUTLINE), withAlpha(outlineColor(state), alpha));
+            badge(over, state, cx + size * BADGE_OFFSET, cy + size * BADGE_OFFSET, size * BADGE, alpha);
+        }
+        over.end();
+
+        for (int i = 0; i < visible.size(); i++) {
+            if (!hasIcon[i] && size >= 16.0) {
+                // Kein aufloesbares Icon — die Mod fehlt, oder beim Knoten ist keines gesetzt.
+                // Ohne Ersatz waere der Knoten eine leere Flaeche.
+                String key = visible.get(i).getKey();
+                UnlockTree.Node node = visible.get(i).getValue();
+                drawInitials(context, key, node, screenX(node.x()), screenY(node.y()),
+                        outlineColor(states.state(key, node)), dimmed(key) ? 0x30 : 0xFF);
+            }
         }
     }
 
-    private static void drawSegment(DrawContext context, double x1, double y1, double x2, double y2,
-            int thickness, int color) {
-        double length = Math.hypot(x2 - x1, y2 - y1);
-        if (length < 0.001) {
-            return;
-        }
-        int segmentTop = -thickness / 2;
-        context.getMatrices().push();
-        context.getMatrices().translate(x1, y1, 0.0F);
-        context.getMatrices().multiply(RotationAxis.POSITIVE_Z.rotation((float) Math.atan2(y2 - y1, x2 - x1)));
-        context.fill(0, segmentTop, (int) Math.ceil(length), segmentTop + thickness, color);
-        context.getMatrices().pop();
+    /** Umriss der Knotenform um (cx, cy) in der Groesse {@code size}. */
+    private static float[][] shape(NodeShape shape, double cx, double cy, double size) {
+        return switch (shape) {
+            case SQUARE -> SmoothPainter.roundedRect(cx, cy, size * SQUARE_HALF, size * SQUARE_HALF, 0.0);
+            case RSQUARE -> SmoothPainter.roundedRect(cx, cy, size * RSQUARE_HALF, size * RSQUARE_HALF,
+                    size * RSQUARE_CORNER);
+            case DIAMOND -> SmoothPainter.regular(cx, cy, size * SHAPE_RADIUS, 4, 0.0);
+            case HEXAGON -> SmoothPainter.regular(cx, cy, size * SHAPE_RADIUS, 6, -Math.PI / 2.0);
+            case GEAR -> gear(cx, cy, size);
+            case CIRCLE -> SmoothPainter.circle(cx, cy, size * SHAPE_RADIUS);
+        };
     }
 
-    private void drawNode(DrawContext context, String key, UnlockTree.Node node, State state, int size,
-            boolean isHovered, boolean isSelected, boolean dim) {
-        int centerPixelX = screenX(node.x());
-        int centerPixelY = screenY(node.y());
-        int x = centerPixelX - size / 2;
-        int y = centerPixelY - size / 2;
-        NodeShape shape = node.shape();
-        int alpha = dim ? 0x30 : 0xFF;
+    /** Zahnrad mit acht Zaehnen und parallelen Flanken, der erste Zahn oben. */
+    private static float[][] gear(double cx, double cy, double size) {
+        double tip = size * SHAPE_RADIUS;
+        double root = size * GEAR_ROOT;
+        double half = size * GEAR_TOOTH_HALF;
+        double base = Math.sqrt(Math.max(0.0, root * root - half * half));
+        int arc = 3;
+        float[] xs = new float[GEAR_TEETH * (4 + arc)];
+        float[] ys = new float[xs.length];
+        int k = 0;
+        double step = Math.PI * 2.0 / GEAR_TEETH;
+        for (int tooth = 0; tooth < GEAR_TEETH; tooth++) {
+            double angle = -Math.PI / 2.0 + tooth * step;
+            double ux = Math.cos(angle);
+            double uy = Math.sin(angle);
+            // Tangente in Richtung steigender Winkel.
+            double vx = -uy;
+            double vy = ux;
+            double[][] corners = {
+                    {base, -half}, {tip, -half}, {tip, half}, {base, half}};
+            for (double[] c : corners) {
+                xs[k] = (float) (cx + ux * c[0] + vx * c[1]);
+                ys[k] = (float) (cy + uy * c[0] + vy * c[1]);
+                k++;
+            }
+            // Fusskreis bis zum naechsten Zahn.
+            double from = angle + Math.asin(Math.min(1.0, half / root));
+            double to = angle + step - Math.asin(Math.min(1.0, half / root));
+            for (int s = 1; s <= arc; s++) {
+                double a = from + (to - from) * s / (arc + 1);
+                xs[k] = (float) (cx + root * Math.cos(a));
+                ys[k] = (float) (cy + root * Math.sin(a));
+                k++;
+            }
+        }
+        return new float[][] {xs, ys};
+    }
 
-        // Auswahl- und Zeigerring: derselbe Umriss, etwas groesser, hinter dem Knoten.
-        if (isSelected || isHovered) {
-            int ringSize = size + 6;
-            tinted(context, outlineTexture(shape), centerPixelX - ringSize / 2, centerPixelY - ringSize / 2,
-                    ringSize, SHAPE_TEXTURE, withAlpha(isSelected ? COLOR_SELECTED : COLOR_HOVERED, alpha));
-        }
-        if (searchMatches != null && searchMatches.contains(key)) {
-            int ringSize = size + 10;
-            tinted(context, outlineTexture(shape), centerPixelX - ringSize / 2, centerPixelY - ringSize / 2,
-                    ringSize, SHAPE_TEXTURE, COLOR_SEARCH_MATCH);
-        }
-
-        tinted(context, fillTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(fillColor(state), alpha));
-
-        Item item = node.icon().map(Registries.ITEM::get).orElse(null);
-        boolean hasIcon = item != null && item != net.minecraft.item.Items.AIR;
-        if (hasIcon) {
-            drawIcon(context, item, centerPixelX, centerPixelY, size);
-        }
-        // Abdunkeln, in zwei Staerken.
-        //
-        // Ueber dem Item, nicht per Alpha: Item-Modelle werden mit ihrem eigenen Shader
-        // gezeichnet und nehmen die Einfaerbung des Knotens nicht an. Ohne diese Schicht
-        // blieben zurueckgestellte Knoten bei der Suche mit voll leuchtendem Icon stehen,
-        // waehrend Rahmen und Abzeichen verblassten — genau die falsche Haelfte.
-        int shade = 0;
-        if (dim) {
-            // Von der Suche zurueckgestellt: der ganze Knoten tritt zurueck.
-            shade = 0xA0;
-        } else if (state == State.BLOCKED && hasIcon) {
-            // Gesperrt: nur so weit, dass man noch erkennt, worum es geht. Nur mit Icon —
-            // ohne eines wuerde die Fuellung getroffen und der Knoten saehe auf der
-            // dunklen Karte wie ein Loch im Brett aus statt wie eine Platte.
-            shade = 0x44;
-        }
-        if (shade > 0) {
-            tinted(context, fillTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(0xFF120C08, shade));
-        }
-
-        tinted(context, outlineTexture(shape), x, y, size, SHAPE_TEXTURE, withAlpha(outlineColor(state), alpha));
-        drawBadge(context, state, centerPixelX, centerPixelY, size, alpha);
-        if (!hasIcon && size >= 16) {
-            // Kein aufloesbares Icon — die Mod fehlt, oder beim Knoten ist keines gesetzt.
-            // Ohne Ersatz waere der Knoten eine leere Flaeche. Ganz zum Schluss gezeichnet,
-            // damit weder die Abdunklung gesperrter Knoten noch der Rahmen darueber liegen.
-            drawInitials(context, key, node, centerPixelX, centerPixelY, outlineColor(state), alpha);
-        }
+    /**
+     * Item auf einer Kommazahl-Position zeichnen, Groesse auf ganze Bildschirmpixel gerundet.
+     *
+     * Die Groesse waechst stetig mit dem Zoom. Frueher rastete sie auf fuenf feste Stufen
+     * ein — scharf, aber beim Zoomen sprang jedes Icon sichtbar von Stufe zu Stufe.
+     */
+    private static void drawIcon(DrawContext context, Item item, double cx, double cy, double size) {
+        double icon = SmoothPainter.snap(size * ICON);
+        float scale = (float) (icon / 16.0);
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        matrices.translate(SmoothPainter.snap(cx - icon * 0.5), SmoothPainter.snap(cy - icon * 0.5), 0.0);
+        matrices.scale(scale, scale, 1.0F);
+        context.drawItem(new ItemStack(item), 0, 0);
+        matrices.pop();
     }
 
     /** Ersatzdarstellung, wenn kein Item-Icon vorliegt: die ersten Buchstaben des Namens. */
-    private void drawInitials(DrawContext context, String key, UnlockTree.Node node, int centerPixelX,
-            int centerPixelY, int color, int alpha) {
+    private void drawInitials(DrawContext context, String key, UnlockTree.Node node, double cx, double cy,
+            int color, int alpha) {
         if (textRenderer == null) {
             return;
         }
         // Den angezeigten Namen nehmen, nicht den Uebersetzungsschluessel: aus
         // "tree.utopia.create.basics" wuerde sonst "B" statt "KB" fuer "Kinetic Basics".
-        String source = UnlockScreen.displayName(node.name(), key).getString();
-        int cut = source.lastIndexOf('.');
-        if (cut >= 0 && cut + 1 < source.length()) {
-            source = source.substring(cut + 1);
-        }
-        source = source.replace('_', ' ').trim();
-        if (source.isEmpty()) {
-            return;
-        }
+        String source = displayName(key, node);
         StringBuilder initials = new StringBuilder();
         for (String word : source.split(" ")) {
             if (!word.isEmpty() && initials.length() < 2) {
@@ -499,75 +634,258 @@ final class UnlockTreeCanvas {
             }
         }
         String text = initials.toString();
-        context.drawText(textRenderer, text, centerPixelX - textRenderer.getWidth(text) / 2,
-                centerPixelY - 4, withAlpha(color, alpha), false);
-    }
-
-    /**
-     * Item auf ganzzahliger Skalierung zeichnen.
-     *
-     * Item-Modelle sind 16 px. Wird mit krummen Faktoren skaliert, sieht jedes Icon
-     * matschig aus — genau das war beim frueheren stufenlosen Zoom immer der Fall.
-     * Hier rastet die Skalierung auf saubere Stufen ein, unabhaengig vom Zoom.
-     */
-    private static void drawIcon(DrawContext context, Item item, int centerPixelX, int centerPixelY, int size) {
-        // Das Item soll die Form weitgehend fuellen. Mit 0,62 blieb bei einem 20-px-Knoten
-        // ein 8-px-Icon uebrig, das im Rahmen verschwand; der Knoten sah leer aus, obwohl
-        // ein Icon da war.
-        float available = size * 0.80F;
-        float scale;
-        if (available >= 32.0F) {
-            scale = 2.0F;
-        } else if (available >= 24.0F) {
-            scale = 1.5F;
-        } else if (available >= 16.0F) {
-            scale = 1.0F;
-        } else if (available >= 12.0F) {
-            scale = 0.75F;
-        } else {
-            scale = 0.5F;
+        if (text.isEmpty()) {
+            return;
         }
-        int offset = Math.round(8.0F * scale);
-        context.getMatrices().push();
-        context.getMatrices().translate(centerPixelX - offset, centerPixelY - offset, 0.0F);
-        context.getMatrices().scale(scale, scale, 1.0F);
-        context.drawItem(new ItemStack(item), 0, 0);
-        context.getMatrices().pop();
-    }
-
-    private static void drawBadge(DrawContext context, State state, int centerPixelX, int centerPixelY,
-            int size, int alpha) {
-        int badge = Math.max(8, (size * 7 / 16) & ~1);
-        int x = centerPixelX + size / 2 - badge + 1;
-        int y = centerPixelY + size / 2 - badge + 1;
-        // Dunkle Unterlegung, damit das Abzeichen auf jedem Item-Icon steht.
-        tinted(context, badgeTexture(state), x - 1, y - 1, badge + 2, BADGE_TEXTURE, withAlpha(0xFF120C08, alpha));
-        tinted(context, badgeTexture(state), x, y, badge, BADGE_TEXTURE, withAlpha(badgeColor(state), alpha));
+        MatrixStack matrices = context.getMatrices();
+        matrices.push();
+        matrices.translate(SmoothPainter.snap(cx - textRenderer.getWidth(text) * 0.5),
+                SmoothPainter.snap(cy - 4.0), Z_OVER_ICON + 1.0F);
+        context.drawText(textRenderer, text, 0, 0, withAlpha(color, alpha), false);
+        matrices.pop();
     }
 
     /**
-     * Texturkachel eingefaerbt zeichnen.
+     * Namen unter den Knoten.
      *
-     * <p>Das {@code enableBlend} hier ist nicht vorsorglich: {@code DrawContext.drawTexture}
-     * schaltet das Blending in 1.20.1 nicht selbst ein, und ohne eingeschaltetes Blending
-     * verwirft die Grafikkarte den Alphawert aus {@code setShaderColor} kommentarlos. Der
-     * Aufruf lief also durch, das Ergebnis war aber immer volle Deckkraft — gesperrte Knoten
-     * wurden nicht abgedunkelt und die Suche stellte nicht passende Knoten nicht zurueck.
-     * Beides sah nach einem Farbfehler aus und war ein Zustandsfehler.
+     * Die Schrift wird so skaliert, dass ein Pixel der Minecraft-Schrift auf eine ganze
+     * Zahl Bildschirmpixel faellt (bei GUI-Massstab 3: zwei). Mit krummen Faktoren waeren
+     * die Buchstaben ungleich breit. Namen, die einen anderen Knoten oder Namen verdecken
+     * wuerden, entfallen — Vorrang hat, was man gerade braucht.
      */
-    private static void tinted(DrawContext context, Identifier texture, int x, int y, int size,
-            int textureSize, int color) {
-        float a = (color >>> 24) / 255.0F;
-        float r = (color >> 16 & 255) / 255.0F;
-        float g = (color >> 8 & 255) / 255.0F;
-        float b = (color & 255) / 255.0F;
-        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
-        com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
-        context.setShaderColor(r, g, b, a);
-        context.drawTexture(texture, x, y, size, size, 0.0F, 0.0F, textureSize, textureSize,
-                textureSize, textureSize);
-        context.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+    private void drawLabels(DrawContext context, List<Map.Entry<String, UnlockTree.Node>> visible,
+            StateProvider states, double size) {
+        double fade = MathHelper.clamp((size - LABEL_FADE_START) / (LABEL_FADE_END - LABEL_FADE_START), 0.0, 1.0);
+        if (fade <= 0.0 || textRenderer == null) {
+            return;
+        }
+        double guiScale = SmoothPainter.guiScale();
+        double textScale = Math.max(1.0, Math.round(guiScale * 0.67)) / guiScale;
+        double maxWidth = MathHelper.clamp(size * 1.7, 44.0, 110.0);
+        int wrapWidth = (int) Math.floor(maxWidth / textScale);
+        double lineHeight = (textRenderer.fontHeight + 1) * textScale;
+        double gap = 1.5 + size * 0.06;
+        double nodeReach = size * 0.52;
+
+        List<Map.Entry<String, UnlockTree.Node>> order = new ArrayList<>(visible);
+        order.sort((a, b) -> Integer.compare(labelPriority(a.getKey(), states.state(a.getKey(), a.getValue())),
+                labelPriority(b.getKey(), states.state(b.getKey(), b.getValue()))));
+
+        placedLabels.clear();
+        List<Label> labels = new ArrayList<>();
+        int visibleLeft = Math.max(left, occludeLeft);
+        for (Map.Entry<String, UnlockTree.Node> entry : order) {
+            String key = entry.getKey();
+            UnlockTree.Node node = entry.getValue();
+            double cx = screenX(node.x());
+            double cy = screenY(node.y());
+            // Nur Knoten, deren Mitte zu sehen ist. Sonst stuende am Kartenrand ein Name
+            // ohne erkennbaren Knoten dazu.
+            if (cx < visibleLeft || cx >= right || cy < top || cy >= bottom) {
+                continue;
+            }
+            double labelAlpha = fade * (dimmed(key) ? 0.35 : 1.0);
+            int alpha = (int) Math.round(255 * labelAlpha);
+            if (alpha < 4) {
+                // Die Minecraft-Schrift behandelt Alpha unter 4 als "voll deckend".
+                continue;
+            }
+            String[] lines = wrap(displayName(key, node), wrapWidth);
+            if (lines.length == 0) {
+                continue;
+            }
+            double width = 0.0;
+            for (String line : lines) {
+                width = Math.max(width, textRenderer.getWidth(line) * textScale);
+            }
+            double height = lines.length * lineHeight;
+            double x0 = cx - width * 0.5;
+            double y0 = cy + size * 0.5 + gap;
+            if (collides(x0, y0, width, height, key, visible, nodeReach)) {
+                continue;
+            }
+            placedLabels.add(new double[] {x0 - 2.0, y0 - 1.0, x0 + width + 2.0, y0 + height + 1.0});
+            State state = states.state(key, node);
+            labels.add(new Label(cx, x0, y0, width, height, lines,
+                    withAlpha(state == State.BLOCKED ? COLOR_LABEL_BLOCKED : COLOR_LABEL, alpha), alpha));
+        }
+        if (labels.isEmpty()) {
+            return;
+        }
+
+        // Unterlage in Kartenfarbe: Linien, die unter einem Namen durchlaufen, treten dort
+        // zurueck. Text quer ueber einer Linie war kaum zu lesen.
+        SmoothPainter plates = SmoothPainter.begin(context, Z_OVER_ICON);
+        for (Label label : labels) {
+            float[][] plate = SmoothPainter.roundedRect(label.cx(), label.y0() + label.height() * 0.5,
+                    label.width() * 0.5 + 2.0, label.height() * 0.5 + 1.0, 2.0);
+            plates.fill(plate[0], plate[1], (float) label.cx(), (float) (label.y0() + label.height() * 0.5),
+                    withAlpha(COLOR_CANVAS, label.alpha() * 0xD0 / 0xFF));
+        }
+        plates.end();
+
+        MatrixStack matrices = context.getMatrices();
+        for (Label label : labels) {
+            for (int i = 0; i < label.lines().length; i++) {
+                String line = label.lines()[i];
+                double lineWidth = textRenderer.getWidth(line) * textScale;
+                matrices.push();
+                matrices.translate(SmoothPainter.snap(label.cx() - lineWidth * 0.5),
+                        SmoothPainter.snap(label.y0() + i * lineHeight), Z_OVER_ICON + 1.0F);
+                matrices.scale((float) textScale, (float) textScale, 1.0F);
+                context.drawText(textRenderer, line, 0, 0, label.color(), false);
+                matrices.pop();
+            }
+        }
+    }
+
+    private record Label(double cx, double x0, double y0, double width, double height, String[] lines,
+            int color, int alpha) {
+    }
+
+    private int labelPriority(String key, State state) {
+        if (key.equals(selected)) {
+            return 0;
+        }
+        if (key.equals(hovered)) {
+            return 1;
+        }
+        if (searchMatches != null && searchMatches.contains(key)) {
+            return 2;
+        }
+        return switch (state) {
+            case BUYABLE -> 3;
+            case TOO_EXPENSIVE -> 4;
+            case OWNED -> 5;
+            case BLOCKED -> 6;
+        };
+    }
+
+    /** Ob ein Namensfeld einen bereits gesetzten Namen oder einen fremden Knoten beruehrt. */
+    private boolean collides(double x, double y, double width, double height, String own,
+            List<Map.Entry<String, UnlockTree.Node>> visible, double nodeReach) {
+        double x2 = x + width;
+        double y2 = y + height;
+        for (double[] placed : placedLabels) {
+            if (x < placed[2] && x2 > placed[0] && y < placed[3] && y2 > placed[1]) {
+                return true;
+            }
+        }
+        for (Map.Entry<String, UnlockTree.Node> entry : visible) {
+            if (entry.getKey().equals(own)) {
+                continue;
+            }
+            double nx = screenX(entry.getValue().x());
+            double ny = screenY(entry.getValue().y());
+            double closestX = MathHelper.clamp(nx, x, x2);
+            double closestY = MathHelper.clamp(ny, y, y2);
+            if (Math.hypot(nx - closestX, ny - closestY) < nodeReach) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Hoechstens zwei Zeilen; was nicht passt, endet mit einer Auslassung. */
+    private String[] wrap(String text, int width) {
+        String cacheKey = width + "\u0000" + text;
+        String[] cached = wrapCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+        if (wrapCache.size() > 1024) {
+            wrapCache.clear();
+        }
+        List<String> lines = new ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        String[] words = text.trim().split("\\s+");
+        int index = 0;
+        while (index < words.length && lines.size() < 2) {
+            String word = words[index];
+            String candidate = line.length() == 0 ? word : line + " " + word;
+            if (textRenderer.getWidth(candidate) <= width || line.length() == 0) {
+                line.setLength(0);
+                line.append(candidate);
+                index++;
+                continue;
+            }
+            lines.add(line.toString());
+            line.setLength(0);
+        }
+        if (line.length() > 0 && lines.size() < 2) {
+            lines.add(line.toString());
+        }
+        if (index < words.length || (!lines.isEmpty() && textRenderer.getWidth(lines.get(lines.size() - 1)) > width)) {
+            // Rest passt nicht mehr: letzte Zeile kuerzen und kenntlich machen.
+            StringBuilder rest = new StringBuilder(lines.isEmpty() ? "" : lines.remove(lines.size() - 1));
+            for (int i = index; i < words.length; i++) {
+                rest.append(' ').append(words[i]);
+            }
+            String ellipsis = "…";
+            String trimmed = textRenderer.trimToWidth(rest.toString().trim(), width - textRenderer.getWidth(ellipsis));
+            lines.add(trimmed.trim() + ellipsis);
+        }
+        String[] result = lines.toArray(new String[0]);
+        wrapCache.put(cacheKey, result);
+        return result;
+    }
+
+    private static String displayName(String key, UnlockTree.Node node) {
+        String source = UnlockScreen.displayName(node.name(), key).getString();
+        int cut = source.lastIndexOf('.');
+        if (cut >= 0 && cut + 1 < source.length() && source.indexOf(' ') < 0) {
+            // Unuebersetzter Schluessel: nur das letzte Glied, lesbar gemacht.
+            source = source.substring(cut + 1);
+        }
+        return source.replace('_', ' ').trim();
+    }
+
+    // --- Abzeichen --------------------------------------------------------
+
+    /** Abzeichen einzeln zeichnen, etwa fuer die Legende. */
+    static void drawBadge(DrawContext context, State state, double cx, double cy, double diameter) {
+        SmoothPainter painter = SmoothPainter.begin(context, 0.0F);
+        badge(painter, state, cx, cy, diameter, 0xFF);
+        painter.end();
+    }
+
+    /**
+     * Rundes Abzeichen: dunkle Scheibe, farbiger Rand, Zeichen in Zustandsfarbe. Die
+     * Scheibe haelt das Zeichen auf jedem Item-Icon lesbar, ohne den frueheren Schatten.
+     */
+    private static void badge(SmoothPainter painter, State state, double cx, double cy, double d, int alpha) {
+        int color = withAlpha(badgeColor(state), alpha);
+        float[][] disc = SmoothPainter.circle(cx, cy, d * 0.5);
+        painter.fill(disc[0], disc[1], (float) cx, (float) cy, withAlpha(COLOR_BADGE_GROUND, alpha * 0xF0 / 0xFF));
+        painter.ring(disc[0], disc[1], (float) Math.max(SmoothPainter.pixel(), d * 0.075), color);
+        float stroke = (float) (d * 0.13);
+        switch (state) {
+            case OWNED -> painter.polyline(
+                    new float[] {(float) (cx - d * 0.22), (float) (cx - d * 0.06), (float) (cx + d * 0.23)},
+                    new float[] {(float) (cy + d * 0.01), (float) (cy + d * 0.17), (float) (cy - d * 0.15)},
+                    stroke, color);
+            case BUYABLE -> {
+                painter.line(cx - d * 0.21, cy, cx + d * 0.21, cy, stroke, color);
+                painter.line(cx, cy - d * 0.21, cx, cy + d * 0.21, stroke, color);
+            }
+            case TOO_EXPENSIVE -> {
+                float[][] coin = SmoothPainter.circle(cx, cy, d * 0.2);
+                painter.ring(coin[0], coin[1], (float) (d * 0.09), color);
+            }
+            case BLOCKED -> {
+                float[][] body = SmoothPainter.roundedRect(cx, cy + d * 0.08, d * 0.19, d * 0.14, d * 0.04);
+                painter.fill(body[0], body[1], (float) cx, (float) (cy + d * 0.08), color);
+                int segments = 8;
+                float[] xs = new float[segments + 1];
+                float[] ys = new float[segments + 1];
+                for (int i = 0; i <= segments; i++) {
+                    double angle = Math.PI + Math.PI * i / segments;
+                    xs[i] = (float) (cx + d * 0.12 * Math.cos(angle));
+                    ys[i] = (float) (cy - d * 0.04 + d * 0.12 * Math.sin(angle));
+                }
+                painter.polyline(xs, ys, (float) (d * 0.075), color);
+            }
+        }
     }
 
     private static int withAlpha(int color, int alpha) {
@@ -576,23 +894,6 @@ final class UnlockTreeCanvas {
 
     private boolean dimmed(String key) {
         return searchMatches != null && !searchMatches.contains(key);
-    }
-
-    private static Identifier fillTexture(NodeShape shape) {
-        return UtopiaCore.id("textures/gui/unlock/" + shape.id() + ".png");
-    }
-
-    private static Identifier outlineTexture(NodeShape shape) {
-        return UtopiaCore.id("textures/gui/unlock/" + shape.id() + "_outline.png");
-    }
-
-    static Identifier badgeTexture(State state) {
-        return switch (state) {
-            case OWNED -> UtopiaCore.id("textures/gui/unlock/badge_check.png");
-            case BUYABLE -> UtopiaCore.id("textures/gui/unlock/badge_plus.png");
-            case TOO_EXPENSIVE -> UtopiaCore.id("textures/gui/unlock/badge_coin.png");
-            case BLOCKED -> UtopiaCore.id("textures/gui/unlock/badge_lock.png");
-        };
     }
 
     private static int fillColor(State state) {
@@ -614,20 +915,14 @@ final class UnlockTreeCanvas {
     }
 
     private static int badgeColor(State state) {
-        return switch (state) {
-            case OWNED -> COLOR_OWNED_OUTLINE;
-            case BUYABLE -> COLOR_BUYABLE_OUTLINE;
-            case TOO_EXPENSIVE -> COLOR_EXPENSIVE_OUTLINE;
-            case BLOCKED -> COLOR_BLOCKED_OUTLINE;
-        };
+        return outlineColor(state);
     }
 
     // --- Treffer und Eingabe ---------------------------------------------
 
     /** Naechstliegender Knoten unter dem Zeiger, damit sich ueberlappende Formen sauber treffen. */
     String nodeAt(UnlockTree tree, double mouseX, double mouseY) {
-        int size = nodeSize();
-        double reach = size / 2.0 + 1.0;
+        double reach = nodeSize() / 2.0 + 1.0;
         String best = null;
         double bestDistance = Double.MAX_VALUE;
         for (Map.Entry<String, UnlockTree.Node> entry : tree.nodes().entrySet()) {
@@ -677,6 +972,12 @@ final class UnlockTreeCanvas {
                 draggedNode = pressedNode;
             } else {
                 panning = true;
+                // Wer die Karte packt, haelt einen laufenden Zoom an Ort und Stelle an —
+                // sonst sprang sie auf das Zoomziel, sobald das Ziehen begann.
+                zoom = viewZoom;
+                centerX = viewCenterX;
+                centerY = viewCenterY;
+                anchored = false;
             }
         }
         if (draggedNode != null) {
@@ -724,17 +1025,25 @@ final class UnlockTreeCanvas {
         if (Math.abs(next - zoom) < 1.0E-6) {
             return;
         }
-        double modelX = centerX + (anchorX - midX()) / (UNIT * zoom);
-        double modelY = centerY + (anchorY - midY()) / (UNIT * zoom);
+        // Der Punkt, den der Benutzer gerade sieht — nicht der, der am Ende einer noch
+        // laufenden Animation dort laege.
+        double modelX = viewCenterX + (anchorX - midX()) / (UNIT * viewZoom);
+        double modelY = viewCenterY + (anchorY - midY()) / (UNIT * viewZoom);
         zoom = next;
         centerX = modelX - (anchorX - midX()) / (UNIT * zoom);
         centerY = modelY - (anchorY - midY()) / (UNIT * zoom);
+        anchored = true;
+        anchorScreenX = anchorX;
+        anchorScreenY = anchorY;
+        anchorModelX = modelX;
+        anchorModelY = modelY;
     }
 
     // --- Kamera -----------------------------------------------------------
 
     /** Ganzen Baum einpassen — die Uebersicht, nicht die Standardansicht. */
     void fit(UnlockTree tree) {
+        anchored = false;
         if (tree == null || tree.nodes().isEmpty()) {
             centerX = 0.0;
             centerY = 0.0;
@@ -767,6 +1076,7 @@ final class UnlockTreeCanvas {
      * vollstaendig und unlesbar.
      */
     void focus(UnlockTree tree, String key, double preferredZoom) {
+        anchored = false;
         UnlockTree.Node node = tree == null ? null : tree.nodes().get(key);
         if (node == null) {
             fit(tree);
@@ -806,6 +1116,7 @@ final class UnlockTreeCanvas {
 
     /** Ohne Annaeherung an die Zielansicht springen — beim Oeffnen und Baumwechsel. */
     void snapToTarget() {
+        anchored = false;
         viewCenterX = centerX;
         viewCenterY = centerY;
         viewZoom = zoom;
@@ -847,36 +1158,37 @@ final class UnlockTreeCanvas {
         return (top + bottom) / 2.0;
     }
 
-    private int screenX(double modelX) {
-        return (int) Math.round(midX() + (modelX - viewCenterX) * UNIT * viewZoom);
+    /** Auf Bildschirmpixel gerundet, nicht auf GUI-Pixel: scharf und trotzdem fluessig. */
+    private double screenX(double modelX) {
+        return SmoothPainter.snap(midX() + (modelX - viewCenterX) * UNIT * viewZoom);
     }
 
-    private int screenY(double modelY) {
-        return (int) Math.round(midY() + (modelY - viewCenterY) * UNIT * viewZoom);
+    private double screenY(double modelY) {
+        return SmoothPainter.snap(midY() + (modelY - viewCenterY) * UNIT * viewZoom);
     }
 
-    /** Vielfaches von vier: die Formtexturen landen damit auf sauberen Rastergroessen. */
-    private int nodeSize() {
-        int raw = (int) Math.round(NODE_BASE * viewZoom);
-        return MathHelper.clamp((raw + 2) & ~3, 8, 88);
+    /** Stetig mit dem Zoom, auf ganze Bildschirmpixel gerundet. */
+    private double nodeSize() {
+        return SmoothPainter.snap(MathHelper.clamp(NODE_BASE * viewZoom, 8.0, 88.0));
     }
 
-    private boolean nodeVisible(UnlockTree.Node node, int size) {
-        int margin = size + 16;
-        int x = screenX(node.x());
-        int y = screenY(node.y());
-        return x >= left - margin && x <= right + margin && y >= top - margin && y <= bottom + margin;
+    private boolean nodeVisible(UnlockTree.Node node, double size) {
+        double margin = size + 16.0;
+        double x = screenX(node.x());
+        double y = screenY(node.y());
+        return x >= Math.max(left, occludeLeft) - margin && x <= right + margin
+                && y >= top - margin && y <= bottom + margin;
     }
 
     private boolean edgeVisible(Edge edge) {
-        int margin = 48;
+        double margin = 48.0;
         return Math.max(edge.x1(), edge.x2()) >= left - margin
                 && Math.min(edge.x1(), edge.x2()) <= right + margin
                 && Math.max(edge.y1(), edge.y2()) >= top - margin
                 && Math.min(edge.y1(), edge.y2()) <= bottom + margin;
     }
 
-    private record Edge(int x1, int y1, int x2, int y2, boolean primary, boolean lit, int color) {
+    private record Edge(double x1, double y1, double x2, double y2, boolean primary, boolean lit, int color) {
     }
 
     record Position(double x, double y) {
