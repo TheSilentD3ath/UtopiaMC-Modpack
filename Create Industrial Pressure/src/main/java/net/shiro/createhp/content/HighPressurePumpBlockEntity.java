@@ -79,14 +79,7 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 
 	@Override
 	public void tick() {
-		// While our fluid behaviour ticks (inside super.tick), expose this pump's boosted push
-		// pressure so a tank attached DIRECTLY to the output face fills fast (no pipe to boost).
-		CHPPumpContext.set(Math.abs(getSpeed()) * (float) getPressureMultiplier());
-		try {
-			super.tick();
-		} finally {
-			CHPPumpContext.clear();
-		}
+		super.tick();
 		if (level == null || level.isClientSide)
 			return;
 		if (Math.abs(getSpeed()) < 1f) {           // not spinning -> no pressure -> relieve any cracks

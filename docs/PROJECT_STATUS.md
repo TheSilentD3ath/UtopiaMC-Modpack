@@ -1,6 +1,6 @@
 # Utopia 3.0 project status
 
-Status date: 2026-09-25
+Status date: 2026-10-05
 
 The current verified release baseline is Utopia 3.0.0 for Minecraft 1.20.1
 with Fabric Loader 0.18.4. Development continues in a separate working copy
@@ -32,7 +32,8 @@ while this public repository is migrated to the current structure.
   below). The repository-built JAR is no longer byte-identical to the
   development artifact: the smoke-test fixes changed its declared dependencies,
   added a German translation and a block tag, and fixed pick-block on glass
-  pipes. Before a release, the open defects listed there need a decision.
+  pipes; a later fix made pumps work with a tank directly on a face. Before a
+  release, the open defects listed there need a decision.
 - Guidebook generation works, but final in-game validation remains pending.
 - Heracles quest data has passed its current static validation.
 - The approved client performance baseline for the next build includes
@@ -274,9 +275,10 @@ Environments:
   pipes survive, and a Create pipe on Create's pump survives.
 - A tank added to a running line 10 pipes from a high pressure pump starts
   filling without restarting the pump.
-- Mixins: 11 of the 12 injectors are woven, identically in the development
+- Mixins: 11 of the 12 injectors were woven, identically in the development
   client and on production mappings, checked in the classes exported
-  with `-Dmixin.debug.export=true`.
+  with `-Dmixin.debug.export=true`. The twelfth was the dead redirect behind the
+  pump defect; after the pump fix all 11 remaining injectors are woven.
 - Multiplayer: the production client joins, registries sync, and placing,
   wrenching and rendering work.
 - All seven recipes load without errors. None was crafted.
@@ -299,53 +301,67 @@ Environments:
 - `de_de.json` with all 10 keys, using Create's own German terms: Rohr, Glasrohr,
   Netherit- with a hyphen, Erweitert for advanced.
 
+### Pump fix (2026-10-05)
+
+A high pressure pump with a tank directly on one of its faces was broken: with
+the tank on the output it moved nothing, with the source on the intake it moved
+no more than Create's pump while costing up to 64 times the stress. Two mixin
+bugs in `PumpSourcePressureMixin` caused it:
+
+- The `getSpeed()` redirect named `KineticBlockEntity` as owner, but the bytecode
+  calls `PumpBlockEntity.getSpeed()`, so it never applied; `require = 0` hid
+  that.
+- The `ordinal = 1` redirect raised the slot that Create zeroes on *both* pump
+  faces, not only on the output. That reversed the pressure on both faces, the
+  flows turned around (visible in the pump's NBT), and pump and neighbour pushed
+  against each other.
+
+The redirect now targets `PumpBlockEntity`, and the `ordinal = 1` redirect is
+gone together with `CHPPumpContext`. Its premise, that Create's pump fills a
+directly attached tank only at a floor rate, does not hold on 6.0.8.1: Create's
+pump moves 32 mB per tick into it, the same as through pipes.
+
+Measured on the dedicated server with the release JAR, Utopia Core and Create
+6.0.8.1, at 64 RPM, in mB per tick:
+
+| setup | Create pump | tier 3 before | tier 3 after | tier 5 after |
+| --- | --- | --- | --- | --- |
+| pipes on both sides | 32 | 512 | 512 | 2,048 |
+| source directly on the intake | 32 | 32 | 512 | 2,048 |
+| tank directly on the output | 32 | **0** | 512 | 2,048 |
+| both directly attached | 32 | not measured | 512 | not measured |
+
+Some readings came out at 77/78 of these values (31.2, 505.4) because one probe
+fell one tick apart from the game-time query. Tiers 1 to 5 through pipes still
+match the factors 4 to 64. The pump's NBT now shows the same pattern as Create's
+pump, only scaled: outward pressure and outward flow on the output, inbound on
+the intake. Bursting and reach are unchanged (Create pipe and Create glass pipe
+burst, a Create pipe on Create's pump does not; tier 1 at 256 RPM reaches 60
+pipes but not 70, at 64 RPM not 30). In the production client the tank on the
+tier 5 pump's output visibly fills, and the client log has only the usual
+environment entries.
+
 ### Open defects, not changed
 
 These need a decision before a release.
 
-1. **Pumps with a tank directly on a face.** Measured at 64 RPM, in mB per tick:
-
-   | setup | Create pump | tier 3 now | tier 3 with proposed fix |
-   | --- | --- | --- | --- |
-   | pipes on both sides | 32 | 512 | 512 |
-   | source directly on the intake | 32 | 32 | 512 |
-   | tank directly on the output | 32 | **0** | 512 |
-   | both directly attached | 32 | not measured | 512 |
-
-   With a tank on its output, a high pressure pump moves nothing at all. With a
-   source on its intake, it moves no more than Create's pump while costing 16
-   times the stress. Two mixin bugs in `PumpSourcePressureMixin` cause this. The
-   `getSpeed()` redirect names `KineticBlockEntity` as owner, but the bytecode
-   calls `PumpBlockEntity.getSpeed()`, so it never applies; `require = 0` hides
-   that. The `ordinal = 1` redirect raises the slot that Create zeroes on *both*
-   pump faces, not only on the output. That reverses the pressure on both faces,
-   the flows turn around (visible in the pump's NBT), and pump and neighbour push
-   against each other. Proposed fix: retarget the `getSpeed()` redirect to
-   `PumpBlockEntity`, and remove the `ordinal = 1` redirect together with
-   `CHPPumpContext`. It was built and measured outside the repository (third
-   column); piped throughput for tiers 3 and 5 and bursting are unchanged. It is
-   not committed because it removes a documented feature. The feature's premise,
-   that Create's pump fills a directly attached tank only at a floor rate, does
-   not hold on 6.0.8.1: Create's pump moves 32 mB per tick into it, the same as
-   through pipes.
-2. **Network changes far from the pump.** `FluidPropagatorPumpMixin` makes high
+1. **Network changes far from the pump.** `FluidPropagatorPumpMixin` makes high
    pressure pumps hear about network changes, but Create's search for pumps stops
    at its own 16-block range along pipes that carry no pressure. A tank placed at
    the end of a 25-pipe dead end, on a tier 1 pump at 128 RPM (reach 32), stays
    empty until the pump is restarted. Options: widen that search while it runs,
    which costs a longer search on every pipe change, or accept and document it.
-3. **Which pipes burst.** Encased fluid pipes, smart fluid pipes and fluid valves
+2. **Which pipes burst.** Encased fluid pipes, smart fluid pipes and fluid valves
    in a high pressure network do not burst, while plain and glass Create pipes do.
    Encasing a pipe in copper is therefore a free way around the mechanic. The
    README says regular Create-compatible pipes burst.
-4. **Silent mixins.** Every behaviour mixin uses `require = 0`, which is how
-   defect 1 went unnoticed; `fabric.mod.json` also accepts Create 6.0.0 and later
+3. **Silent mixins.** Every behaviour mixin uses `require = 0`, which is how
+   the pump defect went unnoticed; `fabric.mod.json` also accepts Create 6.0.0 and later
    while only 6.0.8.1 was tested. Options: `require = 1` for the injection points
    confirmed on 6.0.8.1, or a check at startup.
-5. **Design points.** Netherite pipes copy the netherite block's hardness 50
+4. **Design points.** Netherite pipes copy the netherite block's hardness 50
    (about 9.4 seconds per pipe with a diamond pickaxe by the formula) and blast
-   resistance 1200.
-   No block needs a tool tier; vanilla wants diamond for netherite and stone for
+   resistance 1200. No block needs a tool tier; vanilla wants diamond for netherite and stone for
    copper, while Create's pipes accept any pickaxe. Tiers 1 to 3 look identical,
    as do tiers 4 and 5, and no tooltip explains tier, reach or stress.
 
