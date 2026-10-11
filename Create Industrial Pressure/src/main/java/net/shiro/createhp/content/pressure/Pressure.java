@@ -1,6 +1,7 @@
 package net.shiro.createhp.content.pressure;
 
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
 import com.simibubi.create.content.fluids.PipeConnection;
 import com.simibubi.create.content.fluids.pipes.AxisPipeBlock;
@@ -10,6 +11,10 @@ import com.simibubi.create.content.fluids.pipes.SmartFluidPipeBlock;
 import com.simibubi.create.content.fluids.pipes.valve.FluidValveBlock;
 
 import net.createmod.catnip.data.Couple;
+import net.createmod.catnip.data.Iterate;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.shiro.createhp.config.CHPConfig;
@@ -44,6 +49,30 @@ public final class Pressure {
 			return 0f;
 		float max = 0f;
 		for (PipeConnection connection : pipe.interfaces.values()) {
+			if (connection == null)
+				continue;
+			Couple<Float> pressure = connection.getPressure();
+			max = Math.max(max, Math.max(pressure.getFirst(), pressure.getSecond()));
+		}
+		return max / UNITS_PER_BAR;
+	}
+
+	/**
+	 * Druck, den die Rohre ringsum in einen Block ohne eigenes Rohrverhalten speisen (Dampfeinlass), in bar: der
+	 * hoechste Wert an einem Anschluss, der zu diesem Block zeigt.
+	 */
+	public static float barFeeding(@Nullable Level level, BlockPos pos) {
+		if (level == null)
+			return 0f;
+		float max = 0f;
+		for (Direction d : Iterate.directions) {
+			BlockPos neighbour = pos.relative(d);
+			if (!level.isLoaded(neighbour))
+				continue;
+			FluidTransportBehaviour pipe = FluidPropagator.getPipe(level, neighbour);
+			if (pipe == null || pipe.interfaces == null)
+				continue;
+			PipeConnection connection = pipe.interfaces.get(d.getOpposite());
 			if (connection == null)
 				continue;
 			Couple<Float> pressure = connection.getPressure();

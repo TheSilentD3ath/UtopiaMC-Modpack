@@ -2,8 +2,8 @@
 
 Plan and state of the pressure system of Create: Industrial Pressure. Pipes, valves and tanks
 hold a pressure limit; the player has to watch the pressure in a pipe run and keep it under
-the limit with regulators and relief valves. Steam becomes a fluid that boilers push through
-pipes to engines elsewhere.
+the limit with regulators and relief valves. Steam becomes a fluid that pumps carry from boilers
+through pipes to a large steam turbine.
 
 ## Decisions (maintainer, 2026-10-11)
 
@@ -43,8 +43,8 @@ it. The mod only reads these values. 16 Create pressure units are 1 bar.
 | Part | Limit | On overload |
 | --- | --- | --- |
 | Create pipes, glass, encased and smart pipes, fluid valve | 16 bar | bursts and drops |
-| copper pressure pipes | 256 bar | bursts and drops |
-| netherite pressure pipes | 1,024 bar | explodes, no drop |
+| copper pressure pipes, valves, tanks and steam inlets | 256 bar | bursts and drops |
+| netherite pressure pipes, valves, tanks and steam inlets | 1,024 bar | explodes, no drop |
 
 A part's pressure is the highest value on any of its connections. Pumps feeding the same pipe
 add up. Each limit equals the matching pump at full speed, so a network of matching parts
@@ -140,34 +140,60 @@ loading, every regulator and relief valve makes its network redistribute once.
 - **Recipes** (shaped): copper = four Create fluid tanks, four copper sheets, one sturdy sheet;
   netherite = four copper pressure tanks, four netherite scrap, one netherite ingot.
 
-## Phase 4: steam (planned, decisions 2026-10-11)
+## Phase 4: steam (done)
 
 Steam is generated in boilers, moved by pumps through pipes and turned into rotation in a large
 steam turbine.
 
 - **Steam** (`createhp:steam`) is a fluid that only exists in pipes and tanks: no bucket, no
-  world block.
+  world block, lighter than air. It renders white in glass pipes and tank windows.
 - **Steam outlet** (Dampfauslass): a block attached to a boiler like a steam engine. It makes the tank
   a boiler and turns its boiler levels into steam, 10 mB per tick per level; levels used by steam
-  engines on the same boiler are not available to it. Pipes take the steam from the outlet. Works on
+  engines on the same boiler are not available to it, several outlets share the rest. Pumps take the
+  steam from its front; it holds 8 buckets, enough for a netherite boiler's 1,500 mB/t. Works on
   Create's tanks and on pressure tanks.
 - **Pressure tank boilers:** up to 5 × 5 wide (Create's tank: 3 × 3), level cap 50 for copper and
   150 for netherite. Size: 1 level per block for copper, 2 for netherite (Create: 1 per 4 blocks).
   Netherite triples the heat of each burner, so a 5 × 5 base of superheated blaze burners gives
-  50 levels in copper and 150 in netherite. Water supply still limits as in Create.
+  50 levels in copper and 150 in netherite. Water supply still limits as in Create. Above 18 levels
+  the goggles' boiler bars are scaled to Create's 18. Create's own boilers keep Create's rules.
 - **Transport:** steam moves with pumps like any fluid; pump pressure counts against the limits.
-- **Steam turbine:** a multiblock with a 5 × 5 casing around a 3 × 3 rotor, length chosen by the
-  player, in copper and netherite. Steam enters through an inlet in the casing; an output shaft at the
-  front delivers rotation. Per 10 mB of steam per tick it delivers 1.5 times the output of a Create
-  steam engine at full power (copper) or 2.5 times (netherite). Half of the steam leaves as water
-  through a condensate outlet, so a boiler can be fed in a loop.
-- **Turbine pressure:** the turbine holds its material's limit (256 / 1,024 bar); above it, the inlet
-  bursts (copper) or the turbine explodes (netherite), like pipes.
+- **Steam turbine** (`content/turbine/`): a multiblock in copper or netherite.
+  - Shape: the turbine output sits in the middle of a 5 × 5 front wall, its shaft facing out. Behind it
+    come 1 to 16 rotor layers (3 × 3 rotor blocks inside a ring of 16 casing blocks), closed by a full
+    5 × 5 back wall. Steam inlets and condensate outlets replace any casing block of the ring or the
+    walls, as many as wanted. Casing, rotor and inlet exist per material and must all match; output
+    and condensate outlet fit both.
+  - The output checks the shape every 20 ticks. An incomplete turbine stops at once; its goggles say
+    "incomplete" and name the first block that is missing or wrong, or that it is longer than 16.
+  - Each rotor layer takes up to 100 mB of steam per tick (copper) or 200 (netherite). The output
+    draws that much from the inlets each tick, at most.
+  - Power: per 10 mB of steam per tick 1.5 times (copper) or 2.5 times (netherite) a Create steam
+    engine at full load, which is 16,384 SU. It turns at 64 RPM like the steam engine. The rate is
+    the average over 20 ticks in whole mB per tick, so uneven pump delivery does not make the shaft
+    network recompute every tick.
+  - Condensate: half of the steam used comes out as water, shared evenly by the condensate outlets
+    (8 buckets each), for pumps to draw and feed back into a boiler. Water that finds no room is
+    lost; the turbine keeps running.
+  - Pressure limit: the steam inlet holds its material's limit (256 / 1,024 bar). The high pressure
+    pumps check it like a tank at the end of their pipe: copper cracks and bursts, netherite explodes.
+  - Goggles: on the output material, rotor layers, steam used of the maximum, condensate, and
+    Create's generator stats; on an inlet its pressure, content and whether it belongs to a complete
+    turbine; on a condensate outlet its water.
+  - Recipes: casing (4) = copper casing + 4 copper sheets; netherite casing (8) = 8 casings +
+    netherite ingot; rotor (2) = shaft + 4 copper sheets; netherite rotor (4) = 4 rotors + netherite
+    ingot; inlet = casing + pressure pipe of the material; condensate outlet = casing + fluid pipe;
+    output = casing + shaft + precision mechanism.
 - Not part of it (maintainer): steam fed into a pressure tank with Create's steam engines.
+
+Defaults chosen during the build, not decided by the maintainer: at most 16 rotor layers, 64 RPM,
+water lost when the condensate outlets are full, and the recipes above.
 
 ## Textures
 
 New blocks need textures in Create's layout. Pipes, valves and tanks are recoloured from Create
 and listed in `LICENSE`; valves and tanks, with their models and blockstates, come from
 `tools/valve_assets.py` and `tools/tank_assets.py`. The pressure gauge on regulator and relief valve
-is drawn by that script, not taken from Create.
+is drawn by that script, not taken from Create. Steam, the steam outlet and the turbine parts are
+drawn pixel by pixel in `tools/steam_assets.py` and `tools/turbine_assets.py`; they are not derived
+from Create and are not listed in `LICENSE`.

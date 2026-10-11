@@ -5,17 +5,22 @@ import com.simibubi.create.content.fluids.pipes.GlassPipeVisual;
 import com.simibubi.create.content.fluids.pipes.TransparentStraightPipeRenderer;
 import com.simibubi.create.content.fluids.pump.PumpRenderer;
 import com.simibubi.create.content.fluids.tank.FluidTankRenderer;
+import com.simibubi.create.content.kinetics.base.OrientedRotatingVisual;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 
 import net.shiro.createhp.CreateHP;
 import net.shiro.createhp.client.PressureValveRenderer;
+import net.shiro.createhp.client.TurbineOutputRenderer;
 import net.shiro.createhp.content.HighPressurePumpBlockEntity;
 import net.shiro.createhp.content.PressureGlassPipeBlockEntity;
 import net.shiro.createhp.content.PressurePipeBlockEntity;
 import net.shiro.createhp.content.steam.SteamOutletBlockEntity;
 import net.shiro.createhp.content.tank.PressureTankBlockEntity;
+import net.shiro.createhp.content.turbine.CondensateOutletBlockEntity;
+import net.shiro.createhp.content.turbine.SteamInletBlockEntity;
+import net.shiro.createhp.content.turbine.TurbineOutputBlockEntity;
 import net.shiro.createhp.content.valve.PressureValveBlockEntity;
 
 public class CHPBlockEntities {
@@ -87,6 +92,24 @@ public class CHPBlockEntities {
 	public static final BlockEntityEntry<SteamOutletBlockEntity> STEAM_OUTLET =
 			REGISTRATE.blockEntity("steam_outlet", SteamOutletBlockEntity::new)
 					.validBlock(CHPBlocks.STEAM_OUTLET)
+					.register();
+
+	public static final BlockEntityEntry<SteamInletBlockEntity> STEAM_INLET =
+			REGISTRATE.blockEntity("steam_inlet", SteamInletBlockEntity::new)
+					.validBlocks(CHPBlocks.STEAM_INLET, CHPBlocks.NETHERITE_STEAM_INLET)
+					.register();
+
+	public static final BlockEntityEntry<CondensateOutletBlockEntity> CONDENSATE_OUTLET =
+			REGISTRATE.blockEntity("condensate_outlet", CondensateOutletBlockEntity::new)
+					.validBlock(CHPBlocks.CONDENSATE_OUTLET)
+					.register();
+
+	/** Halbe Welle zur Abtriebsseite wie bei Creates Motor, mit Flywheel und ohne. */
+	public static final BlockEntityEntry<TurbineOutputBlockEntity> TURBINE_OUTPUT =
+			REGISTRATE.blockEntity("turbine_output", TurbineOutputBlockEntity::new)
+					.visual(() -> OrientedRotatingVisual.of(AllPartialModels.SHAFT_HALF), false)
+					.validBlock(CHPBlocks.TURBINE_OUTPUT)
+					.renderer(() -> TurbineOutputRenderer::new)
 					.register();
 
 	public static void register() {}

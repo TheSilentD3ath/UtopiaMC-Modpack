@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "S S",
+    " H ",
+    "S S"
+  ],
+  "key": {
+    "S": {
+      "item": "create:copper_sheet"
+    },
+    "H": {
+      "item": "create:shaft"
+    }
+  },
+  "result": {
+    "item": "createhp:turbine_rotor",
+    "count": 2
+  }
+}

@@ -7,6 +7,7 @@ import com.tterrag.registrate.util.entry.BlockEntry;
 
 import java.util.function.Supplier;
 
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.shiro.createhp.CreateHP;
@@ -20,6 +21,11 @@ import net.shiro.createhp.content.pressure.PipeMaterial;
 import net.shiro.createhp.content.steam.SteamOutletBlock;
 import net.shiro.createhp.content.tank.PressureTankBlock;
 import net.shiro.createhp.content.tank.PressureTankBlockEntity;
+import net.shiro.createhp.content.turbine.CondensateOutletBlock;
+import net.shiro.createhp.content.turbine.SteamInletBlock;
+import net.shiro.createhp.content.turbine.TurbineCasingBlock;
+import net.shiro.createhp.content.turbine.TurbineOutputBlock;
+import net.shiro.createhp.content.turbine.TurbineRotorBlock;
 import net.shiro.createhp.content.valve.PressureValveBlock;
 import net.shiro.createhp.content.valve.ValveKind;
 
@@ -125,6 +131,63 @@ public class CHPBlocks {
 					.item()
 					.build()
 					.register();
+
+	// --- Dampfturbine: Gehaeuse, Rotor und Einlass je Werkstoff; Kondensatauslass und Abtrieb passen in beide ---
+	public static final BlockEntry<TurbineCasingBlock> TURBINE_CASING =
+			turbineCasing("turbine_casing", PipeMaterial.COPPER);
+	public static final BlockEntry<TurbineCasingBlock> NETHERITE_TURBINE_CASING =
+			turbineCasing("netherite_turbine_casing", PipeMaterial.NETHERITE);
+	public static final BlockEntry<TurbineRotorBlock> TURBINE_ROTOR =
+			turbineRotor("turbine_rotor", PipeMaterial.COPPER);
+	public static final BlockEntry<TurbineRotorBlock> NETHERITE_TURBINE_ROTOR =
+			turbineRotor("netherite_turbine_rotor", PipeMaterial.NETHERITE);
+	public static final BlockEntry<SteamInletBlock> STEAM_INLET =
+			steamInlet("steam_inlet", PipeMaterial.COPPER);
+	public static final BlockEntry<SteamInletBlock> NETHERITE_STEAM_INLET =
+			steamInlet("netherite_steam_inlet", PipeMaterial.NETHERITE);
+
+	public static final BlockEntry<CondensateOutletBlock> CONDENSATE_OUTLET =
+			REGISTRATE.block("condensate_outlet", p -> new CondensateOutletBlock(p, () -> CHPBlockEntities.CONDENSATE_OUTLET.get()))
+					.initialProperties(() -> Blocks.COPPER_BLOCK)
+					.item()
+					.build()
+					.register();
+
+	public static final BlockEntry<TurbineOutputBlock> TURBINE_OUTPUT =
+			REGISTRATE.block("turbine_output", p -> new TurbineOutputBlock(p, () -> CHPBlockEntities.TURBINE_OUTPUT.get()))
+					.initialProperties(() -> Blocks.COPPER_BLOCK)
+					.item()
+					.build()
+					.register();
+
+	// Netherit-Teile halten wie Netheritbloecke auch einer Explosion am eigenen Einlass stand.
+	private static Block base(PipeMaterial material) {
+		return material == PipeMaterial.NETHERITE ? Blocks.NETHERITE_BLOCK : Blocks.COPPER_BLOCK;
+	}
+
+	private static BlockEntry<TurbineCasingBlock> turbineCasing(String id, PipeMaterial material) {
+		return REGISTRATE.block(id, p -> new TurbineCasingBlock(p, material))
+				.initialProperties(() -> base(material))
+				.item()
+				.build()
+				.register();
+	}
+
+	private static BlockEntry<TurbineRotorBlock> turbineRotor(String id, PipeMaterial material) {
+		return REGISTRATE.block(id, p -> new TurbineRotorBlock(p, material))
+				.initialProperties(() -> base(material))
+				.item()
+				.build()
+				.register();
+	}
+
+	private static BlockEntry<SteamInletBlock> steamInlet(String id, PipeMaterial material) {
+		return REGISTRATE.block(id, p -> new SteamInletBlock(p, material, () -> CHPBlockEntities.STEAM_INLET.get()))
+				.initialProperties(() -> base(material))
+				.item()
+				.build()
+				.register();
+	}
 
 	// Five pump tiers (3 copper + 2 netherite). Blockstate/models/lang are shipped as static resources.
 	public static final BlockEntry<HighPressurePumpBlock> PUMP_T1 = pump(PumpTier.TIER_1);

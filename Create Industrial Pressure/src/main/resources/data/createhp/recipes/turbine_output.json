@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "createhp:turbine_casing"
+    },
+    {
+      "item": "create:shaft"
+    },
+    {
+      "item": "create:precision_mechanism"
+    }
+  ],
+  "result": {
+    "item": "createhp:turbine_output"
+  }
+}

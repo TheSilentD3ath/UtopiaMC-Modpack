@@ -6,7 +6,6 @@ import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 
-import net.createmod.catnip.lang.LangBuilder;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
@@ -19,7 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.shiro.createhp.CreateHP;
+import net.shiro.createhp.content.pressure.PressureTooltip;
 import net.shiro.createhp.registry.CHPFluids;
 
 import org.jetbrains.annotations.Nullable;
@@ -129,12 +128,11 @@ public class SteamOutletBlockEntity extends SmartBlockEntity implements SidedSto
 
 	@Override
 	public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
-		LangBuilder lang = new LangBuilder(CreateHP.ID);
-		lang.translate("gui.goggles.steam_outlet").forGoggles(tooltip);
-		lang.translate("gui.goggles.steam_rate", producedPerTick / 81)
+		PressureTooltip.lang().translate("gui.goggles.steam_outlet").forGoggles(tooltip);
+		PressureTooltip.lang().translate("gui.goggles.steam_rate", producedPerTick / 81)
 				.style(producedPerTick > 0 ? ChatFormatting.AQUA : ChatFormatting.DARK_GRAY)
 				.forGoggles(tooltip, 1);
-		lang.translate("gui.goggles.steam_buffer", buffer.amount / 81, BUFFER / 81)
+		PressureTooltip.lang().translate("gui.goggles.steam_buffer", buffer.amount / 81, BUFFER / 81)
 				.style(ChatFormatting.GRAY)
 				.forGoggles(tooltip, 1);
 		return true;

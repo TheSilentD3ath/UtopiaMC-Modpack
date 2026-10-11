@@ -32,6 +32,11 @@ public final class PressureTooltip {
 		return addPressure(tooltip, "gui.goggles.tank_pressure", bar, state);
 	}
 
+	/** Dampfeinlass der Turbine: Druck der Rohre, die in ihn speisen, gegen seinen Grenzwert. */
+	public static boolean addInlet(List<Component> tooltip, float bar, BlockState state) {
+		return addPressure(tooltip, "gui.goggles.inlet_pressure", bar, state);
+	}
+
 	private static boolean addPressure(List<Component> tooltip, String header, float bar, BlockState state) {
 		float rating = Pressure.ratingBar(state);
 		lang().translate(header).forGoggles(tooltip);
@@ -112,7 +117,11 @@ public final class PressureTooltip {
 		return bar < 10f ? String.format(java.util.Locale.ROOT, "%.1f", bar) : Integer.toString(Math.round(bar));
 	}
 
-	private static LangBuilder lang() {
+	/**
+	 * Ein neuer Builder je Zeile: LangBuilder sammelt alles, was man ihm uebergibt. Mit einem gemeinsamen Builder
+	 * haengt jede Zeile die vorigen noch einmal vor sich.
+	 */
+	public static LangBuilder lang() {
 		return new LangBuilder(CreateHP.ID);
 	}
 }

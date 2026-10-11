@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "createhp:block/turbine/netherite_turbine_casing"
+    }
+  }
+}

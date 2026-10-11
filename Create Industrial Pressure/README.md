@@ -1,7 +1,7 @@
 # Create: Industrial Pressure
 
-Fabric addon for Create 6 that adds pressure-rated pipe materials, pressure valves, pressure tanks
-and five mechanical pump tiers.
+Fabric addon for Create 6 that adds pressure-rated pipe materials, pressure valves, pressure tanks,
+steam carried in pipes, a large steam turbine and five mechanical pump tiers.
 
 ## Target versions
 
@@ -47,6 +47,13 @@ Useful development tasks:
 - pressure tanks in copper (32 buckets per block, 256 bar) and netherite (128 buckets, 1024 bar),
   built on Create's tank: multiblocks, windows, boiler; Create's own tanks now hold 16 bar (server
   config switch `createTanksLimited`)
+- steam as a fluid: a Steam Outlet on a boiler turns its spare levels into steam (10 mB per tick per
+  level) for pumps to carry; pressure tank boilers may be 5 × 5 wide and reach 50 (copper) or 150
+  (netherite) levels
+- a steam turbine multiblock in copper and netherite: 5 × 5 casing around a 3 × 3 rotor, 1 to 16
+  rotor layers, 1.5 or 2.5 times a steam engine's output per 10 mB of steam per tick at 64 RPM, half
+  the steam back as water through condensate outlets; its steam inlets burst or explode above their
+  limit
 - pipe pressure on Engineer's Goggles and as a Display Link source, for the mod's pipes, valves,
   tanks and pumps and for Create's pipes, valves, tanks and pump; a tank fill-level source
 - Create-style attachment models, transparent fluid rendering and a dedicated creative tab
@@ -65,6 +72,7 @@ Create's pump at 256 RPM gives 16 bar and the pump tiers at 256 RPM give 64 to 1
 | netherite pressure pipe and its glass variant | 1024 bar |
 | Create fluid tank (unless `createTanksLimited = false`) | 16 bar |
 | High Pressure Tank / Netherite Pressure Tank | 256 / 1024 bar |
+| Steam Inlet / Netherite Steam Inlet | 256 / 1024 bar |
 
 Valves hold the limit of their material (256 or 1024 bar):
 
@@ -80,8 +88,8 @@ pressure and flow is described in `PRESSURE_SYSTEM.md`.
 Each limit is the maximum of the matching pump at full speed, so a network built from matching
 parts never bursts. Overload comes from mixing (a strong pump on weaker pipes) or from several
 pumps feeding the same pipe, whose pressures add up. Only high pressure pumps check their network,
-so a network of Create pumps behaves exactly as in Create. The full plan, including valves, tanks
-and steam, is in `PRESSURE_SYSTEM.md`.
+so a network of Create pumps behaves exactly as in Create. The full design, including valves, tanks,
+steam and the turbine, is in `PRESSURE_SYSTEM.md`.
 
 The numeric tier values live in `PumpTier`, the pipe limits in `PipeMaterial` and `Pressure`.
 Explosion, check interval and time to burst are in the server config `config/createhp-server.toml`;
@@ -96,10 +104,12 @@ CreateHP
   content/pressure/  pressure in bar, limits, goggles and the Display Link source
   content/valve/     the three valves and how they shape the pumps' pressure and flow
   content/tank/      pressure tanks, tank pressure and the fill-level Display Link source
-  client/         render layers and Create-compatible attachment models
-  mixin/          narrow integration points for range, throughput, wrench, valves and flow
-tools/            generators for the valve and tank textures, models and blockstates
-  config/         static gameplay tuning values
+  content/steam/     steam fluid, steam outlet and the boiler rules of pressure tanks
+  content/turbine/   the steam turbine: parts, shape check, steam use and rotation
+  client/         render layers, Create-compatible attachment models and renderers
+  config/         server config
+  mixin/          narrow integration points for range, throughput, wrench, valves, flow, tanks and boilers
+tools/            generators for the valve, tank, steam and turbine textures, models and blockstates
 ```
 
 `PressurePipeBlock` and `PressureGlassPipeBlock` are material-neutral implementations configured by

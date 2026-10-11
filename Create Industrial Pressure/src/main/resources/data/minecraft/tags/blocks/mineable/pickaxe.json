@@ -18,6 +18,14 @@
     "createhp:netherite_relief_valve",
     "createhp:pressure_tank",
     "createhp:netherite_pressure_tank",
-    "createhp:steam_outlet"
+    "createhp:steam_outlet",
+    "createhp:turbine_casing",
+    "createhp:netherite_turbine_casing",
+    "createhp:turbine_rotor",
+    "createhp:netherite_turbine_rotor",
+    "createhp:steam_inlet",
+    "createhp:netherite_steam_inlet",
+    "createhp:condensate_outlet",
+    "createhp:turbine_output"
   ]
 }

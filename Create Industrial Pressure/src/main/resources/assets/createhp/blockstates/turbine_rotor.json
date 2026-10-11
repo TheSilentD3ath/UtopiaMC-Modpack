@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "createhp:block/turbine/turbine_rotor",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "createhp:block/turbine/turbine_rotor"
+    },
+    "axis=z": {
+      "model": "createhp:block/turbine/turbine_rotor",
+      "x": 90
+    }
+  }
+}

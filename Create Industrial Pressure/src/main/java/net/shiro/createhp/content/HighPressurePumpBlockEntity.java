@@ -21,6 +21,7 @@ import net.shiro.createhp.config.CHPConfig;
 import net.shiro.createhp.content.pressure.PipeMaterial;
 import net.shiro.createhp.content.pressure.Pressure;
 import net.shiro.createhp.content.pressure.PressureTooltip;
+import net.shiro.createhp.content.turbine.SteamInletBlock;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -187,8 +188,9 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 	}
 
 	/**
-	 * Tanks am Ende einer Leitung: Ein Tank hat keinen eigenen Druck, er bekommt den des Anschlusses, der in ihn
-	 * speist. Ueberlastet ist dann der Tankblock an genau diesem Anschluss; er platzt, nicht der ganze Multiblock.
+	 * Tanks und Dampfeinlaesse am Ende einer Leitung: Sie haben keinen eigenen Druck, sie bekommen den des
+	 * Anschlusses, der in sie speist. Ueberlastet ist dann der Block an genau diesem Anschluss; er platzt, nicht der
+	 * ganze Multiblock.
 	 */
 	private void addOverloadedTanks(BlockPos at, FluidTransportBehaviour pipe, Set<BlockPos> overloaded) {
 		if (pipe.interfaces == null)
@@ -198,7 +200,8 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 			if (!level.isLoaded(neighbour))
 				continue;
 			BlockState state = level.getBlockState(neighbour);
-			if (!(state.getBlock() instanceof FluidTankBlock))
+			// Dampfeinlaesse der Turbine haben wie Tanks kein Rohrverhalten und tragen den Druck ihres Anschlusses.
+			if (!(state.getBlock() instanceof FluidTankBlock) && !(state.getBlock() instanceof SteamInletBlock))
 				continue;
 			Couple<Float> pressure = entry.getValue().getPressure();
 			float bar = Math.max(pressure.getFirst(), pressure.getSecond()) / Pressure.UNITS_PER_BAR;

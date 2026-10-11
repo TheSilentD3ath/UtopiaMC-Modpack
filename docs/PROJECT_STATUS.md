@@ -34,9 +34,10 @@ while this public repository is migrated to the current structure.
   development artifact: the smoke-test fixes changed its declared dependencies,
   added a German translation and a block tag, and fixed pick-block on glass
   pipes; a later fix made pumps work with a tank directly on a face. Since then
-  the pressure system's first three phases were added: pressure limits with
-  bursting and netherite explosions; shut-off, regulator and relief valves; and
-  pressure tanks.
+  all four phases of the pressure system were added: pressure limits with
+  bursting and netherite explosions; shut-off, regulator and relief valves;
+  pressure tanks; and steam with a steam outlet for boilers and a large steam
+  turbine.
   Before a release, the open defects listed there need a decision.
 - Guidebook generation works, but final in-game validation remains pending.
 - Heracles quest data has passed its current static validation.
@@ -563,6 +564,69 @@ Not tested: pressure tanks on contraptions (Create's tank has its own mounted st
 and movement behaviour; ours are not registered for that), the schematicannon, placing
 whole layers with the item on a wide tank, the creative mode exchange with buckets,
 the dev client.
+
+### Phase 4: steam and the steam turbine (2026-10-11)
+
+Built: steam as a fluid, a Steam Outlet for boilers, pressure tank boilers up to
+5 × 5 wide with 50 (copper) or 150 (netherite) levels, and a steam turbine multiblock
+in copper and netherite with steam inlets and condensate outlets. The maintainer
+chose a steam outlet block, transport by pumps, the boiler sizes, a large 5 × 5
+turbine in the style of Create: New Age and Create: Power Grid (ideas only, no
+code or textures), clearly more power than Create, half the steam back as water, and
+a pressure limit in the turbine. Details in `PRESSURE_SYSTEM.md`.
+
+Tested on the dedicated server (release JAR, Create 6.0.8.1, Utopia Core); steam
+rates read from NBT, flow from tank contents over about 200 ticks:
+
+| setup | measured | expected |
+| --- | --- | --- |
+| Create boiler 2 × 2 × 2 with a steam outlet | 20 mB/t steam | 2 levels |
+| netherite pressure tank 5 × 5 × 3 on 25 superheated burners | ActiveHeat 150, 1,500 mB/t | 150 levels |
+| copper pressure tank 5 × 5 × 2 on 25 superheated burners | 500 mB/t | 50 levels |
+| Create boiler 3 × 3 × 8, 6 steam engines and an outlet | 60 mB/t | 12 levels by water, 6 for the engines |
+| copper turbine, 2 rotor layers, endless steam, tier 1 pump | 200 mB/t, 64 RPM, 491,520 SU | 20 × 16,384 × 1.5 |
+| same, condensate pumped into a tank | 100 mB/t water | half the steam |
+| same, fed by Create's pump at 256 RPM | 128 mB/t, 314,573 SU | 12.8 × 16,384 × 1.5 |
+| rotor removed, or a netherite rotor in the copper turbine | stops at once, speed 0 | |
+| copper inlet at 512 bar (tier 4) | bursts, turbine incomplete | |
+| netherite turbine, 1 layer, tier 5 at 1,024 bar | holds, 200 mB/t, 819,200 SU | 20 × 16,384 × 2.5 |
+| netherite inlet at 2,048 bar (two tier 5 pumps) | explodes | |
+| Create boiler 3 × 3 × 3 on 9 superheated burners → outlet → tier 1 → copper turbine, 1 layer | 60 mB/t, 147,456 SU | 6 levels; 6 steam engines give 98,304 |
+| that turbine with a second condensate outlet, the first full | 30 mB/t into the second | all 30 mB/t condensate |
+| 16 rotor layers / 17 | forms / "too long" | at most 16 |
+| restart | turbines run on with their saved rate in the same kinetic network | |
+
+`javap` on the exported `BoilerData` shows all nine new handlers called (size and
+water limits, heat factor, outlet count, active with outlets, scaled bars, clear,
+write, read).
+
+Production client, German: the outlet, steam (white in a glass pipe and in a pressure
+tank window) and all turbine parts render with their textures; the output shows its
+half shaft in the front opening. Goggles: steam outlet "Dampfauslass: 60 mB/t Dampf,
+60 von 8000 mB im Auslass"; netherite boiler "Kesselzustand: Lvl 150" with the bars
+scaled to 18; turbine output "Dampfturbine: Kupfer, Rotorlagen: 1, 60 von 100 mB/t
+Dampf, 30 mB/t Kondensat" and Create's generator stats with 147,456 SU; an
+incomplete turbine "Unvollständig, Prüfe den Block bei 203 -58 0", and "Zu lang:
+höchstens 16 Rotorlagen"; inlet "Einlassdruck: 0,0 von 256 bar, 0 von 8000 mB Dampf
+im Einlass, Teil einer vollständigen Turbine"; condensate outlet "8000 von 8000 mB
+Wasser". The Shift tooltips explain output and inlet. Both logs: only the usual
+entries; the new recipes load without errors.
+
+Fixed during the test: goggle lines repeated all earlier lines (one shared
+`LangBuilder`), on the steam outlet from phase 4a and on the turbine parts. With two
+condensate outlets, half the water was lost when the one listed second was full; a
+second pass now gives it to any outlet with room.
+
+Defaults chosen during the build, for the maintainer to confirm or change: at most
+16 rotor layers, a fixed 64 RPM like the steam engine, condensate lost when the
+outlets are full, and the recipes listed in `PRESSURE_SYSTEM.md`.
+
+Not tested: crafting the new recipes in survival, the turbine under real load or
+overstressed (only its capacity was read), its shaft turning seen over time (stills
+only), turbine parts on contraptions or rotated with the wrench, several inlets fed by
+different pumps, the condensate fed back into the boiler that makes the steam,
+steam outlets on a netherite pressure tank together with steam engines, the dev
+client.
 
 ## German translation of Utopia Core
 
