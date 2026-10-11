@@ -9,9 +9,11 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
 
 import net.shiro.createhp.CreateHP;
+import net.shiro.createhp.client.PressureValveRenderer;
 import net.shiro.createhp.content.HighPressurePumpBlockEntity;
 import net.shiro.createhp.content.PressureGlassPipeBlockEntity;
 import net.shiro.createhp.content.PressurePipeBlockEntity;
+import net.shiro.createhp.content.valve.PressureValveBlockEntity;
 
 public class CHPBlockEntities {
 	private static final CreateRegistrate REGISTRATE = CreateHP.REGISTRATE;
@@ -55,6 +57,15 @@ public class CHPBlockEntities {
 					.validBlocks(CHPBlocks.PUMP_T1, CHPBlocks.PUMP_T2, CHPBlocks.PUMP_T3,
 							CHPBlocks.PUMP_T4, CHPBlocks.PUMP_T5)
 					.renderer(() -> PumpRenderer::new)
+					.register();
+
+	/** Eine Block-Entity fuer alle sechs Ventile; Art und Material liest sie aus ihrem Block. */
+	public static final BlockEntityEntry<PressureValveBlockEntity> PRESSURE_VALVE =
+			REGISTRATE.blockEntity("pressure_valve", PressureValveBlockEntity::new)
+					.validBlocks(CHPBlocks.PRESSURE_VALVE, CHPBlocks.NETHERITE_PRESSURE_VALVE,
+							CHPBlocks.PRESSURE_REGULATOR, CHPBlocks.NETHERITE_PRESSURE_REGULATOR,
+							CHPBlocks.RELIEF_VALVE, CHPBlocks.NETHERITE_RELIEF_VALVE)
+					.renderer(() -> PressureValveRenderer::new)
 					.register();
 
 	public static void register() {}

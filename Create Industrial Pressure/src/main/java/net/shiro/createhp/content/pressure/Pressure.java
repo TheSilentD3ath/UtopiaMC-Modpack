@@ -11,8 +11,6 @@ import com.simibubi.create.content.fluids.pipes.valve.FluidValveBlock;
 import net.createmod.catnip.data.Couple;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.shiro.createhp.content.PressureGlassPipeBlock;
-import net.shiro.createhp.content.PressurePipeBlock;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -55,7 +53,7 @@ public final class Pressure {
 	/** Grenzwert in bar, oder {@link #UNRATED}. */
 	public static float ratingBar(BlockState state) {
 		Block block = state.getBlock();
-		// Unsere Rohre zuerst: sie erben von Creates Rohrklassen und wuerden sonst als Create-Rohr gelten.
+		// Unsere Bloecke zuerst: sie erben von Creates Rohr- und Ventilklassen und wuerden sonst als Create-Teil gelten.
 		PipeMaterial material = materialOf(block);
 		if (material != null)
 			return material.ratingBar;
@@ -67,11 +65,7 @@ public final class Pressure {
 
 	@Nullable
 	public static PipeMaterial materialOf(Block block) {
-		if (block instanceof PressurePipeBlock pipe)
-			return pipe.getMaterial();
-		if (block instanceof PressureGlassPipeBlock glass)
-			return glass.getMaterial();
-		return null;
+		return block instanceof PressureRated rated ? rated.getMaterial() : null;
 	}
 
 	/** Etwas Spielraum gegen Rundungsfehler: Ein Netz genau am Grenzwert soll nicht platzen. */

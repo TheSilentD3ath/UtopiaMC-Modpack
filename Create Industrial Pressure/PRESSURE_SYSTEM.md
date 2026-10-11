@@ -15,6 +15,15 @@ pipes to engines elsewhere.
 - **Old burst rule:** replaced. Pipes burst only above their limit; there is no longer a rule
   that every Create pipe in a high pressure network bursts.
 
+Further answers (maintainer, 2026-10-11, by voice; the transcript was garbled, so points 2 and 4
+are my reading and still open to correction):
+
+1. A valve becomes smart by right-clicking it with an Electron Tube.
+2. A relief valve vents into the world as a cloud. The fluid is lost; nothing is placed.
+3. Tank capacity per tier: scaled as seems logical.
+4. Boiler levels: up to about 150 at the top tier.
+5. Textures: recoloured from Create, like the pipes.
+
 ## Units and limits
 
 The pressure is Create's own: every pipe connection holds an inbound and an outward value
@@ -52,24 +61,55 @@ one pipe.
 - Server config `config/createhp-server.toml`: explosion block damage, explosion power,
   check interval, checks until a part bursts.
 
-## Phase 2: valves
+## Phase 2: valves (done)
 
-Each valve comes in copper (256 bar) and netherite (1,024 bar), and each has a smart variant.
+Three valves, each in copper (256 bar) and netherite (1,024 bar). All are Create's fluid valve
+underneath: same shape, orientation and pipe connections, Create's models as parents.
 
-| Valve | Does | Smart variant |
+| Valve | Does | Smart variant (Electron Tube) |
 | --- | --- | --- |
-| shut-off valve | closes a pipe completely, like Create's fluid valve | opens and closes by redstone instead of rotation |
-| pressure regulator | caps the pressure behind it at a set value and so lowers the flow | redstone strength 0 to 15 sets the value |
-| relief valve | opens above a set pressure and lets fluid out until it is below | emits redstone while it vents |
+| shut-off valve | closes completely: no fluid and no pressure past it; opens by rotation like Create's valve | opens while powered by redstone; no shaft |
+| pressure regulator | caps the pressure behind it at its set value and so lowers the flow | redstone strength 0 to 15 sets the value (15 = the valve's limit, 0 = closed) |
+| relief valve | keeps its whole pipe run at or below its set value; the surplus is vented as a cloud and the fluid is lost | emits redstone 15 while it vents |
 
-- The set value is chosen like Create's value boxes (scroll on the valve).
-- A regulator splits a run in two, like a pump does in Create: downstream it re-emits the
-  lower of the upstream pressure and its set value. This keeps Create's flow model intact.
-- Every valve is a Display Link source through the existing pressure source.
+- **Where it acts.** Create sets pressure only in `PumpBlockEntity.distributePressureTo`.
+  `PressureShaping` walks the pipes from the pump first and gives every pipe a cap; the pump's
+  `addPressure` calls are then limited so that the sum at a connection stays under the cap. Create
+  keeps computing with its own values. Behind a closed shut-off valve the cap is 0 (Create's own
+  valve lets pressure through, so pipes behind a closed Create valve would still burst). Behind a
+  regulator, seen from the pump, the cap is its set value. A relief valve caps its zone: everything
+  reachable from it without passing a regulator or a closed shut-off valve.
+- **Several pumps.** Each pump side enters its contribution at every valve it reaches; a pump side
+  that no longer reaches a valve removes it, and contributions of pumps that are gone or stopped
+  are dropped every second. A relief valve vents when the sum is above its set value, so two pumps
+  of 64 bar each open a relief valve set to 100 bar.
+- **Flow.** Create derives a network's flow once from the pressure at its source (pressure / 2 mB
+  per tick). A regulator behind the pump would not change that, so `FluidNetworkMixin` caps the
+  flow of every network that passes a regulator or a venting relief zone. Each network gets the
+  share of its pump's contribution: two pumps through one regulator set to 16 bar deliver 128 mB/t
+  together, not each. Venting draws the surplus (excess pressure / 2 mB per tick, shared the same
+  way) from the network's source on top.
+- **Set value.** Create's value panel on the two sides where the shut-off valve has its shaft;
+  regulator and relief valve show a pressure gauge there. 256 steps: 1 bar per step on copper,
+  4 bar on netherite. Defaults: regulator 16 bar (Create's pipe limit), relief valve its own limit.
+- **Relief valve at a pipe end** (the usual place, at the end of a T-piece): not an open pipe end,
+  so nothing spills. Create gives dead-end branches no pressure; the relief valve therefore shows
+  the pressure of its run on the goggles and on Display Links.
+- **Indicator.** The valve's indicator shows the state from the block's ENABLED property: shut-off
+  open green / closed red, regulator idle green / regulating yellow, relief valve idle green /
+  venting orange. The handle colour tells the kinds apart (dark, brass, red); smart valves have a
+  brass indicator.
+- **Goggles:** pressure and limit like a pipe, plus open/closed, set value and outlet, "venting
+  N bar", and the smart behaviour. **Display Link:** the pipe pressure source works on all valves.
+- **Overload:** valves count against their material's limit like pipes. A copper valve bursts and
+  drops, a netherite valve explodes.
+- **Recipes** (shapeless): shut-off valve = Create fluid valve + pressure pipe of the material;
+  regulator = shut-off valve + precision mechanism; relief valve = shut-off valve + piston. A smart
+  valve drops its Electron Tube when broken.
 
-Open for the maintainer: how a valve becomes smart (proposal: right-click with an Electron
-Tube, which Create uses for its "smart" parts), and where a relief valve's fluid goes (into the
-world as fluid, or vented as particles and lost).
+Limits of the model: Create computes one flow rate per network, so a regulator in one branch also
+throttles the other branches of the same network. The pump contributions are not saved; after
+loading, every regulator and relief valve makes its network redistribute once.
 
 ## Phase 3: pressure tanks
 
@@ -77,7 +117,8 @@ world as fluid, or vented as particles and lost).
   limit and more capacity per block than Create's 8 buckets.
 - Display Link: fill level, and pressure where a pump feeds them.
 
-Open for the maintainer: capacity per block for each tier.
+Capacity per block (maintainer: "as seems logical"): proposed 32 buckets for copper and 128 for
+netherite, four and sixteen times Create's tank.
 
 ## Phase 4: steam
 
@@ -90,11 +131,13 @@ Open for the maintainer: capacity per block for each tier.
 - The pressure of a steam line is that of its boiler, so it counts against pipe limits like
   pump pressure does.
 
-Open for the maintainer: the boiler level cap per tier, and how many mB of steam one boiler
-level is worth (Create uses 10 mB of water per tick per level).
+Boiler level cap: up to about 150 at the top tier (maintainer); proposed 50 for copper and 150 for
+netherite. Still open: how many mB of steam one boiler level is worth (Create uses 10 mB of water
+per tick per level).
 
 ## Textures
 
-New blocks need textures in Create's layout. The pipes so far were recoloured from Create and
-are listed in `LICENSE`; the same approach works for valves and tanks, unless they are to be
-drawn as commissioned art.
+New blocks need textures in Create's layout. Pipes and valves are recoloured from Create and
+listed in `LICENSE`; the valve set, its models and blockstates come from `tools/valve_assets.py`.
+The pressure gauge on regulator and relief valve is drawn by that script, not taken from Create.
+Tanks follow the same way, unless they are to be drawn as commissioned art.

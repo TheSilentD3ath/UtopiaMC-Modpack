@@ -17,8 +17,13 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
 - `de_de.json` follows Create's own German terms (Rohr, Glasrohr, Netherit-, Erweitert).
   Keep both lang files on the same keys.
 - Pressure system: decisions, units, limits and the phase plan (valves, pressure tanks,
-  steam) are in `PRESSURE_SYSTEM.md`. Phase 1 is built. Pressure is Create's own pipe
-  pressure read in bar (16 units = 1 bar); do not add a second pressure model.
+  steam) are in `PRESSURE_SYSTEM.md`. Phases 1 and 2 are built. Pressure is Create's own
+  pipe pressure read in bar (16 units = 1 bar); do not add a second pressure model. Valves
+  change it only while a pump distributes (`PressureShaping`) and cap the flow of Create's
+  fluid networks (`FluidNetworkMixin`, `ValveFlow`).
+- Valve textures, models and blockstates come from `tools/valve_assets.py` (reads Create's
+  valve assets from the Create JAR; needs ImageMagick). Regenerate instead of editing the
+  generated files by hand; it reproduces the committed files byte for byte.
 - The server config is `config/createhp-server.toml` (global on Fabric). Edit it with the
   server stopped; on shutdown the server writes its loaded values back.
 
@@ -33,6 +38,11 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
   a different module set than the one nested in Create's JAR (registry mismatch on
   `porting_lib:area_selector`). For multiplayer, run the release JAR on both sides with
   Fabric API 0.92.6 and Create's Modrinth JAR.
+- The new valve mixins (`FluidNetworkMixin`, `ReliefOpenEndMixin`) use the default
+  `require = 1` and stop the game if they no longer apply. The pressure redirect in
+  `PumpThroughputMixin` also carries the valves; it is `require = 0` like the other pump mixins.
+- On the dedicated server, `data merge block <valve> {ScrollValue:N}` sets a valve's value
+  without the panel's callback; break and re-place a neighbouring pipe so the pumps redistribute.
 - The pump mixins use `require = 0` and fail silently. After any Create update, start with
   `-Dmixin.debug.export=true` and check with `javap` that every handler is called from
   the exported Create classes in `.mixin.out/`.

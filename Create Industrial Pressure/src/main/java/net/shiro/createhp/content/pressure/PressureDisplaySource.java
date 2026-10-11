@@ -12,6 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.shiro.createhp.CreateHP;
+import net.shiro.createhp.content.valve.PressureValveBlockEntity;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -46,7 +47,7 @@ public class PressureDisplaySource extends PercentOrProgressBarDisplaySource {
 		FluidTransportBehaviour pipe = BlockEntityBehaviour.get(be, FluidTransportBehaviour.TYPE);
 		if (pipe == null)
 			return null;
-		float bar = Pressure.barAt(pipe);
+		float bar = be instanceof PressureValveBlockEntity valve ? valve.displayBar(pipe) : Pressure.barAt(pipe);
 		float rating = Pressure.ratingBar(be.getBlockState());
 		return switch (getMode(context)) {
 			case 0, 1 -> Float.isInfinite(rating) ? 0f : bar / rating;

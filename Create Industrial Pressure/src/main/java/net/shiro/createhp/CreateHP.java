@@ -2,7 +2,9 @@ package net.shiro.createhp;
 
 import com.simibubi.create.Create;
 import com.simibubi.create.foundation.data.CreateRegistrate;
+import com.simibubi.create.foundation.item.ItemDescription;
 
+import net.createmod.catnip.lang.FontHelper;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.ResourceLocation;
 
@@ -24,7 +26,10 @@ public class CreateHP implements ModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger(NAME);
 
 	// Create's Registrate variant — gives us Create-flavoured blocks/items/BEs.
-	public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(ID);
+	// Die Tooltip-Fabrik muss vor dem ersten Item stehen: Registrate merkt sie sich pro Eintrag beim Anlegen.
+	// Sie zeigt Creates Shift-Beschreibung, wo es einen ".tooltip.summary"-Text gibt; sonst aendert sich nichts.
+	public static final CreateRegistrate REGISTRATE = CreateRegistrate.create(ID)
+			.setTooltipModifierFactory(item -> new ItemDescription.Modifier(item, FontHelper.Palette.STANDARD_CREATE));
 
 	@Override
 	public void onInitialize() {

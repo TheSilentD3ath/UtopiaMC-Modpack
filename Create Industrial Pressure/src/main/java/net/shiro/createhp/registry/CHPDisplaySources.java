@@ -33,6 +33,7 @@ public final class CHPDisplaySources {
 				CHPBlockEntities.NETHERITE_PRESSURE_PIPE.get(),
 				CHPBlockEntities.NETHERITE_GLASS_PIPE.get(),
 				CHPBlockEntities.HIGH_PRESSURE_PUMP.get(),
+				CHPBlockEntities.PRESSURE_VALVE.get(),
 				AllBlockEntityTypes.FLUID_PIPE.get(),
 				AllBlockEntityTypes.ENCASED_FLUID_PIPE.get(),
 				AllBlockEntityTypes.GLASS_FLUID_PIPE.get(),

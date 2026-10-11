@@ -12,6 +12,8 @@ import net.shiro.createhp.content.PressureGlassPipeBlock;
 import net.shiro.createhp.content.PressurePipeBlock;
 import net.shiro.createhp.content.PumpTier;
 import net.shiro.createhp.content.pressure.PipeMaterial;
+import net.shiro.createhp.content.valve.PressureValveBlock;
+import net.shiro.createhp.content.valve.ValveKind;
 
 public class CHPBlocks {
 	private static final CreateRegistrate REGISTRATE = CreateHP.REGISTRATE;
@@ -60,6 +62,33 @@ public class CHPBlocks {
 					.properties(p -> p.noOcclusion())
 					.onRegister(CreateRegistrate.blockModel(() -> CHPPipeAttachmentModel::netheriteWithAO))
 					.register();
+
+	// --- Druckventile: je Art in Kupfer und Netherit; Blockstates und Modelle liegen als feste Ressourcen bei ---
+	public static final BlockEntry<PressureValveBlock> PRESSURE_VALVE =
+			valve("pressure_valve", ValveKind.SHUTOFF, PipeMaterial.COPPER);
+	public static final BlockEntry<PressureValveBlock> NETHERITE_PRESSURE_VALVE =
+			valve("netherite_pressure_valve", ValveKind.SHUTOFF, PipeMaterial.NETHERITE);
+	public static final BlockEntry<PressureValveBlock> PRESSURE_REGULATOR =
+			valve("pressure_regulator", ValveKind.REGULATOR, PipeMaterial.COPPER);
+	public static final BlockEntry<PressureValveBlock> NETHERITE_PRESSURE_REGULATOR =
+			valve("netherite_pressure_regulator", ValveKind.REGULATOR, PipeMaterial.NETHERITE);
+	public static final BlockEntry<PressureValveBlock> RELIEF_VALVE =
+			valve("relief_valve", ValveKind.RELIEF, PipeMaterial.COPPER);
+	public static final BlockEntry<PressureValveBlock> NETHERITE_RELIEF_VALVE =
+			valve("netherite_relief_valve", ValveKind.RELIEF, PipeMaterial.NETHERITE);
+
+	private static BlockEntry<PressureValveBlock> valve(String id, ValveKind kind, PipeMaterial material) {
+		return REGISTRATE.block(id, p -> new PressureValveBlock(p, kind, material,
+						() -> CHPBlockEntities.PRESSURE_VALVE.get()))
+				// Wie die Rohre desselben Materials, damit ein Ventil sich nicht anders abbauen laesst als sein Rohr.
+				.initialProperties(() -> material == PipeMaterial.NETHERITE ? Blocks.NETHERITE_BLOCK : Blocks.COPPER_BLOCK)
+				.properties(p -> p.noOcclusion())
+				// Creates Ventil zeichnet seine Rohranschluesse wie ein Rohr; wir mit den Teilen des passenden Materials.
+				.onRegister(CreateRegistrate.blockModel(() -> CHPPipeAttachmentModel.factory(material)))
+				.item()
+				.build()
+				.register();
+	}
 
 	// Five pump tiers (3 copper + 2 netherite). Blockstate/models/lang are shipped as static resources.
 	public static final BlockEntry<HighPressurePumpBlock> PUMP_T1 = pump(PumpTier.TIER_1);

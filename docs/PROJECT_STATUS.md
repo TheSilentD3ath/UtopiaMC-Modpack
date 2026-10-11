@@ -33,8 +33,10 @@ while this public repository is migrated to the current structure.
   below). The repository-built JAR is no longer byte-identical to the
   development artifact: the smoke-test fixes changed its declared dependencies,
   added a German translation and a block tag, and fixed pick-block on glass
-  pipes; a later fix made pumps work with a tank directly on a face. Before a
-  release, the open defects listed there need a decision.
+  pipes; a later fix made pumps work with a tank directly on a face. Since then
+  the pressure system's first two phases were added: pressure limits with
+  bursting and netherite explosions, and shut-off, regulator and relief valves.
+  Before a release, the open defects listed there need a decision.
 - Guidebook generation works, but final in-game validation remains pending.
 - Heracles quest data has passed its current static validation.
 - The approved client performance baseline for the next build includes
@@ -461,6 +463,70 @@ needs its own rotation in the test rig), the explosion power setting, a network
 that several high pressure pumps check at the same time (each keeps its own crack
 count, so a pipe may crack faster), and the goggles on Create's own pipes, which
 show nothing because Create gives them no goggle readout.
+
+### Phase 2: valves (2026-10-11)
+
+Built: shut-off valve, pressure regulator and relief valve, each in copper (256 bar)
+and netherite (1,024 bar), each upgradeable to a smart variant with an Electron Tube.
+How they act on Create's pressure and flow is in `PRESSURE_SYSTEM.md`. The
+maintainer's answers to the open points (Electron Tube, venting as a cloud, tank and
+boiler sizes, recoloured textures) came by voice and partly garbled; points 2 and 4
+there are my reading.
+
+Tested on the dedicated server (Fabric Loader 0.18.4, release JAR, Create 6.0.8.1,
+Utopia Core), pressures read from NBT, flow from the target tank over about 100 ticks.
+Pump tier 3 at 256 RPM (256 bar) unless noted:
+
+| setup | measured | expected |
+| --- | --- | --- |
+| no valve | 2,048 mB/t | 256 bar / 2 × 16 |
+| shut-off valve closed | 256 bar before, 0 behind, no flow | behind 0 (Create's own valve passes the pressure) |
+| shut-off valve opened by a motor | 256 bar behind, 2,048 mB/t | full flow |
+| regulator, default 16 bar | 256 before, 16 behind, 128 mB/t | 16 × 8 |
+| regulator at 64 bar | 64 behind, 512 mB/t | 64 × 8 |
+| smart regulator, redstone 8 | 136.5 bar behind, 1,092 mB/t | 256 × 8/15 |
+| smart shut-off, redstone on / off | open, 2,048 mB/t / closed, no flow | |
+| relief 128 bar at the end of a T | whole run 128 bar, 1,024 mB/t, nothing spilled | |
+| relief 2 bar, tier 1 at 16 RPM, finite source | source −32 mB/t, target +16 mB/t | half vented |
+| two tier 1 pumps (64 bar each) into one relief at 100 bar | 100 bar, venting, 800 mB/t | 100 × 8 |
+| smart relief at 250 / 256 / 100 bar | lamp on / off / on | vents above its value only |
+| Create pipe behind regulator 16, relief 16, closed shut-off | all three hold; without a valve it bursts | |
+| netherite regulator at 1,024 bar inlet | holds, 16 bar behind (default value 4 steps) | |
+| copper regulator at 1,024 bar inlet | bursts and drops | |
+| netherite regulator between two tier 5 pumps (2,048 bar) | explodes, crater, no drop | |
+| smart valve broken | drops valve and Electron Tube | |
+
+After a restart the regulators and relief valves set their networks up again by
+themselves (all rates above re-measured). `javap` on the exported Create classes
+shows every new handler applied: pressure shaping and flow cap in `PumpBlockEntity`
+and `FluidNetwork`, the relief-end check in `FluidPropagator`, the pointer accessor
+on `FluidValveBlockEntity`.
+
+Production client, German, joined to that server: all six valves render with their
+indicator, coloured handle and, on regulator and relief valve, a pressure gauge on
+the value-panel side; the shaft shows only on the normal shut-off valve. A running
+setup shows the regulator yellow ("Regelt") and the relief valve venting clouds and
+lighting a redstone lamp. Goggles on the regulator: "256 von 256 bar, Eingestellt auf
+64 bar, Regelt"; on the relief valve: "Öffnet bei 32 bar, Lässt 32 bar ab, Schlau: gibt
+beim Ablassen Redstone aus". Right-click with an Electron Tube made a shut-off valve
+smart (shaft gone, brass indicator, tube kept in creative). Holding right-click on
+the value panel opens Create's board titled "Sollwert" in bar; a new value reached
+the network at once (regulator 27 bar: 27 bar behind it, the relief valve set to 32
+stopped venting). The item tooltips with Shift explain each valve. A Display Link on
+the relief valve writes "32 bar" onto a sign. Both logs: only the usual entries.
+
+Fixed during the test: with two pumps, each of Create's fluid networks was capped on
+its own, so the relief case delivered 1,024 instead of 800 mB/t; the cap is now
+shared by the pumps' contributions. A relief valve at the end of a T showed "0,0 von
+256 bar", because Create gives dead-end branches no pressure; it now shows the
+pressure of its run. The shaft hole on regulator and relief valve became a gauge.
+
+Not tested: rotating or picking up the new valves with the wrench, valves on
+contraptions, the schematicannon item list, consuming the Electron Tube in survival
+(only creative, where it is kept), netherite shut-off and relief valves exploding
+(only the regulator; the code path is shared), a regulator in one branch of a
+network with several branches (Create computes one flow per network, so the other
+branches are throttled too; see `PRESSURE_SYSTEM.md`), the dev client.
 
 ## German translation of Utopia Core
 

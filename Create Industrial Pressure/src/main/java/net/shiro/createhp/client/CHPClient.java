@@ -25,6 +25,12 @@ public class CHPClient implements ClientModInitializer {
 				CHPBlocks.PUMP_T2.get(),
 				CHPBlocks.PUMP_T3.get(),
 				CHPBlocks.PUMP_T4.get(),
-				CHPBlocks.PUMP_T5.get());
+				CHPBlocks.PUMP_T5.get(),
+				CHPBlocks.PRESSURE_VALVE.get(),
+				CHPBlocks.NETHERITE_PRESSURE_VALVE.get(),
+				CHPBlocks.PRESSURE_REGULATOR.get(),
+				CHPBlocks.NETHERITE_PRESSURE_REGULATOR.get(),
+				CHPBlocks.RELIEF_VALVE.get(),
+				CHPBlocks.NETHERITE_RELIEF_VALVE.get());
 	}
 }

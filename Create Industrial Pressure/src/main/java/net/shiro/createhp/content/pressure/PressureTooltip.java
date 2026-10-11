@@ -7,6 +7,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.state.BlockState;
 import net.shiro.createhp.CreateHP;
+import net.shiro.createhp.content.valve.PressureValveBlockEntity;
+import net.shiro.createhp.content.valve.ValveKind;
 
 import java.util.List;
 
@@ -18,7 +20,10 @@ public final class PressureTooltip {
 	private static final float WARN_RATIO = 0.75f;
 
 	public static boolean addPipe(List<Component> tooltip, FluidTransportBehaviour pipe, BlockState state) {
-		float bar = Pressure.barAt(pipe);
+		return addPipe(tooltip, Pressure.barAt(pipe), state);
+	}
+
+	public static boolean addPipe(List<Component> tooltip, float bar, BlockState state) {
 		float rating = Pressure.ratingBar(state);
 		lang().translate("gui.goggles.pipe_pressure").forGoggles(tooltip);
 
@@ -44,6 +49,51 @@ public final class PressureTooltip {
 		lang().translate("gui.goggles.pressure_value", format(Pressure.barAt(pump)))
 				.style(ChatFormatting.AQUA)
 				.forGoggles(tooltip, 1);
+	}
+
+	/**
+	 * Ventile: Druck und Grenzwert wie ein Rohr, dazu Zustand und Sollwert. Regeln und Ablassen kommen aus dem
+	 * Blockzustand (ENABLED), damit die Brille dasselbe sagt wie die Anzeige am Ventil.
+	 */
+	public static boolean addValve(List<Component> tooltip, PressureValveBlockEntity valve, FluidTransportBehaviour pipe) {
+		addPipe(tooltip, valve.displayBar(pipe), valve.getBlockState());
+		ValveKind kind = valve.getKind();
+		boolean active = valve.isOpen();
+		switch (kind) {
+			case SHUTOFF -> lang().translate(active ? "gui.goggles.valve.open" : "gui.goggles.valve.closed")
+					.style(active ? ChatFormatting.GREEN : ChatFormatting.RED)
+					.forGoggles(tooltip, 1);
+			case REGULATOR -> {
+				lang().translate("gui.goggles.valve.setpoint", format(valve.setpointBar()))
+						.style(ChatFormatting.GRAY)
+						.forGoggles(tooltip, 1);
+				// Der Rohrdruck oben ist der Eingang; interessant ist, was hinten herauskommt.
+				float outlet = Math.min(valve.demandUnits() / Pressure.UNITS_PER_BAR, valve.setpointBar());
+				lang().translate("gui.goggles.valve.outlet", format(outlet))
+						.style(ChatFormatting.GRAY)
+						.forGoggles(tooltip, 1);
+				if (active)
+					lang().translate("gui.goggles.valve.regulating")
+							.style(ChatFormatting.GOLD)
+							.forGoggles(tooltip, 1);
+			}
+			case RELIEF -> {
+				lang().translate("gui.goggles.valve.opens_at", format(valve.setpointBar()))
+						.style(ChatFormatting.GRAY)
+						.forGoggles(tooltip, 1);
+				if (active) {
+					float excess = Math.max(0f, valve.demandUnits() / Pressure.UNITS_PER_BAR - valve.setpointBar());
+					lang().translate("gui.goggles.valve.venting", format(excess))
+							.style(ChatFormatting.GOLD)
+							.forGoggles(tooltip, 1);
+				}
+			}
+		}
+		if (valve.isSmart())
+			lang().translate(kind == ValveKind.RELIEF ? "gui.goggles.valve.smart_signal" : "gui.goggles.valve.smart_redstone")
+					.style(ChatFormatting.DARK_GRAY)
+					.forGoggles(tooltip, 1);
+		return true;
 	}
 
 	/** Ganze bar reichen; Nachkommastellen nur unter 10 bar, wo sie einen Unterschied machen. */

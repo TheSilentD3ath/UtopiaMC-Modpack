@@ -1,0 +1,7 @@
+{
+  "parent": "create:block/fluid_valve/pointer",
+  "textures": {
+    "2": "createhp:block/pressure_valve/netherite_regulator_body",
+    "particle": "createhp:block/pressure_valve/netherite_regulator_body"
+  }
+}

@@ -5,6 +5,7 @@ import com.simibubi.create.content.fluids.FluidTransportBehaviour.AttachmentType
 import com.simibubi.create.content.fluids.FluidTransportBehaviour.AttachmentTypes.ComponentPartials;
 import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
+import com.tterrag.registrate.util.nullness.NonNullFunction;
 
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 import net.createmod.catnip.data.Iterate;
@@ -19,6 +20,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.shiro.createhp.content.pressure.PipeMaterial;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -42,6 +44,11 @@ public class CHPPipeAttachmentModel extends ForwardingBakedModel {
 	/** Netherite pipe. */
 	public static CHPPipeAttachmentModel netheriteWithAO(BakedModel template) {
 		return new CHPPipeAttachmentModel(template, true, CHPPartialModels.NETHERITE);
+	}
+
+	/** Die passende Fabrik fuer ein Material; fuer Bloecke, die es in beiden Materialien gibt. */
+	public static NonNullFunction<BakedModel, BakedModel> factory(PipeMaterial material) {
+		return material == PipeMaterial.NETHERITE ? CHPPipeAttachmentModel::netheriteWithAO : CHPPipeAttachmentModel::withAO;
 	}
 
 	public CHPPipeAttachmentModel(BakedModel template, boolean ao, CHPPartialModels partials) {

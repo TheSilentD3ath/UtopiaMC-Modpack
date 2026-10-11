@@ -1,0 +1,10 @@
+{
+  "parent": "create:block/fluid_valve/item",
+  "textures": {
+    "2": "createhp:block/pressure_valve/copper_relief_body",
+    "4": "createhp:block/pressure_valve/copper_relief_idle",
+    "particle": "createhp:block/pressure_valve/copper_relief_body",
+    "1_0": "createhp:block/pressure_valve/blank",
+    "1_1": "createhp:block/pressure_valve/blank"
+  }
+}

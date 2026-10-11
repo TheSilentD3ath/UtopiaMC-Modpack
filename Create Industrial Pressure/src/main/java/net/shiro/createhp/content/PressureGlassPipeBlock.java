@@ -17,11 +17,12 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
 import net.shiro.createhp.content.pressure.PipeMaterial;
+import net.shiro.createhp.content.pressure.PressureRated;
 
 import java.util.function.Supplier;
 
 /** See-through pressure pipe shared by every material tier. */
-public class PressureGlassPipeBlock extends GlassFluidPipeBlock {
+public class PressureGlassPipeBlock extends GlassFluidPipeBlock implements PressureRated {
 	private final Supplier<? extends BlockEntityType<? extends StraightPipeBlockEntity>> blockEntityType;
 	private final Supplier<PressurePipeBlock> solidPipe;
 	private final PipeMaterial material;
@@ -35,6 +36,7 @@ public class PressureGlassPipeBlock extends GlassFluidPipeBlock {
 		this.solidPipe = solidPipe;
 	}
 
+	@Override
 	public PipeMaterial getMaterial() {
 		return material;
 	}
