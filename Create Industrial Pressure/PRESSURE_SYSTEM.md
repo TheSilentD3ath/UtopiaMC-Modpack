@@ -20,10 +20,13 @@ Further decisions (maintainer, 2026-10-11):
 1. A valve becomes smart by right-clicking it with an Electron Tube.
 2. A relief valve vents into the world as a cloud. The fluid is lost; nothing is placed.
 3. Pressure tank capacity per block: 32 buckets for copper, 128 for netherite.
-4. Boiler level cap of pressure tanks: 50 for copper, 150 for netherite.
+4. Boiler level cap of pressure tanks: 50 for copper, 150 for netherite; one steam boiler level is
+   worth 10 mB of steam per tick.
 5. Textures: recoloured from Create, like the pipes.
 6. Create's own fluid tanks hold 16 bar like Create's pipes, with a server config switch.
 7. An overloaded pressure tank behaves like a pipe: copper bursts, netherite explodes.
+8. Steam: steam outlet block on boilers, pumped like any fluid, large steam turbine as the consumer;
+   details under Phase 4.
 
 ## Units and limits
 
@@ -137,20 +140,30 @@ loading, every regulator and relief valve makes its network redistribute once.
 - **Recipes** (shaped): copper = four Create fluid tanks, four copper sheets, one sturdy sheet;
   netherite = four copper pressure tanks, four netherite scrap, one netherite ingot.
 
-## Phase 4: steam
+## Phase 4: steam (planned, decisions 2026-10-11)
 
-- Steam (`createhp:steam`) is a fluid. A pressure tank heated like a Create boiler and fed with
-  water produces steam instead of driving engines directly; steam leaves through the tank's
-  outlets into pipes.
-- Pressure tanks can hold more boiler levels than Create's cap of 18: 50 for copper, 150 for
-  netherite.
-- At the far end, steam fed into a tank that carries Create steam engines counts as boiler
-  levels for those engines.
-- The pressure of a steam line is that of its boiler, so it counts against pipe limits like
-  pump pressure does.
+Steam is generated in boilers, moved by pumps through pipes and turned into rotation in a large
+steam turbine.
 
-Boiler level cap: 50 for copper and 150 for netherite (maintainer). Still open: how many mB of
-steam one boiler level is worth (Create uses 10 mB of water per tick per level).
+- **Steam** (`createhp:steam`) is a fluid that only exists in pipes and tanks: no bucket, no
+  world block.
+- **Steam outlet** (Dampfauslass): a block attached to a boiler like a steam engine. It makes the tank
+  a boiler and turns its boiler levels into steam, 10 mB per tick per level; levels used by steam
+  engines on the same boiler are not available to it. Pipes take the steam from the outlet. Works on
+  Create's tanks and on pressure tanks.
+- **Pressure tank boilers:** up to 5 × 5 wide (Create's tank: 3 × 3), level cap 50 for copper and
+  150 for netherite. Size: 1 level per block for copper, 2 for netherite (Create: 1 per 4 blocks).
+  Netherite triples the heat of each burner, so a 5 × 5 base of superheated blaze burners gives
+  50 levels in copper and 150 in netherite. Water supply still limits as in Create.
+- **Transport:** steam moves with pumps like any fluid; pump pressure counts against the limits.
+- **Steam turbine:** a multiblock with a 5 × 5 casing around a 3 × 3 rotor, length chosen by the
+  player, in copper and netherite. Steam enters through an inlet in the casing; an output shaft at the
+  front delivers rotation. Per 10 mB of steam per tick it delivers 1.5 times the output of a Create
+  steam engine at full power (copper) or 2.5 times (netherite). Half of the steam leaves as water
+  through a condensate outlet, so a boiler can be fed in a loop.
+- **Turbine pressure:** the turbine holds its material's limit (256 / 1,024 bar); above it, the inlet
+  bursts (copper) or the turbine explodes (netherite), like pipes.
+- Not part of it (maintainer): steam fed into a pressure tank with Create's steam engines.
 
 ## Textures
 

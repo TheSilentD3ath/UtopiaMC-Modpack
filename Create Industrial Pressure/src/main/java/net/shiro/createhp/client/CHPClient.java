@@ -33,7 +33,8 @@ public class CHPClient implements ClientModInitializer {
 				CHPBlocks.PRESSURE_REGULATOR.get(),
 				CHPBlocks.NETHERITE_PRESSURE_REGULATOR.get(),
 				CHPBlocks.RELIEF_VALVE.get(),
-				CHPBlocks.NETHERITE_RELIEF_VALVE.get());
+				CHPBlocks.NETHERITE_RELIEF_VALVE.get(),
+				CHPBlocks.STEAM_OUTLET.get());
 		// Wie Creates Tank: Mipmapping fuer die Fensterkanten aus der Entfernung.
 		BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutoutMipped(),
 				CHPBlocks.PRESSURE_TANK.get(),

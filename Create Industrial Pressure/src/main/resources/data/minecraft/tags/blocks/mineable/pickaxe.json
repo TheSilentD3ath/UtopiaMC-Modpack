@@ -17,6 +17,7 @@
     "createhp:relief_valve",
     "createhp:netherite_relief_valve",
     "createhp:pressure_tank",
-    "createhp:netherite_pressure_tank"
+    "createhp:netherite_pressure_tank",
+    "createhp:steam_outlet"
   ]
 }

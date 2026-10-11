@@ -17,6 +17,7 @@ import net.shiro.createhp.content.PressureGlassPipeBlock;
 import net.shiro.createhp.content.PressurePipeBlock;
 import net.shiro.createhp.content.PumpTier;
 import net.shiro.createhp.content.pressure.PipeMaterial;
+import net.shiro.createhp.content.steam.SteamOutletBlock;
 import net.shiro.createhp.content.tank.PressureTankBlock;
 import net.shiro.createhp.content.tank.PressureTankBlockEntity;
 import net.shiro.createhp.content.valve.PressureValveBlock;
@@ -115,6 +116,15 @@ public class CHPBlocks {
 				.build()
 				.register();
 	}
+
+	// Dampfauslass: an einen Kessel gesetzt, gibt er dessen freie Stufen als Dampf an Rohre ab.
+	public static final BlockEntry<SteamOutletBlock> STEAM_OUTLET =
+			REGISTRATE.block("steam_outlet", p -> new SteamOutletBlock(p, () -> CHPBlockEntities.STEAM_OUTLET.get()))
+					.initialProperties(() -> Blocks.COPPER_BLOCK)
+					.properties(p -> p.noOcclusion())
+					.item()
+					.build()
+					.register();
 
 	// Five pump tiers (3 copper + 2 netherite). Blockstate/models/lang are shipped as static resources.
 	public static final BlockEntry<HighPressurePumpBlock> PUMP_T1 = pump(PumpTier.TIER_1);

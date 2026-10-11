@@ -84,5 +84,13 @@
   "block.createhp.pressure_tank.tooltip.behaviour1": "Der Block an diesem Anschluss _bekommt Risse und platzt_; sein Anteil am Inhalt geht verloren.",
   "block.createhp.netherite_pressure_tank.tooltip.summary": "Ein _Flüssigkeitstank_ mit _128 Eimern_ je Block, der bis _1.024 bar_ hält. Verbindet sich zu großen Tanks und arbeitet wie Creates Tank als _Kessel_.",
   "block.createhp.netherite_pressure_tank.tooltip.condition1": "Wenn über dem Grenzwert gespeist",
-  "block.createhp.netherite_pressure_tank.tooltip.behaviour1": "Der Block an diesem Anschluss _explodiert_."
+  "block.createhp.netherite_pressure_tank.tooltip.behaviour1": "Der Block an diesem Anschluss _explodiert_.",
+  "fluid.createhp.steam": "Dampf",
+  "block.createhp.steam_outlet": "Dampfauslass",
+  "createhp.gui.goggles.steam_outlet": "Dampfauslass:",
+  "createhp.gui.goggles.steam_rate": "%1$s mB/t Dampf",
+  "createhp.gui.goggles.steam_buffer": "%1$s von %2$s mB im Auslass",
+  "block.createhp.steam_outlet.tooltip.summary": "Wird wie eine _Dampfmaschine_ an einen _Kessel_ gesetzt. Seine freien _Stufen_ werden zu _Dampf_, 10 mB pro Tick und Stufe, den _Pumpen_ vorne abholen.",
+  "block.createhp.steam_outlet.tooltip.condition1": "An einem Drucktank",
+  "block.createhp.steam_outlet.tooltip.behaviour1": "Drucktanks kochen bis _50 Stufen_ (Kupfer) bzw. _150 Stufen_ (Netherit) und dürfen _5×5_ breit sein."
 }

@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.shiro.createhp.content.pressure.PipeMaterial;
 import net.shiro.createhp.content.pressure.PressureTooltip;
+import net.shiro.createhp.content.steam.BoilerRules;
 
 import java.util.List;
 
@@ -28,8 +29,22 @@ public class PressureTankBlockEntity extends FluidTankBlockEntity {
 	private float clientBar;
 	private long clientNextRefresh;
 
+	/** Drucktanks duerfen breiter werden als Creates Tank (3), damit 25 Brenner unter einen Kessel passen. */
+	public static final int MAX_WIDTH = 5;
+
 	public PressureTankBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
 		super(type, pos, state);
+		// Kesselregeln (Entscheidung des Maintainers): Kupfer 1 Stufe je Block bis 50, Netherit 2 je Block bis 150
+		// und dreifache Hitze je Brenner. Ein 5x5-Boden aus ueberhitzten Lohenbrennern erreicht damit genau die
+		// Hoechststufe.
+		PipeMaterial material = getMaterial();
+		((BoilerRules) boiler).createhp$setRules(material.boilerLevelCap, material.boilerLevelsPerBlock,
+				material.boilerHeatFactor);
+	}
+
+	@Override
+	public int getMaxWidth() {
+		return MAX_WIDTH;
 	}
 
 	public PipeMaterial getMaterial() {

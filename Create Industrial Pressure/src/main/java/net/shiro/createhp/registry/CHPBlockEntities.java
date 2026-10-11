@@ -14,6 +14,7 @@ import net.shiro.createhp.client.PressureValveRenderer;
 import net.shiro.createhp.content.HighPressurePumpBlockEntity;
 import net.shiro.createhp.content.PressureGlassPipeBlockEntity;
 import net.shiro.createhp.content.PressurePipeBlockEntity;
+import net.shiro.createhp.content.steam.SteamOutletBlockEntity;
 import net.shiro.createhp.content.tank.PressureTankBlockEntity;
 import net.shiro.createhp.content.valve.PressureValveBlockEntity;
 
@@ -81,6 +82,11 @@ public class CHPBlockEntities {
 			REGISTRATE.blockEntity("netherite_pressure_tank", PressureTankBlockEntity::new)
 					.validBlock(CHPBlocks.NETHERITE_PRESSURE_TANK)
 					.renderer(() -> FluidTankRenderer::new)
+					.register();
+
+	public static final BlockEntityEntry<SteamOutletBlockEntity> STEAM_OUTLET =
+			REGISTRATE.blockEntity("steam_outlet", SteamOutletBlockEntity::new)
+					.validBlock(CHPBlocks.STEAM_OUTLET)
 					.register();
 
 	public static void register() {}

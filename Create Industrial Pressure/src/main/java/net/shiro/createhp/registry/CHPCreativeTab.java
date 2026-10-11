@@ -32,6 +32,7 @@ public final class CHPCreativeTab {
 				output.accept(CHPBlocks.PRESSURE_REGULATOR.get());
 				output.accept(CHPBlocks.RELIEF_VALVE.get());
 				output.accept(CHPBlocks.PRESSURE_TANK.get());
+				output.accept(CHPBlocks.STEAM_OUTLET.get());
 				output.accept(CHPBlocks.PUMP_T1.get());
 				output.accept(CHPBlocks.PUMP_T2.get());
 				output.accept(CHPBlocks.PUMP_T3.get());

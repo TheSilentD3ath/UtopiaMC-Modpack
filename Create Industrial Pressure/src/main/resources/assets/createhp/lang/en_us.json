@@ -84,5 +84,13 @@
   "block.createhp.pressure_tank.tooltip.behaviour1": "The block at that connection _cracks and bursts_, and its share of the content is lost.",
   "block.createhp.netherite_pressure_tank.tooltip.summary": "A _Fluid Tank_ that holds _128 buckets_ per block and up to _1,024 bar_. Connects into large tanks and works as a _boiler_ like Create's tank.",
   "block.createhp.netherite_pressure_tank.tooltip.condition1": "When fed above its limit",
-  "block.createhp.netherite_pressure_tank.tooltip.behaviour1": "The block at that connection _explodes_."
+  "block.createhp.netherite_pressure_tank.tooltip.behaviour1": "The block at that connection _explodes_.",
+  "fluid.createhp.steam": "Steam",
+  "block.createhp.steam_outlet": "Steam Outlet",
+  "createhp.gui.goggles.steam_outlet": "Steam Outlet:",
+  "createhp.gui.goggles.steam_rate": "%1$s mB/t steam",
+  "createhp.gui.goggles.steam_buffer": "%1$s of %2$s mB in the outlet",
+  "block.createhp.steam_outlet.tooltip.summary": "Attach it to a _boiler_ like a _Steam Engine_. The boiler's spare _levels_ become _steam_, 10 mB per tick per level, which _pumps_ draw from the front.",
+  "block.createhp.steam_outlet.tooltip.condition1": "On a Pressure Tank",
+  "block.createhp.steam_outlet.tooltip.behaviour1": "Pressure tanks boil up to _50 levels_ (copper) or _150 levels_ (netherite) and can be _5×5_ wide."
 }
