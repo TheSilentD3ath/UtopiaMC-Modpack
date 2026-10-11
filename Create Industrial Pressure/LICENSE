@@ -62,6 +62,11 @@ those expect that layout. This covers every file in
 
 except blank.png.
 
+The pressure tank textures are Create's fluid tank textures, recoloured for the
+same reason: every file in
+
+  assets/createhp/textures/block/pressure_tank/
+
 As far as they are based on Create, they are used under Create's licence:
 
     MIT License

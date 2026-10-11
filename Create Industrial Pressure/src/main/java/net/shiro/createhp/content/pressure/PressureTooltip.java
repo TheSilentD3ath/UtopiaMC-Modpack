@@ -24,8 +24,17 @@ public final class PressureTooltip {
 	}
 
 	public static boolean addPipe(List<Component> tooltip, float bar, BlockState state) {
+		return addPressure(tooltip, "gui.goggles.pipe_pressure", bar, state);
+	}
+
+	/** Tanks: wie ein Rohr, nur mit eigener Ueberschrift; der Druck ist der hoechste an einem Anschluss. */
+	public static boolean addTank(List<Component> tooltip, float bar, BlockState state) {
+		return addPressure(tooltip, "gui.goggles.tank_pressure", bar, state);
+	}
+
+	private static boolean addPressure(List<Component> tooltip, String header, float bar, BlockState state) {
 		float rating = Pressure.ratingBar(state);
-		lang().translate("gui.goggles.pipe_pressure").forGoggles(tooltip);
+		lang().translate(header).forGoggles(tooltip);
 
 		ChatFormatting color = bar > rating ? ChatFormatting.RED
 				: bar >= rating * WARN_RATIO ? ChatFormatting.GOLD : ChatFormatting.AQUA;

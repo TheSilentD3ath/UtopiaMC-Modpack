@@ -1,7 +1,7 @@
 # Create: Industrial Pressure
 
-Fabric addon for Create 6 that adds pressure-rated pipe materials, pressure valves and five
-mechanical pump tiers.
+Fabric addon for Create 6 that adds pressure-rated pipe materials, pressure valves, pressure tanks
+and five mechanical pump tiers.
 
 ## Target versions
 
@@ -44,8 +44,11 @@ Useful development tasks:
   overloaded netherite pipe explodes (block damage can be switched off in the server config)
 - shut-off valves, pressure regulators and relief valves in copper and netherite; an Electron
   Tube makes them smart (redstone control, or a redstone signal while venting)
-- pipe pressure on Engineer's Goggles and as a Display Link source, for the mod's pipes, valves and
-  pumps and for Create's pipes, valves and pump
+- pressure tanks in copper (32 buckets per block, 256 bar) and netherite (128 buckets, 1024 bar),
+  built on Create's tank: multiblocks, windows, boiler; Create's own tanks now hold 16 bar (server
+  config switch `createTanksLimited`)
+- pipe pressure on Engineer's Goggles and as a Display Link source, for the mod's pipes, valves,
+  tanks and pumps and for Create's pipes, valves, tanks and pump; a tank fill-level source
 - Create-style attachment models, transparent fluid rendering and a dedicated creative tab
 
 Glass variants follow Create's own lifecycle: wrench a solid pressure pipe to expose its window,
@@ -60,6 +63,8 @@ Create's pump at 256 RPM gives 16 bar and the pump tiers at 256 RPM give 64 to 1
 | Create fluid, glass, encased and smart pipe, fluid valve | 16 bar |
 | high pressure pipe and its glass variant | 256 bar |
 | netherite pressure pipe and its glass variant | 1024 bar |
+| Create fluid tank (unless `createTanksLimited = false`) | 16 bar |
+| High Pressure Tank / Netherite Pressure Tank | 256 / 1024 bar |
 
 Valves hold the limit of their material (256 or 1024 bar):
 
@@ -90,9 +95,10 @@ CreateHP
   content/        pressure pipes, pump tiers and the pump block entity
   content/pressure/  pressure in bar, limits, goggles and the Display Link source
   content/valve/     the three valves and how they shape the pumps' pressure and flow
+  content/tank/      pressure tanks, tank pressure and the fill-level Display Link source
   client/         render layers and Create-compatible attachment models
   mixin/          narrow integration points for range, throughput, wrench, valves and flow
-tools/            generator for the valve textures, models and blockstates
+tools/            generators for the valve and tank textures, models and blockstates
   config/         static gameplay tuning values
 ```
 

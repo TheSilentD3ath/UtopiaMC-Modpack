@@ -17,14 +17,18 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
 - `de_de.json` follows Create's own German terms (Rohr, Glasrohr, Netherit-, Erweitert).
   Keep both lang files on the same keys.
 - Pressure system: decisions, units, limits and the phase plan (valves, pressure tanks,
-  steam) are in `PRESSURE_SYSTEM.md`. Phases 1 and 2 are built. Pressure is Create's own
+  steam) are in `PRESSURE_SYSTEM.md`. Phases 1 to 3 are built. Pressure is Create's own
   pipe pressure read in bar (16 units = 1 bar); do not add a second pressure model. Valves
   change it only while a pump distributes (`PressureShaping`) and cap the flow of Create's
   fluid networks (`FluidNetworkMixin`, `ValveFlow`).
-- Valve textures, models and blockstates come from `tools/valve_assets.py` (reads Create's
-  valve assets from the Create JAR; needs ImageMagick). Regenerate instead of editing the
-  generated files by hand; it reproduces the committed files byte for byte.
-- The server config is `config/createhp-server.toml` (global on Fabric). Edit it with the
+- Valve and tank textures, models and blockstates come from `tools/valve_assets.py` and
+  `tools/tank_assets.py` (they read Create's assets from the Create JAR; need ImageMagick).
+  Regenerate instead of editing the generated files by hand; they reproduce the committed
+  files byte for byte.
+- Pressure tanks are Create's fluid tank with a per-material block entity type; their capacity
+  comes from `TankCapacityMixin`, because Create reads it from a static method.
+- The server config is `config/createhp-server.toml` (global on Fabric). `createTanksLimited`
+  decides whether Create's own tanks burst above 16 bar. Edit it with the
   server stopped; on shutdown the server writes its loaded values back.
 
 ## Testing

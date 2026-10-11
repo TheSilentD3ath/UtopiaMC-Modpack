@@ -4,6 +4,7 @@ import com.simibubi.create.AllPartialModels;
 import com.simibubi.create.content.fluids.pipes.GlassPipeVisual;
 import com.simibubi.create.content.fluids.pipes.TransparentStraightPipeRenderer;
 import com.simibubi.create.content.fluids.pump.PumpRenderer;
+import com.simibubi.create.content.fluids.tank.FluidTankRenderer;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.BlockEntityEntry;
@@ -13,6 +14,7 @@ import net.shiro.createhp.client.PressureValveRenderer;
 import net.shiro.createhp.content.HighPressurePumpBlockEntity;
 import net.shiro.createhp.content.PressureGlassPipeBlockEntity;
 import net.shiro.createhp.content.PressurePipeBlockEntity;
+import net.shiro.createhp.content.tank.PressureTankBlockEntity;
 import net.shiro.createhp.content.valve.PressureValveBlockEntity;
 
 public class CHPBlockEntities {
@@ -66,6 +68,19 @@ public class CHPBlockEntities {
 							CHPBlocks.PRESSURE_REGULATOR, CHPBlocks.NETHERITE_PRESSURE_REGULATOR,
 							CHPBlocks.RELIEF_VALVE, CHPBlocks.NETHERITE_RELIEF_VALVE)
 					.renderer(() -> PressureValveRenderer::new)
+					.register();
+
+	/** Je Werkstoff ein Typ: Create verbindet nur Tanks desselben Typs zu einem Multiblock. */
+	public static final BlockEntityEntry<PressureTankBlockEntity> PRESSURE_TANK =
+			REGISTRATE.blockEntity("pressure_tank", PressureTankBlockEntity::new)
+					.validBlock(CHPBlocks.PRESSURE_TANK)
+					.renderer(() -> FluidTankRenderer::new)
+					.register();
+
+	public static final BlockEntityEntry<PressureTankBlockEntity> NETHERITE_PRESSURE_TANK =
+			REGISTRATE.blockEntity("netherite_pressure_tank", PressureTankBlockEntity::new)
+					.validBlock(CHPBlocks.NETHERITE_PRESSURE_TANK)
+					.renderer(() -> FluidTankRenderer::new)
 					.register();
 
 	public static void register() {}

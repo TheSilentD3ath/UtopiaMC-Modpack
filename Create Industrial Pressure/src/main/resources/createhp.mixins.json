@@ -12,9 +12,12 @@
     "PumpRangeMixin",
     "PumpSourcePressureMixin",
     "PumpThroughputMixin",
-    "ReliefOpenEndMixin"
+    "ReliefOpenEndMixin",
+    "TankCapacityMixin"
   ],
-  "client": [],
+  "client": [
+    "FluidTankModelInvoker"
+  ],
   "injectors": {
     "defaultRequire": 1
   }

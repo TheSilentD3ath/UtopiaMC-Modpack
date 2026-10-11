@@ -3,9 +3,13 @@ package net.shiro.createhp.content;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
+import com.simibubi.create.content.fluids.PipeConnection;
+import com.simibubi.create.content.fluids.tank.FluidTankBlock;
 import com.simibubi.create.content.fluids.pump.PumpBlockEntity;
 
+import net.createmod.catnip.data.Couple;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -148,7 +152,8 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 
 	/**
 	 * Bounded BFS over the pipe network this pump feeds; collects every pipe whose pressure is above its
-	 * rating. The pressure read is the pipe's total, so other pumps feeding the same pipe count as well.
+	 * rating, and every tank block fed above its rating. The pressure read is the pipe's total, so other
+	 * pumps feeding the same pipe count as well.
 	 */
 	private Set<BlockPos> findOverloadedPipes() {
 		Set<BlockPos> overloaded = new HashSet<>();
@@ -160,6 +165,7 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 		if (own == null)
 			return overloaded;
 		visited.add(worldPosition);
+		addOverloadedTanks(worldPosition, own, overloaded);
 		for (var d : FluidPropagator.getPipeConnections(getBlockState(), own))
 			frontier.add(new Node(worldPosition.relative(d), 1));
 
@@ -173,10 +179,32 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 			BlockState state = level.getBlockState(node.pos);
 			if (Pressure.isOverloaded(Pressure.barAt(pipe), Pressure.ratingBar(state)))
 				overloaded.add(node.pos);
+			addOverloadedTanks(node.pos, pipe, overloaded);
 			for (var dir : FluidPropagator.getPipeConnections(state, pipe))
 				frontier.add(new Node(node.pos.relative(dir), node.dist + 1));
 		}
 		return overloaded;
+	}
+
+	/**
+	 * Tanks am Ende einer Leitung: Ein Tank hat keinen eigenen Druck, er bekommt den des Anschlusses, der in ihn
+	 * speist. Ueberlastet ist dann der Tankblock an genau diesem Anschluss; er platzt, nicht der ganze Multiblock.
+	 */
+	private void addOverloadedTanks(BlockPos at, FluidTransportBehaviour pipe, Set<BlockPos> overloaded) {
+		if (pipe.interfaces == null)
+			return;
+		for (Map.Entry<Direction, PipeConnection> entry : pipe.interfaces.entrySet()) {
+			BlockPos neighbour = at.relative(entry.getKey());
+			if (!level.isLoaded(neighbour))
+				continue;
+			BlockState state = level.getBlockState(neighbour);
+			if (!(state.getBlock() instanceof FluidTankBlock))
+				continue;
+			Couple<Float> pressure = entry.getValue().getPressure();
+			float bar = Math.max(pressure.getFirst(), pressure.getSecond()) / Pressure.UNITS_PER_BAR;
+			if (Pressure.isOverloaded(bar, Pressure.ratingBar(state)))
+				overloaded.add(neighbour);
+		}
 	}
 
 	private void clearAllCracks() {

@@ -1,5 +1,6 @@
 package net.shiro.createhp.content.pressure;
 
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
 import com.simibubi.create.content.fluids.PipeConnection;
 import com.simibubi.create.content.fluids.pipes.AxisPipeBlock;
@@ -11,6 +12,7 @@ import com.simibubi.create.content.fluids.pipes.valve.FluidValveBlock;
 import net.createmod.catnip.data.Couple;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.shiro.createhp.config.CHPConfig;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -30,7 +32,7 @@ public final class Pressure {
 	 */
 	public static final float UNITS_PER_BAR = 16f;
 
-	/** Grenzwert fuer Creates eigene Rohre: genau das, was Creates Pumpe allein erzeugen kann. */
+	/** Grenzwert fuer Creates eigene Rohre und Tanks: genau das, was Creates Pumpe allein erzeugen kann. */
 	public static final float CREATE_PIPE_RATING_BAR = 16f;
 
 	/** Kein Grenzwert: Pumpen, Tanks und Bloecke anderer Mods platzen nie durch uns. */
@@ -60,6 +62,9 @@ public final class Pressure {
 		if (block instanceof FluidPipeBlock || block instanceof AxisPipeBlock || block instanceof EncasedPipeBlock
 				|| block instanceof SmartFluidPipeBlock || block instanceof FluidValveBlock)
 			return CREATE_PIPE_RATING_BAR;
+		// Nur Creates normaler Tank, nicht der kreative und nicht Tanks anderer Mods, die von ihm erben.
+		if (AllBlocks.FLUID_TANK.has(state))
+			return CHPConfig.createTanksLimited() ? CREATE_PIPE_RATING_BAR : UNRATED;
 		return UNRATED;
 	}
 

@@ -15,14 +15,15 @@ pipes to engines elsewhere.
 - **Old burst rule:** replaced. Pipes burst only above their limit; there is no longer a rule
   that every Create pipe in a high pressure network bursts.
 
-Further answers (maintainer, 2026-10-11, by voice; the transcript was garbled, so points 2 and 4
-are my reading and still open to correction):
+Further decisions (maintainer, 2026-10-11):
 
 1. A valve becomes smart by right-clicking it with an Electron Tube.
 2. A relief valve vents into the world as a cloud. The fluid is lost; nothing is placed.
-3. Tank capacity per tier: scaled as seems logical.
-4. Boiler levels: up to about 150 at the top tier.
+3. Pressure tank capacity per block: 32 buckets for copper, 128 for netherite.
+4. Boiler level cap of pressure tanks: 50 for copper, 150 for netherite.
 5. Textures: recoloured from Create, like the pipes.
+6. Create's own fluid tanks hold 16 bar like Create's pipes, with a server config switch.
+7. An overloaded pressure tank behaves like a pipe: copper bursts, netherite explodes.
 
 ## Units and limits
 
@@ -111,33 +112,49 @@ Limits of the model: Create computes one flow rate per network, so a regulator i
 throttles the other branches of the same network. The pump contributions are not saved; after
 loading, every regulator and relief valve makes its network redistribute once.
 
-## Phase 3: pressure tanks
+## Phase 3: pressure tanks (done)
 
-- Copper and netherite pressure tanks as multiblocks like Create's fluid tank, with a pressure
-  limit and more capacity per block than Create's 8 buckets.
-- Display Link: fill level, and pressure where a pump feeds them.
-
-Capacity per block (maintainer: "as seems logical"): proposed 32 buckets for copper and 128 for
-netherite, four and sixteen times Create's tank.
+- **High Pressure Tank** (copper): 32 buckets per block, limit 256 bar. **Netherite Pressure Tank**:
+  128 buckets per block, limit 1,024 bar. Both are Create's fluid tank underneath: multiblocks up to
+  3 × 3 and Create's height limit, windows by wrench, comparator output, boiler for steam engines,
+  Create's tank item (places whole layers on wide tanks). Each material has its own block entity
+  type, so copper and netherite tanks never merge into one tank.
+- **Capacity.** Create reads it from a static method. `TankCapacityMixin` redirects its five calls
+  in the tank block entity (creation, loading, resizing) for pressure tanks only; without it Create
+  would cut every pressure tank back to 8 buckets per block when the world loads.
+- **Pressure.** A tank has no pressure of its own in Create; the pipe connections feeding it carry
+  it. A tank's pressure is the highest of those, over the whole multiblock. The high pressure pumps'
+  check now also looks at tanks at the ends of their pipes: the tank block at an overloaded
+  connection cracks and bursts (copper, drops itself, its share of the content is lost) or explodes
+  (netherite), like pipes.
+- **Create's tanks** now hold 16 bar, like Create's pipes (maintainer). The server config switch
+  `createTanksLimited` turns this off for worlds with existing setups that fill Create tanks from high
+  pressure pumps. The creative tank is never limited.
+- **Goggles:** Create's tank info plus "Tank Pressure: N of M bar". **Display Link:** the pipe
+  pressure source works on all tanks, Create's included; a new "Tank Fill Level" source shows fill as
+  a bar, in percent, content or capacity in buckets, right at the tank (Create needs a Smart Observer
+  for that). Pressure tanks also offer Create's boiler status source.
+- **Recipes** (shaped): copper = four Create fluid tanks, four copper sheets, one sturdy sheet;
+  netherite = four copper pressure tanks, four netherite scrap, one netherite ingot.
 
 ## Phase 4: steam
 
 - Steam (`createhp:steam`) is a fluid. A pressure tank heated like a Create boiler and fed with
   water produces steam instead of driving engines directly; steam leaves through the tank's
   outlets into pipes.
-- Pressure tanks can hold more boiler levels than Create's cap of 18, by tier.
+- Pressure tanks can hold more boiler levels than Create's cap of 18: 50 for copper, 150 for
+  netherite.
 - At the far end, steam fed into a tank that carries Create steam engines counts as boiler
   levels for those engines.
 - The pressure of a steam line is that of its boiler, so it counts against pipe limits like
   pump pressure does.
 
-Boiler level cap: up to about 150 at the top tier (maintainer); proposed 50 for copper and 150 for
-netherite. Still open: how many mB of steam one boiler level is worth (Create uses 10 mB of water
-per tick per level).
+Boiler level cap: 50 for copper and 150 for netherite (maintainer). Still open: how many mB of
+steam one boiler level is worth (Create uses 10 mB of water per tick per level).
 
 ## Textures
 
-New blocks need textures in Create's layout. Pipes and valves are recoloured from Create and
-listed in `LICENSE`; the valve set, its models and blockstates come from `tools/valve_assets.py`.
-The pressure gauge on regulator and relief valve is drawn by that script, not taken from Create.
-Tanks follow the same way, unless they are to be drawn as commissioned art.
+New blocks need textures in Create's layout. Pipes, valves and tanks are recoloured from Create
+and listed in `LICENSE`; valves and tanks, with their models and blockstates, come from
+`tools/valve_assets.py` and `tools/tank_assets.py`. The pressure gauge on regulator and relief valve
+is drawn by that script, not taken from Create.

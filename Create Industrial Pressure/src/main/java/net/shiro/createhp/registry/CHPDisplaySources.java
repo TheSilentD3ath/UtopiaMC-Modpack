@@ -1,12 +1,14 @@
 package net.shiro.createhp.registry;
 
 import com.simibubi.create.AllBlockEntityTypes;
+import com.simibubi.create.AllDisplaySources;
 import com.simibubi.create.api.behaviour.display.DisplaySource;
 import com.tterrag.registrate.util.entry.RegistryEntry;
 
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.shiro.createhp.CreateHP;
 import net.shiro.createhp.content.pressure.PressureDisplaySource;
+import net.shiro.createhp.content.tank.TankFillDisplaySource;
 
 import java.util.List;
 
@@ -16,6 +18,9 @@ public final class CHPDisplaySources {
 
 	public static final RegistryEntry<PressureDisplaySource> PIPE_PRESSURE =
 			CreateHP.REGISTRATE.displaySource("pipe_pressure", PressureDisplaySource::new).register();
+
+	public static final RegistryEntry<TankFillDisplaySource> TANK_FILL =
+			CreateHP.REGISTRATE.displaySource("tank_fill", TankFillDisplaySource::new).register();
 
 	/** Erzwingt das Laden der Klasse vor REGISTRATE.register(). */
 	public static void register() {}
@@ -42,5 +47,18 @@ public final class CHPDisplaySources {
 				AllBlockEntityTypes.MECHANICAL_PUMP.get());
 		for (BlockEntityType<?> type : types)
 			DisplaySource.BY_BLOCK_ENTITY.add(type, source);
+
+		// Tanks: Druck und Fuellstand, auch an Creates Tank, der jetzt ebenfalls einen Grenzwert hat. Die Drucktanks
+		// bekommen dazu Creates Kesselanzeige, die Create seinem Tank ueber den Block zuordnet, nicht ueber den Typ.
+		List<BlockEntityType<?>> tanks = List.of(
+				CHPBlockEntities.PRESSURE_TANK.get(),
+				CHPBlockEntities.NETHERITE_PRESSURE_TANK.get(),
+				AllBlockEntityTypes.FLUID_TANK.get());
+		for (BlockEntityType<?> type : tanks) {
+			DisplaySource.BY_BLOCK_ENTITY.add(type, source);
+			DisplaySource.BY_BLOCK_ENTITY.add(type, TANK_FILL.get());
+		}
+		DisplaySource.BY_BLOCK_ENTITY.add(CHPBlockEntities.PRESSURE_TANK.get(), AllDisplaySources.BOILER.get());
+		DisplaySource.BY_BLOCK_ENTITY.add(CHPBlockEntities.NETHERITE_PRESSURE_TANK.get(), AllDisplaySources.BOILER.get());
 	}
 }

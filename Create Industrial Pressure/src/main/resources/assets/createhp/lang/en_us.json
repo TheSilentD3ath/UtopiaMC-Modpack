@@ -68,5 +68,21 @@
   "block.createhp.netherite_relief_valve.tooltip.condition1": "Value panel on the sides",
   "block.createhp.netherite_relief_valve.tooltip.behaviour1": "Sets the _relief pressure_. Starts at the valve's own limit.",
   "block.createhp.netherite_relief_valve.tooltip.condition2": "Right-click with Electron Tube",
-  "block.createhp.netherite_relief_valve.tooltip.behaviour2": "Makes it _smart_: it _emits redstone_ while venting."
+  "block.createhp.netherite_relief_valve.tooltip.behaviour2": "Makes it _smart_: it _emits redstone_ while venting.",
+  "block.createhp.pressure_tank": "High Pressure Tank",
+  "block.createhp.netherite_pressure_tank": "Netherite Pressure Tank",
+  "createhp.gui.goggles.tank_pressure": "Tank Pressure:",
+  "createhp.generic.unit.buckets": "B",
+  "createhp.display_source.tank_fill": "Tank Fill Level",
+  "createhp.display_source.tank_fill.display": "Displayed Info",
+  "createhp.display_source.tank_fill.progress_bar": "Fill as Progress Bar",
+  "createhp.display_source.tank_fill.percent": "Fill in Percent",
+  "createhp.display_source.tank_fill.amount": "Content in Buckets",
+  "createhp.display_source.tank_fill.capacity": "Capacity in Buckets",
+  "block.createhp.pressure_tank.tooltip.summary": "A _Fluid Tank_ that holds _32 buckets_ per block and up to _256 bar_. Connects into large tanks and works as a _boiler_ like Create's tank.",
+  "block.createhp.pressure_tank.tooltip.condition1": "When fed above its limit",
+  "block.createhp.pressure_tank.tooltip.behaviour1": "The block at that connection _cracks and bursts_, and its share of the content is lost.",
+  "block.createhp.netherite_pressure_tank.tooltip.summary": "A _Fluid Tank_ that holds _128 buckets_ per block and up to _1,024 bar_. Connects into large tanks and works as a _boiler_ like Create's tank.",
+  "block.createhp.netherite_pressure_tank.tooltip.condition1": "When fed above its limit",
+  "block.createhp.netherite_pressure_tank.tooltip.behaviour1": "The block at that connection _explodes_."
 }

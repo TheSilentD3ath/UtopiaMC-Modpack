@@ -34,8 +34,9 @@ while this public repository is migrated to the current structure.
   development artifact: the smoke-test fixes changed its declared dependencies,
   added a German translation and a block tag, and fixed pick-block on glass
   pipes; a later fix made pumps work with a tank directly on a face. Since then
-  the pressure system's first two phases were added: pressure limits with
-  bursting and netherite explosions, and shut-off, regulator and relief valves.
+  the pressure system's first three phases were added: pressure limits with
+  bursting and netherite explosions; shut-off, regulator and relief valves; and
+  pressure tanks.
   Before a release, the open defects listed there need a decision.
 - Guidebook generation works, but final in-game validation remains pending.
 - Heracles quest data has passed its current static validation.
@@ -468,10 +469,9 @@ show nothing because Create gives them no goggle readout.
 
 Built: shut-off valve, pressure regulator and relief valve, each in copper (256 bar)
 and netherite (1,024 bar), each upgradeable to a smart variant with an Electron Tube.
-How they act on Create's pressure and flow is in `PRESSURE_SYSTEM.md`. The
-maintainer's answers to the open points (Electron Tube, venting as a cloud, tank and
-boiler sizes, recoloured textures) came by voice and partly garbled; points 2 and 4
-there are my reading.
+How they act on Create's pressure and flow is in `PRESSURE_SYSTEM.md`, together
+with the maintainer's decisions on the open points (Electron Tube, venting as a
+cloud, tank and boiler sizes, recoloured textures).
 
 Tested on the dedicated server (Fabric Loader 0.18.4, release JAR, Create 6.0.8.1,
 Utopia Core), pressures read from NBT, flow from the target tank over about 100 ticks.
@@ -527,6 +527,42 @@ contraptions, the schematicannon item list, consuming the Electron Tube in survi
 (only the regulator; the code path is shared), a regulator in one branch of a
 network with several branches (Create computes one flow per network, so the other
 branches are throttled too; see `PRESSURE_SYSTEM.md`), the dev client.
+
+### Phase 3: pressure tanks (2026-10-11)
+
+Built: High Pressure Tank (32 buckets per block, 256 bar) and Netherite Pressure Tank
+(128 buckets, 1,024 bar), both Create's fluid tank underneath. The maintainer also
+decided that Create's own tanks hold 16 bar like Create's pipes, with a server config
+switch (`createTanksLimited`), and that an overloaded tank behaves like a pipe.
+
+Tested on the dedicated server (release JAR, Create 6.0.8.1, Utopia Core):
+
+| setup | result |
+| --- | --- |
+| copper tank, single, tier 3 at 256 bar | fills to 2,592,000 droplets (32 buckets), holds |
+| netherite tank, single, tier 5 at 1,024 bar | fills to 10,368,000 droplets (128 buckets), holds |
+| copper tank 2 × 2 × 3, tier 3 | one multiblock, 31,104,000 droplets (384 buckets) |
+| netherite tank next to that copper tank | stays a separate tank |
+| restart | all three keep their full content |
+| copper tank at 1,024 bar (tier 5) | bursts |
+| netherite tank at 2,048 bar (two tier 5 pumps) | explodes, crater, no drop |
+| Create tanks filled by high pressure pumps in the old test rigs | burst; the one behind a closed smart valve holds |
+| `createTanksLimited = false`, Create tank fed at 256 bar | holds |
+
+`javap` on the exported Create class shows the capacity redirect in all five calls
+(`createInventory`, twice in `read`, `applyFluidTankSize`, `getTankSize`), and the
+model invoker on `FluidTankModel` in the client.
+
+Production client, German: copper and netherite tanks render with connected textures
+and windows, also as a 2 × 2 × 3 multiblock; the wrench toggles the windows. Goggles
+on a fed tank: Create's tank info and "Tankdruck: 256 von 256 bar". A Display Link on
+the tank writes "100%" (fill level) and "256 bar" (pressure) onto a sign. A netherite
+tank with a steam engine is recognised as a boiler. The Shift tooltip explains the tank.
+
+Not tested: pressure tanks on contraptions (Create's tank has its own mounted storage
+and movement behaviour; ours are not registered for that), the schematicannon, placing
+whole layers with the item on a wide tank, the creative mode exchange with buckets,
+the dev client.
 
 ## German translation of Utopia Core
 

@@ -1,0 +1,11 @@
+{
+  "parent": "create:block/fluid_tank/block_single_window_nw",
+  "textures": {
+    "0": "createhp:block/pressure_tank/copper_top",
+    "1": "createhp:block/pressure_tank/copper_tank",
+    "3": "createhp:block/pressure_tank/copper_window",
+    "4": "createhp:block/pressure_tank/copper_inner",
+    "5": "createhp:block/pressure_tank/copper_window_single",
+    "particle": "createhp:block/pressure_tank/copper_tank"
+  }
+}

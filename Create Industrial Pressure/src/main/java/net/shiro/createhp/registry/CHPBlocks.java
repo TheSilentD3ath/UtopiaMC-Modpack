@@ -1,17 +1,24 @@
 package net.shiro.createhp.registry;
 
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.content.fluids.tank.FluidTankItem;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.BlockEntry;
 
+import java.util.function.Supplier;
+
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.shiro.createhp.CreateHP;
 import net.shiro.createhp.client.CHPPipeAttachmentModel;
+import net.shiro.createhp.client.CHPTankModels;
 import net.shiro.createhp.content.HighPressurePumpBlock;
 import net.shiro.createhp.content.PressureGlassPipeBlock;
 import net.shiro.createhp.content.PressurePipeBlock;
 import net.shiro.createhp.content.PumpTier;
 import net.shiro.createhp.content.pressure.PipeMaterial;
+import net.shiro.createhp.content.tank.PressureTankBlock;
+import net.shiro.createhp.content.tank.PressureTankBlockEntity;
 import net.shiro.createhp.content.valve.PressureValveBlock;
 import net.shiro.createhp.content.valve.ValveKind;
 
@@ -86,6 +93,25 @@ public class CHPBlocks {
 				// Creates Ventil zeichnet seine Rohranschluesse wie ein Rohr; wir mit den Teilen des passenden Materials.
 				.onRegister(CreateRegistrate.blockModel(() -> CHPPipeAttachmentModel.factory(material)))
 				.item()
+				.build()
+				.register();
+	}
+
+	// --- Drucktanks: Creates Tank mit mehr Inhalt und Grenzwert; Modelle und Blockstates als feste Ressourcen ---
+	public static final BlockEntry<PressureTankBlock> PRESSURE_TANK =
+			tank("pressure_tank", PipeMaterial.COPPER, () -> CHPBlockEntities.PRESSURE_TANK.get());
+	public static final BlockEntry<PressureTankBlock> NETHERITE_PRESSURE_TANK =
+			tank("netherite_pressure_tank", PipeMaterial.NETHERITE, () -> CHPBlockEntities.NETHERITE_PRESSURE_TANK.get());
+
+	private static BlockEntry<PressureTankBlock> tank(String id, PipeMaterial material,
+			Supplier<? extends BlockEntityType<? extends PressureTankBlockEntity>> blockEntityType) {
+		return REGISTRATE.block(id, p -> new PressureTankBlock(p, material, blockEntityType))
+				.initialProperties(() -> material == PipeMaterial.NETHERITE ? Blocks.NETHERITE_BLOCK : Blocks.COPPER_BLOCK)
+				// Wie Creates Tank: durchsichtig fuer das Fenster, aber Redstone-leitend wie ein voller Block.
+				.properties(p -> p.noOcclusion().isRedstoneConductor((state, level, pos) -> true))
+				.onRegister(CreateRegistrate.blockModel(() -> CHPTankModels.factory(material)))
+				// Creates Tank-Item: setzt beim Bauen auf breite Tanks ganze Lagen und behandelt Tank-NBT.
+				.item(FluidTankItem::new)
 				.build()
 				.register();
 	}

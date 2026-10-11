@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "TNT",
+    "NIN",
+    "TNT"
+  ],
+  "key": {
+    "T": {
+      "item": "createhp:pressure_tank"
+    },
+    "N": {
+      "item": "minecraft:netherite_scrap"
+    },
+    "I": {
+      "item": "minecraft:netherite_ingot"
+    }
+  },
+  "result": {
+    "item": "createhp:netherite_pressure_tank",
+    "count": 1
+  }
+}

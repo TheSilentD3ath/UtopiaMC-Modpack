@@ -68,5 +68,21 @@
   "block.createhp.netherite_relief_valve.tooltip.condition1": "Werteanzeige an den Seiten",
   "block.createhp.netherite_relief_valve.tooltip.behaviour1": "Stellt den _Ablassdruck_ ein. Anfangs steht er auf dem Grenzwert des Ventils.",
   "block.createhp.netherite_relief_valve.tooltip.condition2": "Rechtsklick mit Elektronenröhre",
-  "block.createhp.netherite_relief_valve.tooltip.behaviour2": "Macht es _schlau_: Es _gibt Redstone aus_, solange es ablässt."
+  "block.createhp.netherite_relief_valve.tooltip.behaviour2": "Macht es _schlau_: Es _gibt Redstone aus_, solange es ablässt.",
+  "block.createhp.pressure_tank": "Hochdrucktank",
+  "block.createhp.netherite_pressure_tank": "Netherit-Drucktank",
+  "createhp.gui.goggles.tank_pressure": "Tankdruck:",
+  "createhp.generic.unit.buckets": "Eimer",
+  "createhp.display_source.tank_fill": "Tankfüllstand",
+  "createhp.display_source.tank_fill.display": "Angezeigte Information",
+  "createhp.display_source.tank_fill.progress_bar": "Füllstand als Fortschrittsleiste",
+  "createhp.display_source.tank_fill.percent": "Füllstand in Prozent",
+  "createhp.display_source.tank_fill.amount": "Inhalt in Eimern",
+  "createhp.display_source.tank_fill.capacity": "Fassungsvermögen in Eimern",
+  "block.createhp.pressure_tank.tooltip.summary": "Ein _Flüssigkeitstank_ mit _32 Eimern_ je Block, der bis _256 bar_ hält. Verbindet sich zu großen Tanks und arbeitet wie Creates Tank als _Kessel_.",
+  "block.createhp.pressure_tank.tooltip.condition1": "Wenn über dem Grenzwert gespeist",
+  "block.createhp.pressure_tank.tooltip.behaviour1": "Der Block an diesem Anschluss _bekommt Risse und platzt_; sein Anteil am Inhalt geht verloren.",
+  "block.createhp.netherite_pressure_tank.tooltip.summary": "Ein _Flüssigkeitstank_ mit _128 Eimern_ je Block, der bis _1.024 bar_ hält. Verbindet sich zu großen Tanks und arbeitet wie Creates Tank als _Kessel_.",
+  "block.createhp.netherite_pressure_tank.tooltip.condition1": "Wenn über dem Grenzwert gespeist",
+  "block.createhp.netherite_pressure_tank.tooltip.behaviour1": "Der Block an diesem Anschluss _explodiert_."
 }

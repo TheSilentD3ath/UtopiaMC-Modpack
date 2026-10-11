@@ -23,6 +23,7 @@ public final class CHPConfig {
 	public static final ForgeConfigSpec.DoubleValue EXPLOSION_POWER;
 	public static final ForgeConfigSpec.IntValue BURST_SCAN_INTERVAL;
 	public static final ForgeConfigSpec.IntValue BURST_THRESHOLD;
+	public static final ForgeConfigSpec.BooleanValue CREATE_TANKS_LIMITED;
 
 	static {
 		ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -41,8 +42,25 @@ public final class CHPConfig {
 				.comment("Checks an overloaded pipe survives before it bursts. Time to burst is about",
 						"scanIntervalTicks * burstAfterChecks ticks; the cracks grow in the meantime.")
 				.defineInRange("burstAfterChecks", 4, 1, 40);
+		CREATE_TANKS_LIMITED = b
+				.comment("Whether Create's own fluid tanks hold only 16 bar, like Create's pipes. A high pressure pump",
+						"pushing more into one makes it burst. Turn off for worlds with existing setups that fill",
+						"Create tanks from high pressure pumps.")
+				.define("createTanksLimited", true);
 		b.pop();
 		SERVER_SPEC = b.build();
+	}
+
+	/**
+	 * Ob Creates Tanks 16 bar halten. Vor dem Laden der Server-Config (Client im Hauptmenue) gilt die Voreinstellung,
+	 * statt dass get() eine Ausnahme wirft.
+	 */
+	public static boolean createTanksLimited() {
+		try {
+			return CREATE_TANKS_LIMITED.get();
+		} catch (IllegalStateException notLoaded) {
+			return true;
+		}
 	}
 
 	public static void register() {

@@ -1,6 +1,7 @@
 package net.shiro.createhp.content.pressure;
 
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
+import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
 import com.simibubi.create.content.redstone.displayLink.DisplayLinkContext;
 import com.simibubi.create.content.redstone.displayLink.source.PercentOrProgressBarDisplaySource;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -12,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.shiro.createhp.CreateHP;
+import net.shiro.createhp.content.tank.TankPressure;
 import net.shiro.createhp.content.valve.PressureValveBlockEntity;
 
 import org.jetbrains.annotations.Nullable;
@@ -19,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 /**
- * Display-Link-Quelle fuer den Druck an einem Rohr, Ventil oder einer Pumpe. Aufgebaut wie Creates
+ * Display-Link-Quelle fuer den Druck an einem Rohr, Ventil, Tank oder einer Pumpe. Aufgebaut wie Creates
  * Stress-Anzeige, damit sie sich am Display genauso bedienen laesst: Balken, Prozent oder Zahlen.
  *
  * Modi: 0 Auslastung als Balken, 1 Auslastung in Prozent, 2 aktueller Druck, 3 Grenzwert.
@@ -44,10 +46,15 @@ public class PressureDisplaySource extends PercentOrProgressBarDisplaySource {
 		BlockEntity be = context.getSourceBlockEntity();
 		if (be == null)
 			return null;
-		FluidTransportBehaviour pipe = BlockEntityBehaviour.get(be, FluidTransportBehaviour.TYPE);
-		if (pipe == null)
-			return null;
-		float bar = be instanceof PressureValveBlockEntity valve ? valve.displayBar(pipe) : Pressure.barAt(pipe);
+		float bar;
+		if (be instanceof FluidTankBlockEntity tank) {
+			bar = TankPressure.barAt(tank);
+		} else {
+			FluidTransportBehaviour pipe = BlockEntityBehaviour.get(be, FluidTransportBehaviour.TYPE);
+			if (pipe == null)
+				return null;
+			bar = be instanceof PressureValveBlockEntity valve ? valve.displayBar(pipe) : Pressure.barAt(pipe);
+		}
 		float rating = Pressure.ratingBar(be.getBlockState());
 		return switch (getMode(context)) {
 			case 0, 1 -> Float.isInfinite(rating) ? 0f : bar / rating;
