@@ -8,5 +8,18 @@
   "block.createhp.netherite_pressure_pipe": "Netherite Pressure Pipe",
   "block.createhp.netherite_glass_pipe": "Netherite Glass Pressure Pipe",
   "block.createhp.netherite_pressure_pump": "Netherite Pressure Pump",
-  "block.createhp.advanced_netherite_pump": "Advanced Netherite Pressure Pump"
+  "block.createhp.advanced_netherite_pump": "Advanced Netherite Pressure Pump",
+  "createhp.gui.goggles.pipe_pressure": "Pipe Pressure:",
+  "createhp.gui.goggles.pump_pressure": "Pump Pressure:",
+  "createhp.gui.goggles.pressure_of_limit": "%1$s of %2$s bar",
+  "createhp.gui.goggles.pressure_value": "%1$s bar",
+  "createhp.gui.goggles.overload_bursts": "Overloaded, about to burst",
+  "createhp.gui.goggles.overload_explodes": "Overloaded, about to explode",
+  "createhp.generic.unit.bar": "bar",
+  "createhp.display_source.pipe_pressure": "Pipe Pressure",
+  "createhp.display_source.pipe_pressure.display": "Displayed Info",
+  "createhp.display_source.pipe_pressure.progress_bar": "Load as Progress Bar",
+  "createhp.display_source.pipe_pressure.percent": "Load in Percent",
+  "createhp.display_source.pipe_pressure.current": "Pressure in bar",
+  "createhp.display_source.pipe_pressure.limit": "Pressure Limit"
 }

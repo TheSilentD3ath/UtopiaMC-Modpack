@@ -5,6 +5,7 @@ import com.simibubi.create.content.fluids.pipes.FluidPipeBlockEntity;
 
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.shiro.createhp.content.pressure.PipeMaterial;
 
 import java.util.function.Supplier;
 
@@ -17,13 +18,19 @@ import java.util.function.Supplier;
 public class PressurePipeBlock extends FluidPipeBlock {
 	private final Supplier<? extends BlockEntityType<? extends FluidPipeBlockEntity>> blockEntityType;
 	private final Supplier<BlockState> glassState;
+	private final PipeMaterial material;
 
-	public PressurePipeBlock(Properties properties,
+	public PressurePipeBlock(Properties properties, PipeMaterial material,
 			Supplier<? extends BlockEntityType<? extends FluidPipeBlockEntity>> blockEntityType,
 			Supplier<BlockState> glassState) {
 		super(properties);
+		this.material = material;
 		this.blockEntityType = blockEntityType;
 		this.glassState = glassState;
+	}
+
+	public PipeMaterial getMaterial() {
+		return material;
 	}
 
 	@Override

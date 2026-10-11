@@ -1,9 +1,7 @@
 package net.shiro.createhp.registry;
 
 import com.simibubi.create.AllPartialModels;
-import com.simibubi.create.content.fluids.pipes.FluidPipeBlockEntity;
 import com.simibubi.create.content.fluids.pipes.GlassPipeVisual;
-import com.simibubi.create.content.fluids.pipes.StraightPipeBlockEntity;
 import com.simibubi.create.content.fluids.pipes.TransparentStraightPipeRenderer;
 import com.simibubi.create.content.fluids.pump.PumpRenderer;
 import com.simibubi.create.content.kinetics.base.SingleAxisRotatingVisual;
@@ -12,34 +10,36 @@ import com.tterrag.registrate.util.entry.BlockEntityEntry;
 
 import net.shiro.createhp.CreateHP;
 import net.shiro.createhp.content.HighPressurePumpBlockEntity;
+import net.shiro.createhp.content.PressureGlassPipeBlockEntity;
+import net.shiro.createhp.content.PressurePipeBlockEntity;
 
 public class CHPBlockEntities {
 	private static final CreateRegistrate REGISTRATE = CreateHP.REGISTRATE;
 
-	/** Reuses Create's FluidPipeBlockEntity so our pipe joins the fluid network out of the box. */
-	public static final BlockEntityEntry<FluidPipeBlockEntity> HIGH_PRESSURE_PIPE =
-			REGISTRATE.blockEntity("high_pressure_pipe", FluidPipeBlockEntity::new)
+	/** Create's FluidPipeBlockEntity plus a goggle readout of the pressure; joins the fluid network as is. */
+	public static final BlockEntityEntry<PressurePipeBlockEntity> HIGH_PRESSURE_PIPE =
+			REGISTRATE.blockEntity("high_pressure_pipe", PressurePipeBlockEntity::new)
 					.validBlock(CHPBlocks.HIGH_PRESSURE_PIPE)
 					.register();
 
 	/** Glass (see-through) HP pipe BE — reuses Create's StraightPipeBlockEntity, with Create's own
 	 *  glass-pipe visual + renderer so the fluid shows flowing inside. */
-	public static final BlockEntityEntry<StraightPipeBlockEntity> HIGH_PRESSURE_GLASS_PIPE =
-			REGISTRATE.blockEntity("high_pressure_glass_pipe", StraightPipeBlockEntity::new)
+	public static final BlockEntityEntry<PressureGlassPipeBlockEntity> HIGH_PRESSURE_GLASS_PIPE =
+			REGISTRATE.blockEntity("high_pressure_glass_pipe", PressureGlassPipeBlockEntity::new)
 					.visual(() -> GlassPipeVisual::new, false)   // shows fluid flowing inside the glass
 					.validBlock(CHPBlocks.HIGH_PRESSURE_GLASS_PIPE)
 					.renderer(() -> TransparentStraightPipeRenderer::new)
 					.register();
 
 	/** Netherite solid pipe BE — same Create FluidPipeBlockEntity, joins the fluid network. */
-	public static final BlockEntityEntry<FluidPipeBlockEntity> NETHERITE_PRESSURE_PIPE =
-			REGISTRATE.blockEntity("netherite_pressure_pipe", FluidPipeBlockEntity::new)
+	public static final BlockEntityEntry<PressurePipeBlockEntity> NETHERITE_PRESSURE_PIPE =
+			REGISTRATE.blockEntity("netherite_pressure_pipe", PressurePipeBlockEntity::new)
 					.validBlock(CHPBlocks.NETHERITE_PRESSURE_PIPE)
 					.register();
 
 	/** Netherite glass pipe BE — Create's StraightPipeBlockEntity + glass visual/renderer. */
-	public static final BlockEntityEntry<StraightPipeBlockEntity> NETHERITE_GLASS_PIPE =
-			REGISTRATE.blockEntity("netherite_glass_pipe", StraightPipeBlockEntity::new)
+	public static final BlockEntityEntry<PressureGlassPipeBlockEntity> NETHERITE_GLASS_PIPE =
+			REGISTRATE.blockEntity("netherite_glass_pipe", PressureGlassPipeBlockEntity::new)
 					.visual(() -> GlassPipeVisual::new, false)
 					.validBlock(CHPBlocks.NETHERITE_GLASS_PIPE)
 					.renderer(() -> TransparentStraightPipeRenderer::new)

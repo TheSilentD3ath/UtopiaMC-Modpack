@@ -6,9 +6,11 @@ import com.simibubi.create.foundation.data.CreateRegistrate;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.resources.ResourceLocation;
 
+import net.shiro.createhp.config.CHPConfig;
 import net.shiro.createhp.registry.CHPBlockEntities;
 import net.shiro.createhp.registry.CHPBlocks;
 import net.shiro.createhp.registry.CHPCreativeTab;
+import net.shiro.createhp.registry.CHPDisplaySources;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,9 +33,14 @@ public class CreateHP implements ModInitializer {
 		// Force class-load of the registry holders so their static entries are defined...
 		CHPBlocks.register();
 		CHPBlockEntities.register();
+		CHPDisplaySources.register();
 
 		// ...then flush everything to the game registries (Fabric Registrate requirement).
 		REGISTRATE.register();
+
+		// Die Druckquelle braucht die fertigen Block-Entity-Typen, also erst nach dem Registrieren.
+		CHPDisplaySources.associate();
+		CHPConfig.register();
 
 		// Creative tab (after items exist) — groups all of the mod's blocks/items in one place.
 		CHPCreativeTab.register();

@@ -8,5 +8,18 @@
   "block.createhp.netherite_pressure_pipe": "Netherit-Druckrohr",
   "block.createhp.netherite_glass_pipe": "Netherit-Glasdruckrohr",
   "block.createhp.netherite_pressure_pump": "Netherit-Druckpumpe",
-  "block.createhp.advanced_netherite_pump": "Erweiterte Netherit-Druckpumpe"
+  "block.createhp.advanced_netherite_pump": "Erweiterte Netherit-Druckpumpe",
+  "createhp.gui.goggles.pipe_pressure": "Rohrdruck:",
+  "createhp.gui.goggles.pump_pressure": "Pumpendruck:",
+  "createhp.gui.goggles.pressure_of_limit": "%1$s von %2$s bar",
+  "createhp.gui.goggles.pressure_value": "%1$s bar",
+  "createhp.gui.goggles.overload_bursts": "Überlastet, platzt gleich",
+  "createhp.gui.goggles.overload_explodes": "Überlastet, explodiert gleich",
+  "createhp.generic.unit.bar": "bar",
+  "createhp.display_source.pipe_pressure": "Rohrdruck",
+  "createhp.display_source.pipe_pressure.display": "Angezeigte Information",
+  "createhp.display_source.pipe_pressure.progress_bar": "Auslastung als Fortschrittsleiste",
+  "createhp.display_source.pipe_pressure.percent": "Auslastung in Prozent",
+  "createhp.display_source.pipe_pressure.current": "Druck in bar",
+  "createhp.display_source.pipe_pressure.limit": "Grenzwert"
 }

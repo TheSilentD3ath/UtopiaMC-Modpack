@@ -26,6 +26,7 @@
     "fabricloader": ">=${fabric_loader_version}",
     "fabric-api": ">=${fabric_api_version}",
     "create": ">=6.0.0",
+    "forgeconfigapiport": ">=8.0.0",
     "minecraft": "${minecraft_version}"
   }
 }

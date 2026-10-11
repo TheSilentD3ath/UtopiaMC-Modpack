@@ -3,18 +3,20 @@ package net.shiro.createhp.content;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.content.fluids.FluidTransportBehaviour;
-import com.simibubi.create.content.fluids.pipes.AxisPipeBlock;
-import com.simibubi.create.content.fluids.pipes.FluidPipeBlock;
 import com.simibubi.create.content.fluids.pump.PumpBlockEntity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.shiro.createhp.config.CHPConfig;
+import net.shiro.createhp.content.pressure.PipeMaterial;
+import net.shiro.createhp.content.pressure.Pressure;
+import net.shiro.createhp.content.pressure.PressureTooltip;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -28,16 +30,17 @@ import java.util.Set;
  * Block entity for the high pressure pumps. Inherits ALL of Create's pump behaviour and adds:
  *  - higher Stress (SU) cost, scaled per tier;
  *  - a speed-scaled effective reach (see {@link #getEffectiveRange()}), consumed by the range mixins;
- *  - the BURST mechanic: any non-high-pressure pipe in this running pump's network cracks, then breaks.
+ *  - the overpressure check: any pipe in this running pump's network whose pressure is above its rating
+ *    cracks, then bursts; netherite pipes explode (see {@link Pressure} and {@link PipeMaterial}).
  *
- * The burst scan is bounded (by reach), throttled (every {@link CHPConfig#BURST_SCAN_INTERVAL} ticks),
+ * The check is bounded (by reach), throttled (every {@link CHPConfig#BURST_SCAN_INTERVAL} ticks),
  * and only runs server-side while the pump is actually spinning — so big networks don't get tick-heavy.
  */
 public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 
 	private final PumpTier tier;
 
-	/** Regular pipes currently over-pressured by this pump -> how many scans they've survived. */
+	/** Overloaded pipes in this pump's network -> how many checks they have survived. */
 	private final Map<BlockPos, Integer> crackProgress = new HashMap<>();
 
 	public HighPressurePumpBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
@@ -87,47 +90,77 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 				clearAllCracks();
 			return;
 		}
-		if (level.getGameTime() % CHPConfig.BURST_SCAN_INTERVAL == 0)
+		if (level.getGameTime() % CHPConfig.BURST_SCAN_INTERVAL.get() == 0)
 			burstScan();
 	}
 
-	/** One throttled pass: find over-pressured regular pipes, advance their cracks, break the worst. */
-	private void burstScan() {
-		Set<BlockPos> overPressured = findRegularPipesInNetwork();
+	@Override
+	public boolean addToGoggleTooltip(List<Component> tooltip, boolean isPlayerSneaking) {
+		super.addToGoggleTooltip(tooltip, isPlayerSneaking);
+		PressureTooltip.addPump(tooltip, getBehaviour(FluidTransportBehaviour.TYPE));
+		return true;
+	}
 
-		// pipes that left the network (removed / disconnected) heal
+	/** One throttled pass: find overloaded pipes, advance their cracks, burst the ones that had enough. */
+	private void burstScan() {
+		Set<BlockPos> overloaded = findOverloadedPipes();
+		int threshold = CHPConfig.BURST_THRESHOLD.get();
+
+		// Rohre, die nicht mehr ueberlastet sind (Druck gesenkt, abgebaut, abgetrennt), erholen sich.
 		Iterator<Map.Entry<BlockPos, Integer>> it = crackProgress.entrySet().iterator();
 		while (it.hasNext()) {
 			BlockPos p = it.next().getKey();
-			if (!overPressured.contains(p)) {
+			if (!overloaded.contains(p)) {
 				level.destroyBlockProgress(crackerId(p), p, -1);
 				it.remove();
 			}
 		}
 
-		for (BlockPos p : overPressured) {
+		for (BlockPos p : overloaded) {
 			int progress = crackProgress.getOrDefault(p, 0) + 1;
-			if (progress >= CHPConfig.BURST_THRESHOLD) {
+			if (progress >= threshold) {
 				crackProgress.remove(p);
 				level.destroyBlockProgress(crackerId(p), p, -1);
-				level.playSound(null, p, SoundEvents.COPPER_BREAK, SoundSource.BLOCKS, 1.2f, 0.7f);
-				level.destroyBlock(p, true);          // burst: break + drop + spill its fluid
+				burst(p);
 			} else {
 				crackProgress.put(p, progress);
-				int stage = Math.min(9, progress * 10 / CHPConfig.BURST_THRESHOLD);
+				int stage = Math.min(9, progress * 10 / threshold);
 				level.destroyBlockProgress(crackerId(p), p, stage);
 			}
 		}
 	}
 
-	/** Bounded BFS over the connected pipe network; collects pipes that are NOT our HP variants. */
-	private Set<BlockPos> findRegularPipesInNetwork() {
-		Set<BlockPos> regular = new HashSet<>();
+	private void burst(BlockPos p) {
+		PipeMaterial material = Pressure.materialOf(level.getBlockState(p).getBlock());
+		if (material != null && material.explodes) {
+			// Erst das Rohr entfernen: Netherit hat die Explosionsfestigkeit eines Netheritblocks und wuerde
+			// die eigene Explosion sonst ueberstehen. Es droppt nichts, es ist ja explodiert.
+			level.removeBlock(p, false);
+			Level.ExplosionInteraction interaction = CHPConfig.EXPLOSION_BREAKS_BLOCKS.get()
+					? Level.ExplosionInteraction.TNT : Level.ExplosionInteraction.NONE;
+			level.explode(null, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
+					CHPConfig.EXPLOSION_POWER.get().floatValue(), interaction);
+			return;
+		}
+		level.playSound(null, p, SoundEvents.COPPER_BREAK, SoundSource.BLOCKS, 1.2f, 0.7f);
+		level.destroyBlock(p, true);          // burst: break + drop + spill its fluid
+	}
+
+	/**
+	 * Bounded BFS over the pipe network this pump feeds; collects every pipe whose pressure is above its
+	 * rating. The pressure read is the pipe's total, so other pumps feeding the same pipe count as well.
+	 */
+	private Set<BlockPos> findOverloadedPipes() {
+		Set<BlockPos> overloaded = new HashSet<>();
 		Set<BlockPos> visited = new HashSet<>();
 		ArrayDeque<Node> frontier = new ArrayDeque<>();
 		int range = Math.max(1, getEffectiveRange());
 
-		for (Direction d : Direction.values())
+		FluidTransportBehaviour own = getBehaviour(FluidTransportBehaviour.TYPE);
+		if (own == null)
+			return overloaded;
+		visited.add(worldPosition);
+		for (var d : FluidPropagator.getPipeConnections(getBlockState(), own))
 			frontier.add(new Node(worldPosition.relative(d), 1));
 
 		while (!frontier.isEmpty()) {
@@ -138,26 +171,12 @@ public class HighPressurePumpBlockEntity extends PumpBlockEntity {
 			if (pipe == null)
 				continue;                              // not a pipe
 			BlockState state = level.getBlockState(node.pos);
-			Block b = state.getBlock();
-			if (isBurstablePipe(b))
-				regular.add(node.pos);                 // a non-HP pipe under our pressure -> burst candidate
-			List<Direction> connections = FluidPropagator.getPipeConnections(state, pipe);
-			for (Direction dir : connections)
+			if (Pressure.isOverloaded(Pressure.barAt(pipe), Pressure.ratingBar(state)))
+				overloaded.add(node.pos);
+			for (var dir : FluidPropagator.getPipeConnections(state, pipe))
 				frontier.add(new Node(node.pos.relative(dir), node.dist + 1));
 		}
-		return regular;
-	}
-
-	/**
-	 * Only ACTUAL pipe blocks burst — never pumps, tanks, valves, etc. (those also report a fluid
-	 * behaviour, which is why the pump was wrongly bursting). HP pipes + HP glass are immune.
-	 * FluidPipeBlock covers fluid/encased/smart pipes; AxisPipeBlock covers glass pipes.
-	 */
-	private static boolean isBurstablePipe(Block b) {
-		// Any of our pressure pipes / glass variants (copper, netherite, ...) are immune.
-		if (b instanceof PressurePipeBlock || b instanceof PressureGlassPipeBlock)
-			return false;
-		return b instanceof FluidPipeBlock || b instanceof AxisPipeBlock;
+		return overloaded;
 	}
 
 	private void clearAllCracks() {

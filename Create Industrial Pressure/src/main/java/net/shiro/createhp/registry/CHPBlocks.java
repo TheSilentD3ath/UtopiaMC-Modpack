@@ -11,12 +11,13 @@ import net.shiro.createhp.content.HighPressurePumpBlock;
 import net.shiro.createhp.content.PressureGlassPipeBlock;
 import net.shiro.createhp.content.PressurePipeBlock;
 import net.shiro.createhp.content.PumpTier;
+import net.shiro.createhp.content.pressure.PipeMaterial;
 
 public class CHPBlocks {
 	private static final CreateRegistrate REGISTRATE = CreateHP.REGISTRATE;
 
 	public static final BlockEntry<PressurePipeBlock> HIGH_PRESSURE_PIPE =
-			REGISTRATE.block("high_pressure_pipe", p -> new PressurePipeBlock(p,
+			REGISTRATE.block("high_pressure_pipe", p -> new PressurePipeBlock(p, PipeMaterial.COPPER,
 					() -> CHPBlockEntities.HIGH_PRESSURE_PIPE.get(),
 					() -> CHPBlocks.HIGH_PRESSURE_GLASS_PIPE.getDefaultState()))
 					.initialProperties(() -> Blocks.COPPER_BLOCK)
@@ -31,7 +32,7 @@ public class CHPBlocks {
 
 	// See-through variant (wrench-created from the pipe). Blockstate/model shipped as static resources.
 	public static final BlockEntry<PressureGlassPipeBlock> HIGH_PRESSURE_GLASS_PIPE =
-			REGISTRATE.block("high_pressure_glass_pipe", p -> new PressureGlassPipeBlock(p,
+			REGISTRATE.block("high_pressure_glass_pipe", p -> new PressureGlassPipeBlock(p, PipeMaterial.COPPER,
 					() -> CHPBlockEntities.HIGH_PRESSURE_GLASS_PIPE.get(),
 					() -> HIGH_PRESSURE_PIPE.get()))
 					.initialProperties(() -> Blocks.COPPER_BLOCK)
@@ -41,7 +42,7 @@ public class CHPBlocks {
 
 	// --- Netherite tier (top material tier; same function, netherite look) ---
 	public static final BlockEntry<PressurePipeBlock> NETHERITE_PRESSURE_PIPE =
-			REGISTRATE.block("netherite_pressure_pipe", p -> new PressurePipeBlock(p,
+			REGISTRATE.block("netherite_pressure_pipe", p -> new PressurePipeBlock(p, PipeMaterial.NETHERITE,
 					() -> CHPBlockEntities.NETHERITE_PRESSURE_PIPE.get(),
 					() -> CHPBlocks.NETHERITE_GLASS_PIPE.getDefaultState()))
 					.initialProperties(() -> Blocks.NETHERITE_BLOCK)
@@ -52,7 +53,7 @@ public class CHPBlocks {
 					.register();
 
 	public static final BlockEntry<PressureGlassPipeBlock> NETHERITE_GLASS_PIPE =
-			REGISTRATE.block("netherite_glass_pipe", p -> new PressureGlassPipeBlock(p,
+			REGISTRATE.block("netherite_glass_pipe", p -> new PressureGlassPipeBlock(p, PipeMaterial.NETHERITE,
 					() -> CHPBlockEntities.NETHERITE_GLASS_PIPE.get(),
 					() -> NETHERITE_PRESSURE_PIPE.get()))
 					.initialProperties(() -> Blocks.NETHERITE_BLOCK)

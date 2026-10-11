@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.HitResult;
+import net.shiro.createhp.content.pressure.PipeMaterial;
 
 import java.util.function.Supplier;
 
@@ -23,13 +24,19 @@ import java.util.function.Supplier;
 public class PressureGlassPipeBlock extends GlassFluidPipeBlock {
 	private final Supplier<? extends BlockEntityType<? extends StraightPipeBlockEntity>> blockEntityType;
 	private final Supplier<PressurePipeBlock> solidPipe;
+	private final PipeMaterial material;
 
-	public PressureGlassPipeBlock(Properties properties,
+	public PressureGlassPipeBlock(Properties properties, PipeMaterial material,
 			Supplier<? extends BlockEntityType<? extends StraightPipeBlockEntity>> blockEntityType,
 			Supplier<PressurePipeBlock> solidPipe) {
 		super(properties);
+		this.material = material;
 		this.blockEntityType = blockEntityType;
 		this.solidPipe = solidPipe;
+	}
+
+	public PipeMaterial getMaterial() {
+		return material;
 	}
 
 	@Override
