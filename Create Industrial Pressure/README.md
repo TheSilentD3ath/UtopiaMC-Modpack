@@ -39,14 +39,34 @@ Useful development tasks:
 - five pump tiers with speed-scaled reach from 64 to 1024 blocks
 - pressure multipliers from 4× to 64×, coupled to matching Stress Unit costs
 - contextual range and throughput boosts that leave vanilla pumps unchanged
-- regular Create-compatible pipes crack and burst when over-pressured
+- pressure ratings: every pipe holds a limit in bar; above it, it cracks and bursts, and an
+  overloaded netherite pipe explodes (block damage can be switched off in the server config)
+- pipe pressure on Engineer's Goggles and as a Display Link source, for the mod's pipes and pumps
+  and for Create's pipes, valves and pump
 - Create-style attachment models, transparent fluid rendering and a dedicated creative tab
 
 Glass variants follow Create's own lifecycle: wrench a solid pressure pipe to expose its window,
 and wrench the window again to restore the matching solid material. They deliberately have no
 standalone inventory item and drop/require their matching solid pressure pipe.
 
-The numeric tier values live in `PumpTier`; scan timing and speed scaling live in `CHPConfig`.
+Pressure is Create's own pipe pressure, shown in bar: 16 Create pressure units are 1 bar, so
+Create's pump at 256 RPM gives 16 bar and the pump tiers at 256 RPM give 64 to 1024 bar. Limits:
+
+| Pipe | Limit |
+|---|---|
+| Create fluid, glass, encased and smart pipe, fluid valve | 16 bar |
+| high pressure pipe and its glass variant | 256 bar |
+| netherite pressure pipe and its glass variant | 1024 bar |
+
+Each limit is the maximum of the matching pump at full speed, so a network built from matching
+parts never bursts. Overload comes from mixing (a strong pump on weaker pipes) or from several
+pumps feeding the same pipe, whose pressures add up. Only high pressure pumps check their network,
+so a network of Create pumps behaves exactly as in Create. The full plan, including valves, tanks
+and steam, is in `PRESSURE_SYSTEM.md`.
+
+The numeric tier values live in `PumpTier`, the pipe limits in `PipeMaterial` and `Pressure`.
+Explosion, check interval and time to burst are in the server config `config/createhp-server.toml`;
+edit it while the server is stopped, because the server writes its loaded values back on shutdown.
 
 ## Architecture
 

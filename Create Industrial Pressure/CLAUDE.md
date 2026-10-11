@@ -16,6 +16,11 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
   decision are in `docs/PROJECT_STATUS.md`.
 - `de_de.json` follows Create's own German terms (Rohr, Glasrohr, Netherit-, Erweitert).
   Keep both lang files on the same keys.
+- Pressure system: decisions, units, limits and the phase plan (valves, pressure tanks,
+  steam) are in `PRESSURE_SYSTEM.md`. Phase 1 is built. Pressure is Create's own pipe
+  pressure read in bar (16 units = 1 bar); do not add a second pressure model.
+- The server config is `config/createhp-server.toml` (global on Fabric). Edit it with the
+  server stopped; on shutdown the server writes its loaded values back.
 
 ## Testing
 

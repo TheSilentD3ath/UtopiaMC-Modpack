@@ -1,6 +1,6 @@
 # Utopia 3.0 project status
 
-Status date: 2026-10-05
+Status date: 2026-10-11
 
 The current verified release baseline is Utopia 3.0.0 for Minecraft 1.20.1
 with Fabric Loader 0.18.4. Development continues in a separate working copy
@@ -22,8 +22,9 @@ while this public repository is migrated to the current structure.
   toolchain has been moved up to the one the pack actually ships — Fabric Loader
   0.18.4 and Fabric API 0.92.2 instead of the 2023 versions it still named, plus
   Loom 1.7 and Gradle 8.8 to carry them. On 2026-09-25 the Fabric API was raised
-  to 0.92.6, the minimum Create 6.0.8.1 accepts (see the smoke test below). The old declaration described a
-  configuration nobody runs and kept Create out of the development client.
+  to 0.92.6, the minimum Create 6.0.8.1 accepts (see the smoke test below). The
+  old declaration described a configuration nobody runs and kept Create out of
+  the development client.
   The byte-identity of the repository-built JAR against the development artifact
   therefore has to be re-established on the same toolchain. Pack-level runtime
   verification and final public release integration remain separate gates.
@@ -351,19 +352,16 @@ These need a decision before a release.
    the end of a 25-pipe dead end, on a tier 1 pump at 128 RPM (reach 32), stays
    empty until the pump is restarted. Options: widen that search while it runs,
    which costs a longer search on every pipe change, or accept and document it.
-2. **Which pipes burst.** Encased fluid pipes, smart fluid pipes and fluid valves
-   in a high pressure network do not burst, while plain and glass Create pipes do.
-   Encasing a pipe in copper is therefore a free way around the mechanic. The
-   README says regular Create-compatible pipes burst.
-3. **Silent mixins.** Every behaviour mixin uses `require = 0`, which is how
-   the pump defect went unnoticed; `fabric.mod.json` also accepts Create 6.0.0 and later
-   while only 6.0.8.1 was tested. Options: `require = 1` for the injection points
-   confirmed on 6.0.8.1, or a check at startup.
-4. **Design points.** Netherite pipes copy the netherite block's hardness 50
+2. **Silent mixins.** Every behaviour mixin uses `require = 0`, which is how the
+   pump defect went unnoticed; `fabric.mod.json` also accepts Create 6.0.0 and
+   later while only 6.0.8.1 was tested. Options: `require = 1` for the injection
+   points confirmed on 6.0.8.1, or a check at startup.
+3. **Design points.** Netherite pipes copy the netherite block's hardness 50
    (about 9.4 seconds per pipe with a diamond pickaxe by the formula) and blast
-   resistance 1200. No block needs a tool tier; vanilla wants diamond for netherite and stone for
-   copper, while Create's pipes accept any pickaxe. Tiers 1 to 3 look identical,
-   as do tiers 4 and 5, and no tooltip explains tier, reach or stress.
+   resistance 1200. No block needs a tool tier; vanilla wants diamond for
+   netherite and stone for copper, while Create's pipes accept any pickaxe.
+   Tiers 1 to 3 look identical, as do tiers 4 and 5, and no tooltip explains
+   tier, reach or stress.
 
 ### Environment notes
 
@@ -404,6 +402,65 @@ These need a decision before a release.
 
 Screenshots of every block and of the setups were handed over in the session;
 they are not in the repository.
+
+## Create Industrial Pressure pressure system (2026-10-11)
+
+The maintainer asked for a pressure system: pipe runs whose pressure has to be
+watched, valves that shut off, regulate and relieve, smart variants by redstone,
+tiers like the pipes, pressure tanks, explosions for netherite, Display Link
+support and steam carried in pipes. Four decisions were taken: pressure is what the
+pumps put in, plus a limit per part (no build-up when an outlet is blocked);
+netherite explodes for real, with a server-config switch for block damage; steam
+is a fluid in pipes; the old rule that every Create pipe in a high pressure network
+bursts is replaced by limits. The plan for all four phases, with units, limits and
+the open points, is in `Create Industrial Pressure/PRESSURE_SYSTEM.md`.
+
+Phase 1 is built: pressure in bar from Create's own pipe pressure (16 units are
+1 bar), limits per pipe (Create parts 16 bar, copper pressure pipes 256, netherite
+1,024), bursting and the netherite explosion, the server config, Engineer's
+Goggles readouts and a Display Link source. This also closes the encased-pipe gap
+listed under the smoke test's open defects: encased and smart pipes now burst
+like any other Create pipe.
+
+Tested on the dedicated server with the release JAR, Utopia Core and Create
+6.0.8.1, with a production client:
+
+| setup | pressure | part in the middle | result |
+| --- | --- | --- | --- |
+| tier 1, 64 RPM | 16 bar | Create pipe (16) | holds |
+| tier 1, 128 RPM | 32 bar | Create pipe (16) | bursts, drops |
+| tier 1, 128 RPM | 32 bar | encased Create pipe (16) | bursts |
+| tier 1, 128 RPM | 32 bar | smart pipe (16) | bursts, drops |
+| tier 2, 256 RPM | 128 bar | Create glass pipe (16) | bursts, drops a fluid pipe |
+| tier 3, 256 RPM | 256 bar | copper pressure pipe (256) | holds |
+| tier 5, 256 RPM | 1,024 bar | copper pressure pipe (256) | bursts, drops |
+| tier 5, 256 RPM | 1,024 bar | netherite pipe (1,024) | holds |
+| Create pump, 256 RPM | 16 bar | Create pipe | holds |
+
+The pressures were read from the pipes' NBT and match the table in
+`PRESSURE_SYSTEM.md` exactly. Two tier 5 pumps feeding one netherite pipe put
+2,048 bar on the shared part (1,024 on each feed): both shared pipes exploded and
+left a crater. With `explosionBreaksBlocks = false` the same setup removed the two
+pipes, left ground and tank intact and still killed a pig standing next to it.
+
+In the production client, in German: the goggles show "Rohrdruck: 32 von 256 bar"
+on a pipe and "Pumpendruck: 32 bar" under the kinetic stats of a pump, and an
+overloaded pipe reads "1024 von 256 bar, Überlastet, platzt gleich" in red while it
+cracks. A Display Link on a pressure pipe writes "Rohr 32 bar" onto a sign, and
+onto a three-wide Create display board "Last" with a progress bar and "Druck 32
+bar". The Display Link screen lists the source as "Rohrdruck" with all four modes.
+Both logs have only the usual environment entries.
+
+Found on the way: the server writes its loaded config values back when it stops,
+so `config/createhp-server.toml` has to be edited while the server is down. An edit
+on a running server is lost. Forge Config API Port keeps server configs in the
+global `config/` folder on Fabric, not per world.
+
+Not tested: Create's fluid valve as an overloaded part (its limit is set, but it
+needs its own rotation in the test rig), the explosion power setting, a network
+that several high pressure pumps check at the same time (each keeps its own crack
+count, so a pipe may crack faster), and the goggles on Create's own pipes, which
+show nothing because Create gives them no goggle readout.
 
 ## German translation of Utopia Core
 
