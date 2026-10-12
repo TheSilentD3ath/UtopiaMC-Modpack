@@ -151,6 +151,24 @@ public class TurbineOutputBlockEntity extends GeneratingKineticBlockEntity {
 		return material == null ? 0f : material.ratingBar * PRESSURE_SHARE * rpm() / MAX_RPM;
 	}
 
+	/**
+	 * Abtrieb und Kondensatauslaesse nehmen das Aussehen des Werkstoffs der Turbine an. Nur bei Abweichung, damit
+	 * keine Blockupdates ohne Grund entstehen; der Abtrieb ueber Creates switchToBlockState, das seine Welle haelt.
+	 */
+	private void matchLook() {
+		boolean netherite = material == PipeMaterial.NETHERITE;
+		for (BlockPos pos : structure.condensateOutlets()) {
+			if (!level.isLoaded(pos))
+				continue;
+			BlockState state = level.getBlockState(pos);
+			if (state.hasProperty(TurbineOutputBlock.NETHERITE) && state.getValue(TurbineOutputBlock.NETHERITE) != netherite)
+				level.setBlock(pos, state.setValue(TurbineOutputBlock.NETHERITE, netherite), 3);
+		}
+		BlockState own = getBlockState();
+		if (own.hasProperty(TurbineOutputBlock.NETHERITE) && own.getValue(TurbineOutputBlock.NETHERITE) != netherite)
+			switchToBlockState(level, worldPosition, own.setValue(TurbineOutputBlock.NETHERITE, netherite));
+	}
+
 	/** Gibt den Einlaessen den aktuellen Bedarf, fuer ihren Komparator und ihre Brillenanzeige. */
 	private void pushRequirement() {
 		float required = formed ? requiredBar() : 0f;
@@ -179,6 +197,8 @@ public class TurbineOutputBlockEntity extends GeneratingKineticBlockEntity {
 		problem = structure.problem();
 		tooLong = structure.tooLong();
 		pushRequirement();
+		if (formed)
+			matchLook();
 		if (!formed && steamRate != 0) {
 			// Sofort stehen bleiben, nicht erst am Ende des Fensters.
 			steamRate = 0;

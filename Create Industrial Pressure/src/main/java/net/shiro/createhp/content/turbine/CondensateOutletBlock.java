@@ -8,6 +8,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.shiro.createhp.content.pressure.PipeMaterial;
 
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +27,13 @@ public class CondensateOutletBlock extends Block implements IBE<CondensateOutlet
 			Supplier<? extends BlockEntityType<? extends CondensateOutletBlockEntity>> blockEntityType) {
 		super(properties);
 		this.blockEntityType = blockEntityType;
+		registerDefaultState(defaultBlockState().setValue(TurbineOutputBlock.NETHERITE, false));
+	}
+
+	// Aussehen nach dem Werkstoff der Turbine, siehe TurbineOutputBlock.NETHERITE.
+	@Override
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		builder.add(TurbineOutputBlock.NETHERITE);
 	}
 
 	@Override

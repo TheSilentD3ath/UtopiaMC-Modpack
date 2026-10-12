@@ -7,8 +7,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 import java.util.function.Supplier;
 
@@ -21,12 +24,26 @@ import java.util.function.Supplier;
  */
 public class TurbineOutputBlock extends DirectionalKineticBlock implements IBE<TurbineOutputBlockEntity> {
 
+	/**
+	 * Aussehen in Netherit statt Kupfer. Abtrieb und Kondensatauslass passen in beide Turbinen; der Abtrieb setzt die
+	 * Eigenschaft bei jeder Pruefung passend zum Werkstoff der Turbine, damit sie in der Wand nicht als Flicken
+	 * auffallen. Auf das Verhalten wirkt sie nicht.
+	 */
+	public static final BooleanProperty NETHERITE = BooleanProperty.create("netherite");
+
 	private final Supplier<? extends BlockEntityType<? extends TurbineOutputBlockEntity>> blockEntityType;
 
 	public TurbineOutputBlock(Properties properties,
 			Supplier<? extends BlockEntityType<? extends TurbineOutputBlockEntity>> blockEntityType) {
 		super(properties);
 		this.blockEntityType = blockEntityType;
+		registerDefaultState(defaultBlockState().setValue(NETHERITE, false));
+	}
+
+	@Override
+	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+		super.createBlockStateDefinition(builder);
+		builder.add(NETHERITE);
 	}
 
 	@Override

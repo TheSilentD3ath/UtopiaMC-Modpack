@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.shiro.createhp.CreateHP;
 import net.shiro.createhp.client.CHPPipeAttachmentModel;
 import net.shiro.createhp.client.CHPTankModels;
+import net.shiro.createhp.client.CHPTurbineModels;
 import net.shiro.createhp.content.HighPressurePumpBlock;
 import net.shiro.createhp.content.PressureGlassPipeBlock;
 import net.shiro.createhp.content.PressurePipeBlock;
@@ -148,7 +149,8 @@ public class CHPBlocks {
 					.build()
 					.register();
 
-	// --- Dampfturbine: Gehaeuse, Rotor und Einlass je Werkstoff; Kondensatauslass und Abtrieb passen in beide ---
+	// --- Dampfturbine: Gehaeuse, Rotor und Einlass je Werkstoff; Kondensatauslass und Abtrieb passen in beide.
+	// Die Aussenteile haben verbundene Texturen (CHPTurbineModels), damit eine Wand wie eine Platte aussieht. ---
 	public static final BlockEntry<TurbineCasingBlock> TURBINE_CASING =
 			turbineCasing("turbine_casing", PipeMaterial.COPPER);
 	public static final BlockEntry<TurbineCasingBlock> NETHERITE_TURBINE_CASING =
@@ -165,6 +167,7 @@ public class CHPBlocks {
 	public static final BlockEntry<CondensateOutletBlock> CONDENSATE_OUTLET =
 			REGISTRATE.block("condensate_outlet", p -> new CondensateOutletBlock(p, () -> CHPBlockEntities.CONDENSATE_OUTLET.get()))
 					.initialProperties(() -> Blocks.COPPER_BLOCK)
+					.onRegister(CreateRegistrate.connectedTextures(() -> CHPTurbineModels.condensate()))
 					.item()
 					.build()
 					.register();
@@ -172,6 +175,7 @@ public class CHPBlocks {
 	public static final BlockEntry<TurbineOutputBlock> TURBINE_OUTPUT =
 			REGISTRATE.block("turbine_output", p -> new TurbineOutputBlock(p, () -> CHPBlockEntities.TURBINE_OUTPUT.get()))
 					.initialProperties(() -> Blocks.COPPER_BLOCK)
+					.onRegister(CreateRegistrate.connectedTextures(() -> CHPTurbineModels.output()))
 					.item()
 					.build()
 					.register();
@@ -184,6 +188,7 @@ public class CHPBlocks {
 	private static BlockEntry<TurbineCasingBlock> turbineCasing(String id, PipeMaterial material) {
 		return REGISTRATE.block(id, p -> new TurbineCasingBlock(p, material))
 				.initialProperties(() -> base(material))
+				.onRegister(CreateRegistrate.connectedTextures(() -> CHPTurbineModels.casing(material)))
 				.item()
 				.build()
 				.register();
@@ -200,6 +205,7 @@ public class CHPBlocks {
 	private static BlockEntry<SteamInletBlock> steamInlet(String id, PipeMaterial material) {
 		return REGISTRATE.block(id, p -> new SteamInletBlock(p, material, () -> CHPBlockEntities.STEAM_INLET.get()))
 				.initialProperties(() -> base(material))
+				.onRegister(CreateRegistrate.connectedTextures(() -> CHPTurbineModels.inlet(material)))
 				.item()
 				.build()
 				.register();

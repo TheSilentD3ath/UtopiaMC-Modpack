@@ -33,6 +33,9 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
   from the inlets' buffers and pushes water into the condensate outlets' buffers each tick, so no
   part holds another's storage. Steam inlets join the pumps' overload check like tanks
   (`HighPressurePumpBlockEntity.addOverloadedTanks`).
+- Turbine walls use connected textures: `client/TurbineCTBehaviour` joins casing, inlet, condensate
+  outlet and output of the same material, `client/CHPTurbineModels` holds the sheets. Register them
+  with a lambda in `CHPBlocks` (a method reference would load the client class on the server).
 - Goggle lines need a new `LangBuilder` each (`PressureTooltip.lang()`); a shared one repeats every
   earlier line.
 - The client config `config/createhp-client.toml` only holds `pressureWarningSeen`; set it to false

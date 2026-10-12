@@ -1,26 +1,49 @@
 {
   "variants": {
-    "facing=north": {
+    "facing=north,netherite=false": {
       "model": "createhp:block/turbine/turbine_output"
     },
-    "facing=east": {
+    "facing=north,netherite=true": {
+      "model": "createhp:block/turbine/netherite_turbine_output"
+    },
+    "facing=east,netherite=false": {
       "model": "createhp:block/turbine/turbine_output",
       "y": 90
     },
-    "facing=south": {
+    "facing=east,netherite=true": {
+      "model": "createhp:block/turbine/netherite_turbine_output",
+      "y": 90
+    },
+    "facing=south,netherite=false": {
       "model": "createhp:block/turbine/turbine_output",
       "y": 180
     },
-    "facing=west": {
+    "facing=south,netherite=true": {
+      "model": "createhp:block/turbine/netherite_turbine_output",
+      "y": 180
+    },
+    "facing=west,netherite=false": {
       "model": "createhp:block/turbine/turbine_output",
       "y": 270
     },
-    "facing=up": {
+    "facing=west,netherite=true": {
+      "model": "createhp:block/turbine/netherite_turbine_output",
+      "y": 270
+    },
+    "facing=up,netherite=false": {
       "model": "createhp:block/turbine/turbine_output",
       "x": 270
     },
-    "facing=down": {
+    "facing=up,netherite=true": {
+      "model": "createhp:block/turbine/netherite_turbine_output",
+      "x": 270
+    },
+    "facing=down,netherite=false": {
       "model": "createhp:block/turbine/turbine_output",
+      "x": 90
+    },
+    "facing=down,netherite=true": {
+      "model": "createhp:block/turbine/netherite_turbine_output",
       "x": 90
     }
   }

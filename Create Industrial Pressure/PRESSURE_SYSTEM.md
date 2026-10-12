@@ -180,6 +180,11 @@ steam turbine.
   - Goggles: on the output material, rotor layers, speed, pressure needed, efficiency, steam used of
     the maximum, condensate, and Create's generator stats; on an inlet its pressure, content and whether it belongs to a complete
     turbine; on a condensate outlet its water.
+  - Look: casing, inlets, condensate outlets and output have connected textures in the layout of
+    Create's fluid tank (RECTANGLE, 4 × 4 tiles). A wall reads as riveted plates with a frame only at
+    its outer edge; parts of the other material do not join. Output and condensate outlet fit both
+    materials; the output switches them to the turbine's material (block state `netherite`) when it
+    finds the turbine complete.
   - Recipes: casing (4) = copper casing + 4 copper sheets; netherite casing (8) = 8 casings +
     netherite ingot; rotor (2) = shaft + 4 copper sheets; netherite rotor (4) = 4 rotors + netherite
     ingot; inlet = casing + pressure pipe of the material; condensate outlet = casing + fluid pipe;

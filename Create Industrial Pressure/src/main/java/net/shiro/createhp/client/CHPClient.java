@@ -22,6 +22,7 @@ public class CHPClient implements ClientModInitializer {
 
 		// Verbundene Texturen der Drucktanks muessen vor dem ersten Zusammenstellen der Texturen bekannt sein.
 		CHPTankModels.init();
+		CHPTurbineModels.init();
 
 		BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(),
 				CHPBlocks.HIGH_PRESSURE_PIPE.get(),

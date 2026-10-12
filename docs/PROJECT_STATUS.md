@@ -683,9 +683,14 @@ was not measured how quickly the output breaks without that limit.
 Breaking for existing worlds: turbines built in phase 4 stand still until they get
 a redstone signal.
 
-Open (maintainer, 2026-10-12): the turbine needs a sound of its own; the
-maintainer is drawing connected textures in the style of Create's tank, to be
-wired up once they exist.
+Connected textures (maintainer, 2026-10-12: "they still look bad"): casing, steam
+inlet, condensate outlet and turbine output now join like Create's fluid tank, so a
+turbine wall reads as riveted plates with one frame at its outer edge. Output and
+condensate outlet take the turbine's material when it is complete. Checked in the
+production client on the copper turbines (1 and 17 layers) and the netherite one;
+the dedicated server starts with the client classes only behind lambdas.
+
+Open (maintainer, 2026-10-12): the turbine needs a sound of its own.
 
 Not tested: a closed control loop (comparator to smart regulator or pump), the
 analog lever replaced by other redstone sources, the gauge on contraptions and with

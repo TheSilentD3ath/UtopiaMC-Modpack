@@ -1,7 +1,10 @@
 {
   "variants": {
-    "": {
+    "netherite=false": {
       "model": "createhp:block/turbine/condensate_outlet"
+    },
+    "netherite=true": {
+      "model": "createhp:block/turbine/netherite_condensate_outlet"
     }
   }
 }
