@@ -17,15 +17,16 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
 - `de_de.json` follows Create's own German terms (Rohr, Glasrohr, Netherit-, Erweitert).
   Keep both lang files on the same keys.
 - Pressure system: decisions, units, limits and the phases (valves, pressure tanks, steam,
-  turbine) are in `PRESSURE_SYSTEM.md`. All four phases are built. Pressure is Create's own
-  pipe pressure read in bar (16 units = 1 bar); do not add a second pressure model. Valves
+  turbine, control) are in `PRESSURE_SYSTEM.md`. All five phases are built. Pressure is
+  Create's own pipe pressure read in bar (16 units = 1 bar); do not add a second pressure model. Valves
   change it only while a pump distributes (`PressureShaping`) and cap the flow of Create's
   fluid networks (`FluidNetworkMixin`, `ValveFlow`).
 - Valve and tank textures, models and blockstates come from `tools/valve_assets.py` and
   `tools/tank_assets.py` (they read Create's assets from the Create JAR; need ImageMagick).
-  Steam, steam outlet and turbine assets come from `tools/steam_assets.py` and
-  `tools/turbine_assets.py` (own pixels, nothing from Create). Regenerate instead of editing the
-  generated files by hand; they reproduce the committed files byte for byte.
+  Steam, steam outlet, turbine and gauge assets come from `tools/steam_assets.py`,
+  `tools/turbine_assets.py` and `tools/gauge_assets.py` (own pixels, nothing from Create).
+  Regenerate instead of editing the generated files by hand; they reproduce the committed files
+  byte for byte.
 - Pressure tanks are Create's fluid tank with a per-material block entity type; their capacity
   comes from `TankCapacityMixin`, because Create reads it from a static method.
 - The steam turbine is checked from its output block (`TurbineStructure`); the output pulls steam
@@ -34,6 +35,8 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
   (`HighPressurePumpBlockEntity.addOverloadedTanks`).
 - Goggle lines need a new `LangBuilder` each (`PressureTooltip.lang()`); a shared one repeats every
   earlier line.
+- The client config `config/createhp-client.toml` only holds `pressureWarningSeen`; set it to false
+  to see the one-time warning screen again.
 - The server config is `config/createhp-server.toml` (global on Fabric). `createTanksLimited`
   decides whether Create's own tanks burst above 16 bar. Edit it with the
   server stopped; on shutdown the server writes its loaded values back.
@@ -55,6 +58,11 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
 - A creative fluid tank with `{TankContent:{Variant:{fluid:"createhp:steam"},...}}` is an endless
   steam source for turbine tests; `data get block <output>` shows `Formed`, `Length`, `SteamRate`
   and the kinetic network's capacity.
+- A turbine's redstone signal for tests: `setblock <in front of a casing next to the output>
+  create:analog_lever[face=wall,facing=<away from the casing>]{State:N}`. Comparators read the block
+  their `facing` points at; their value is in `data get block <comparator> OutputSignal`, the inlet's
+  and gauge's own value in their `Comparator` tag.
+- A burst part spills its fluid: after an overload test the block is water, not air.
 - On the dedicated server, `data merge block <valve> {ScrollValue:N}` sets a valve's value
   without the panel's callback; break and re-place a neighbouring pipe so the pumps redistribute.
 - The pump mixins use `require = 0` and fail silently. After any Create update, start with

@@ -31,6 +31,7 @@ public final class CHPCreativeTab {
 				output.accept(CHPBlocks.PRESSURE_VALVE.get());
 				output.accept(CHPBlocks.PRESSURE_REGULATOR.get());
 				output.accept(CHPBlocks.RELIEF_VALVE.get());
+				output.accept(CHPBlocks.PRESSURE_GAUGE.get());
 				output.accept(CHPBlocks.PRESSURE_TANK.get());
 				output.accept(CHPBlocks.STEAM_OUTLET.get());
 				output.accept(CHPBlocks.TURBINE_CASING.get());
@@ -45,6 +46,7 @@ public final class CHPCreativeTab {
 				output.accept(CHPBlocks.NETHERITE_PRESSURE_VALVE.get());
 				output.accept(CHPBlocks.NETHERITE_PRESSURE_REGULATOR.get());
 				output.accept(CHPBlocks.NETHERITE_RELIEF_VALVE.get());
+				output.accept(CHPBlocks.NETHERITE_PRESSURE_GAUGE.get());
 				output.accept(CHPBlocks.NETHERITE_PRESSURE_TANK.get());
 				output.accept(CHPBlocks.NETHERITE_TURBINE_CASING.get());
 				output.accept(CHPBlocks.NETHERITE_TURBINE_ROTOR.get());

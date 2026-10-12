@@ -16,6 +16,7 @@ import net.shiro.createhp.client.TurbineOutputRenderer;
 import net.shiro.createhp.content.HighPressurePumpBlockEntity;
 import net.shiro.createhp.content.PressureGlassPipeBlockEntity;
 import net.shiro.createhp.content.PressurePipeBlockEntity;
+import net.shiro.createhp.content.pressure.PressureGaugeBlockEntity;
 import net.shiro.createhp.content.steam.SteamOutletBlockEntity;
 import net.shiro.createhp.content.tank.PressureTankBlockEntity;
 import net.shiro.createhp.content.turbine.CondensateOutletBlockEntity;
@@ -74,6 +75,12 @@ public class CHPBlockEntities {
 							CHPBlocks.PRESSURE_REGULATOR, CHPBlocks.NETHERITE_PRESSURE_REGULATOR,
 							CHPBlocks.RELIEF_VALVE, CHPBlocks.NETHERITE_RELIEF_VALVE)
 					.renderer(() -> PressureValveRenderer::new)
+					.register();
+
+	/** Ein Typ fuer beide Druckmesser; die Grenze liest er aus seinem Block. */
+	public static final BlockEntityEntry<PressureGaugeBlockEntity> PRESSURE_GAUGE =
+			REGISTRATE.blockEntity("pressure_gauge", PressureGaugeBlockEntity::new)
+					.validBlocks(CHPBlocks.PRESSURE_GAUGE, CHPBlocks.NETHERITE_PRESSURE_GAUGE)
 					.register();
 
 	/** Je Werkstoff ein Typ: Create verbindet nur Tanks desselben Typs zu einem Multiblock. */

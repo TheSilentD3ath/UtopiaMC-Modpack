@@ -1,0 +1,150 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "pipe": "createhp:block/pressure_gauge/copper_pipe",
+    "end": "createhp:block/pressure_gauge/copper_pipe_end",
+    "dial": "createhp:block/pressure_gauge/copper_dial",
+    "collar": "createhp:block/pressure_gauge/copper_collar",
+    "particle": "createhp:block/pressure_gauge/copper_collar"
+  },
+  "elements": [
+    {
+      "from": [
+        4,
+        0,
+        4
+      ],
+      "to": [
+        12,
+        16,
+        12
+      ],
+      "faces": {
+        "north": {
+          "texture": "#pipe",
+          "uv": [
+            4,
+            0,
+            12,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#pipe",
+          "uv": [
+            4,
+            0,
+            12,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#pipe",
+          "uv": [
+            4,
+            0,
+            12,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#pipe",
+          "uv": [
+            4,
+            0,
+            12,
+            16
+          ]
+        },
+        "up": {
+          "texture": "#end",
+          "uv": [
+            4,
+            4,
+            12,
+            12
+          ],
+          "cullface": "up"
+        },
+        "down": {
+          "texture": "#end",
+          "uv": [
+            4,
+            4,
+            12,
+            12
+          ],
+          "cullface": "down"
+        }
+      }
+    },
+    {
+      "from": [
+        3,
+        3,
+        3
+      ],
+      "to": [
+        13,
+        13,
+        13
+      ],
+      "faces": {
+        "north": {
+          "texture": "#dial",
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "south": {
+          "texture": "#dial",
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "east": {
+          "texture": "#dial",
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "west": {
+          "texture": "#dial",
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "up": {
+          "texture": "#collar",
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "down": {
+          "texture": "#collar",
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        }
+      }
+    }
+  ]
+}

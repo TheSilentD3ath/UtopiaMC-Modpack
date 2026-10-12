@@ -2,7 +2,9 @@ package net.shiro.createhp.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.renderer.RenderType;
+import net.shiro.createhp.config.CHPConfig;
 import net.shiro.createhp.registry.CHPBlocks;
 
 /**
@@ -15,6 +17,9 @@ public class CHPClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		// Register our blue pipe-fitting partial models for baking (must happen before model bake).
 		CHPPartialModels.init();
+		CHPConfig.registerClient();
+		ScreenEvents.AFTER_INIT.register((client, screen, width, height) -> PressureWarningScreen.openOver(client, screen));
+
 		// Verbundene Texturen der Drucktanks muessen vor dem ersten Zusammenstellen der Texturen bekannt sein.
 		CHPTankModels.init();
 

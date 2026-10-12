@@ -11,6 +11,9 @@ import net.shiro.createhp.CreateHP;
  * Server-Configs auf Fabric standardmaessig global ab, nicht pro Welt), damit ein Serverbetreiber den
  * Blockschaden der Netherit-Explosion abschalten kann, ohne die Mod anzufassen.
  * Die Werte der Pumpenstufen bleiben in {@link net.shiro.createhp.content.PumpTier}.
+ *
+ * Die Client-Config (config/createhp-client.toml) merkt sich nur, ob der Spieler den einmaligen Warnhinweis zum
+ * Drucksystem bestaetigt hat.
  */
 public final class CHPConfig {
 	private CHPConfig() {}
@@ -24,6 +27,9 @@ public final class CHPConfig {
 	public static final ForgeConfigSpec.IntValue BURST_SCAN_INTERVAL;
 	public static final ForgeConfigSpec.IntValue BURST_THRESHOLD;
 	public static final ForgeConfigSpec.BooleanValue CREATE_TANKS_LIMITED;
+
+	public static final ForgeConfigSpec CLIENT_SPEC;
+	public static final ForgeConfigSpec.BooleanValue PRESSURE_WARNING_SEEN;
 
 	static {
 		ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
@@ -49,6 +55,13 @@ public final class CHPConfig {
 				.define("createTanksLimited", true);
 		b.pop();
 		SERVER_SPEC = b.build();
+
+		ForgeConfigSpec.Builder c = new ForgeConfigSpec.Builder();
+		PRESSURE_WARNING_SEEN = c
+				.comment("Whether the one-time warning about the pressure system was confirmed. Set to false to show it",
+						"again on the next start.")
+				.define("pressureWarningSeen", false);
+		CLIENT_SPEC = c.build();
 	}
 
 	/**
@@ -65,5 +78,28 @@ public final class CHPConfig {
 
 	public static void register() {
 		ForgeConfigRegistry.INSTANCE.register(CreateHP.ID, ModConfig.Type.SERVER, SERVER_SPEC);
+	}
+
+	/** Nur auf dem Client; ein Server braucht den Warnhinweis nicht. */
+	public static void registerClient() {
+		ForgeConfigRegistry.INSTANCE.register(CreateHP.ID, ModConfig.Type.CLIENT, CLIENT_SPEC);
+	}
+
+	/** Vor dem Laden der Client-Config gilt der Hinweis als gesehen, damit er nicht in einem halben Zustand aufgeht. */
+	public static boolean pressureWarningSeen() {
+		try {
+			return PRESSURE_WARNING_SEEN.get();
+		} catch (IllegalStateException notLoaded) {
+			return true;
+		}
+	}
+
+	public static void markPressureWarningSeen() {
+		try {
+			PRESSURE_WARNING_SEEN.set(true);
+			PRESSURE_WARNING_SEEN.save();
+		} catch (IllegalStateException notLoaded) {
+			// Ohne geladene Config laesst sich nichts speichern; der Hinweis kommt dann beim naechsten Start wieder.
+		}
 	}
 }

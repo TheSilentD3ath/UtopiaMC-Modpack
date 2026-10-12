@@ -37,7 +37,9 @@ while this public repository is migrated to the current structure.
   all four phases of the pressure system were added: pressure limits with
   bursting and netherite explosions; shut-off, regulator and relief valves;
   pressure tanks; and steam with a steam outlet for boilers and a large steam
-  turbine.
+  turbine. A fifth phase adds redstone control of the turbine, pressure on
+  comparators (steam inlet and a new pressure gauge) and a one-time warning
+  screen.
   Before a release, the open defects listed there need a decision.
 - Guidebook generation works, but final in-game validation remains pending.
 - Heracles quest data has passed its current static validation.
@@ -627,6 +629,64 @@ only), turbine parts on contraptions or rotated with the wrench, several inlets 
 different pumps, the condensate fed back into the boiler that makes the steam,
 steam outlets on a netherite pressure tank together with steam engines, the dev
 client.
+
+### Phase 5: turbine control, pressure gauge, warning screen (2026-10-12)
+
+The maintainer asked for turbines controlled by redstone, with a pressure the
+speed needs, so that players measure the pressure and build their own control
+that regulates up and down and avoids overpressure; and for a one-time warning
+about the pressure system on the first start. Decisions: signal 0 = off, 1 to 15
+= 16 to 256 RPM; at 256 RPM the turbine needs three quarters of its limit, less
+pressure gives proportionally less power; a comparator on the steam inlet plus a
+pressure gauge block; the warning as a screen in CIP before the title screen.
+Details in `Create Industrial Pressure/PRESSURE_SYSTEM.md`.
+
+Tested on the dedicated server (release JAR, Create 6.0.8.1, Utopia Core), copper
+turbine with one rotor layer, inlet at 64 bar (tier 1 pump), signal from Create's
+analog lever on a casing next to the output:
+
+| signal | speed | needs | efficiency | SU |
+| --- | --- | --- | --- | --- |
+| none | 0 | | off, no steam drawn | 0 |
+| 4 | 64 RPM | 48 bar | 100 % | 245,760 (100 mB/t) |
+| 8 | 128 RPM | 96 bar | 66.7 % | 163,922 |
+| 15 | 256 RPM | 192 bar | 33.3 % | 81,838 |
+
+| part | measured | expected |
+| --- | --- | --- |
+| comparator on the inlet, need 192 / 48 bar | 5 / 15 | 15 × 64 / 192 |
+| a second inlet behind a T-piece | the first inlet gets 32 bar (comparator 10), the second 64; together 83 % | Create splits a pump's pressure among parallel branches |
+| copper gauge at 64 / 32 / 8 bar | comparator 3 / 1 / 1, follows pump speed changes | 15 × bar / 256, at least 1 |
+| copper gauge at 512 bar (tier 4) | comparator 15, then bursts and spills | |
+| netherite gauge at 512 bar | comparator 7 | |
+| restart | turbine runs on at its signal and rate, same kinetic network | |
+| lever on a casing next to the output switched 150 times, about once per tick | output survives, runs at 64 RPM afterwards | on/off at most every 10 ticks |
+
+Production client, German: on the first start the warning screen "Achtung:
+Drucksystem" appears before the title screen; "Verstanden" writes
+`pressureWarningSeen = true` and opens the title screen; on the next start it does
+not appear. Turbine goggles: "64 U/min (Redstone 4), Braucht 48 bar an den
+Einlässen, Wirkungsgrad: 83 %"; inlet: "Einlassdruck: 64 von 256 bar, Turbine braucht
+48 bar"; gauge: "Rohrdruck: 512 von 1024 bar, Komparator: 7". Gauges render in both
+materials and all three axes; the copper gauge takes the turquoise of the high
+pressure pipes. Both logs: only the usual entries.
+
+Seen once and not reproduced: right after the first gauge was placed in a busy
+line, its comparator read 0 until a server restart; three later placements, in the
+same line and in a new one, read the right value at once.
+
+Found while reviewing: Create destroys a block that starts and stops rotating too
+often. A fast on/off control would have broken the turbine output, so switching
+between off and on now waits at least 10 ticks; speed changes stay immediate. It
+was not measured how quickly the output breaks without that limit.
+
+Breaking for existing worlds: turbines built in phase 4 stand still until they get
+a redstone signal.
+
+Not tested: a closed control loop (comparator to smart regulator or pump), the
+analog lever replaced by other redstone sources, the gauge on contraptions and with
+the wrench, the warning with Quick Play (by design it waits for the next title
+screen), the English texts in the client.
 
 ## German translation of Utopia Core
 

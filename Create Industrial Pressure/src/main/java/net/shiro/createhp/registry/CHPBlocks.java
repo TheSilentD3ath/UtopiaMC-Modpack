@@ -18,6 +18,7 @@ import net.shiro.createhp.content.PressureGlassPipeBlock;
 import net.shiro.createhp.content.PressurePipeBlock;
 import net.shiro.createhp.content.PumpTier;
 import net.shiro.createhp.content.pressure.PipeMaterial;
+import net.shiro.createhp.content.pressure.PressureGaugeBlock;
 import net.shiro.createhp.content.steam.SteamOutletBlock;
 import net.shiro.createhp.content.tank.PressureTankBlock;
 import net.shiro.createhp.content.tank.PressureTankBlockEntity;
@@ -99,6 +100,21 @@ public class CHPBlocks {
 				.properties(p -> p.noOcclusion())
 				// Creates Ventil zeichnet seine Rohranschluesse wie ein Rohr; wir mit den Teilen des passenden Materials.
 				.onRegister(CreateRegistrate.blockModel(() -> CHPPipeAttachmentModel.factory(material)))
+				.item()
+				.build()
+				.register();
+	}
+
+	// --- Druckmesser: Rohrstueck mit Komparatorausgang, je Werkstoff ---
+	public static final BlockEntry<PressureGaugeBlock> PRESSURE_GAUGE =
+			gauge("pressure_gauge", PipeMaterial.COPPER);
+	public static final BlockEntry<PressureGaugeBlock> NETHERITE_PRESSURE_GAUGE =
+			gauge("netherite_pressure_gauge", PipeMaterial.NETHERITE);
+
+	private static BlockEntry<PressureGaugeBlock> gauge(String id, PipeMaterial material) {
+		return REGISTRATE.block(id, p -> new PressureGaugeBlock(p, material, () -> CHPBlockEntities.PRESSURE_GAUGE.get()))
+				.initialProperties(() -> base(material))
+				.properties(p -> p.noOcclusion())
 				.item()
 				.build()
 				.register();

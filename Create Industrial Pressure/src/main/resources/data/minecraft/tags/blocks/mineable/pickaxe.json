@@ -26,6 +26,8 @@
     "createhp:steam_inlet",
     "createhp:netherite_steam_inlet",
     "createhp:condensate_outlet",
-    "createhp:turbine_output"
+    "createhp:turbine_output",
+    "createhp:pressure_gauge",
+    "createhp:netherite_pressure_gauge"
   ]
 }

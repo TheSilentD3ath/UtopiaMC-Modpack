@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "createhp:block/pressure_gauge/pressure_gauge",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "createhp:block/pressure_gauge/pressure_gauge"
+    },
+    "axis=z": {
+      "model": "createhp:block/pressure_gauge/pressure_gauge",
+      "x": 90
+    }
+  }
+}

@@ -51,9 +51,13 @@ Useful development tasks:
   level) for pumps to carry; pressure tank boilers may be 5 × 5 wide and reach 50 (copper) or 150
   (netherite) levels
 - a steam turbine multiblock in copper and netherite: 5 × 5 casing around a 3 × 3 rotor, 1 to 16
-  rotor layers, 1.5 or 2.5 times a steam engine's output per 10 mB of steam per tick at 64 RPM, half
-  the steam back as water through condensate outlets; its steam inlets burst or explode above their
-  limit
+  rotor layers, 1.5 or 2.5 times a steam engine's output per 10 mB of steam per tick, half the steam
+  back as water through condensate outlets; its steam inlets burst or explode above their limit
+- turbine control: redstone sets 16 to 256 RPM (no signal = off); higher speed needs more pressure
+  at the inlets (up to three quarters of their limit), less pressure gives less power
+- pressure on comparators: the steam inlet reports its pressure against the turbine's need, and the
+  Pressure Gauge (a pipe piece in copper and netherite) reports pressure against its limit
+- a one-time warning screen about the pressure system on the first start
 - pipe pressure on Engineer's Goggles and as a Display Link source, for the mod's pipes, valves,
   tanks and pumps and for Create's pipes, valves, tanks and pump; a tank fill-level source
 - Create-style attachment models, transparent fluid rendering and a dedicated creative tab
@@ -73,6 +77,7 @@ Create's pump at 256 RPM gives 16 bar and the pump tiers at 256 RPM give 64 to 1
 | Create fluid tank (unless `createTanksLimited = false`) | 16 bar |
 | High Pressure Tank / Netherite Pressure Tank | 256 / 1024 bar |
 | Steam Inlet / Netherite Steam Inlet | 256 / 1024 bar |
+| Pressure Gauge / Netherite Pressure Gauge | 256 / 1024 bar |
 
 Valves hold the limit of their material (256 or 1024 bar):
 
@@ -109,7 +114,7 @@ CreateHP
   client/         render layers, Create-compatible attachment models and renderers
   config/         server config
   mixin/          narrow integration points for range, throughput, wrench, valves, flow, tanks and boilers
-tools/            generators for the valve, tank, steam and turbine textures, models and blockstates
+tools/            generators for the valve, tank, steam, turbine and gauge textures, models and blockstates
 ```
 
 `PressurePipeBlock` and `PressureGlassPipeBlock` are material-neutral implementations configured by

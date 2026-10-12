@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "createhp:high_pressure_pipe"
+    },
+    {
+      "item": "minecraft:comparator"
+    }
+  ],
+  "result": {
+    "item": "createhp:pressure_gauge"
+  }
+}

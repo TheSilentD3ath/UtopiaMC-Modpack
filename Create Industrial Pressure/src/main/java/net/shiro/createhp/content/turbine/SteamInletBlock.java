@@ -44,6 +44,17 @@ public class SteamInletBlock extends Block implements IBE<SteamInletBlockEntity>
 		return material;
 	}
 
+	// Komparator: Druck am Einlass relativ zum Bedarf der Turbine (SteamInletBlockEntity).
+	@Override
+	public boolean hasAnalogOutputSignal(BlockState state) {
+		return true;
+	}
+
+	@Override
+	public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+		return level.getBlockEntity(pos) instanceof SteamInletBlockEntity inlet ? inlet.getComparatorSignal() : 0;
+	}
+
 	@Override
 	public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
 		IBE.onRemove(state, level, pos, newState);

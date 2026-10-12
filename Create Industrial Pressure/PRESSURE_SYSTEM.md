@@ -43,8 +43,8 @@ it. The mod only reads these values. 16 Create pressure units are 1 bar.
 | Part | Limit | On overload |
 | --- | --- | --- |
 | Create pipes, glass, encased and smart pipes, fluid valve | 16 bar | bursts and drops |
-| copper pressure pipes, valves, tanks and steam inlets | 256 bar | bursts and drops |
-| netherite pressure pipes, valves, tanks and steam inlets | 1,024 bar | explodes, no drop |
+| copper pressure pipes, valves, gauges, tanks and steam inlets | 256 bar | bursts and drops |
+| netherite pressure pipes, valves, gauges, tanks and steam inlets | 1,024 bar | explodes, no drop |
 
 A part's pressure is the highest value on any of its connections. Pumps feeding the same pipe
 add up. Each limit equals the matching pump at full speed, so a network of matching parts
@@ -169,16 +169,16 @@ steam turbine.
   - Each rotor layer takes up to 100 mB of steam per tick (copper) or 200 (netherite). The output
     draws that much from the inlets each tick, at most.
   - Power: per 10 mB of steam per tick 1.5 times (copper) or 2.5 times (netherite) a Create steam
-    engine at full load, which is 16,384 SU. It turns at 64 RPM like the steam engine. The rate is
-    the average over 20 ticks in whole mB per tick, so uneven pump delivery does not make the shaft
+    engine at full load, which is 16,384 SU, whatever the speed; the speed is set by redstone (see
+    Phase 5). The rate is the average over 20 ticks, so uneven pump delivery does not make the shaft
     network recompute every tick.
   - Condensate: half of the steam used comes out as water, shared evenly by the condensate outlets
     (8 buckets each), for pumps to draw and feed back into a boiler. Water that finds no room is
     lost; the turbine keeps running.
   - Pressure limit: the steam inlet holds its material's limit (256 / 1,024 bar). The high pressure
     pumps check it like a tank at the end of their pipe: copper cracks and bursts, netherite explodes.
-  - Goggles: on the output material, rotor layers, steam used of the maximum, condensate, and
-    Create's generator stats; on an inlet its pressure, content and whether it belongs to a complete
+  - Goggles: on the output material, rotor layers, speed, pressure needed, efficiency, steam used of
+    the maximum, condensate, and Create's generator stats; on an inlet its pressure, content and whether it belongs to a complete
     turbine; on a condensate outlet its water.
   - Recipes: casing (4) = copper casing + 4 copper sheets; netherite casing (8) = 8 casings +
     netherite ingot; rotor (2) = shaft + 4 copper sheets; netherite rotor (4) = 4 rotors + netherite
@@ -186,14 +186,50 @@ steam turbine.
     output = casing + shaft + precision mechanism.
 - Not part of it (maintainer): steam fed into a pressure tank with Create's steam engines.
 
-Defaults chosen during the build, not decided by the maintainer: at most 16 rotor layers, 64 RPM,
-water lost when the condensate outlets are full, and the recipes above.
+Defaults chosen during the build, not decided by the maintainer: at most 16 rotor layers, water lost
+when the condensate outlets are full, and the recipes above.
+
+## Phase 5: control (done, decisions 2026-10-12)
+
+The turbine is run by the player's own redstone control: they measure the pressure, regulate it up
+and down and keep it below the limit.
+
+- **Speed by redstone.** The signal at the turbine output (directly, or through an adjacent casing
+  block powered by a lever, repeater or comparator) sets the speed: no signal = off, signal n =
+  16 × n RPM, 15 = 256 RPM. An unpowered turbine draws no steam. Existing turbines without a signal
+  stop. Speed changes act in the same tick; switching between off and on waits at least 10 ticks
+  after the last switch, because Create destroys a block whose rotation starts and stops too often
+  (5 points per switch, 1 point back per tick, broken above 128). Fast on/off control would otherwise
+  break the output within seconds.
+- **Pressure needed.** The turbine needs pressure at its inlets in proportion to its speed: three
+  quarters of its limit at 256 RPM, so 0.75 bar per RPM in copper (192 bar at 256 RPM) and 3 bar per
+  RPM in netherite (768 bar). The quarter above it is the margin before the inlet bursts.
+- **Too little pressure.** Each inlet's steam counts with its own efficiency, its pressure divided by
+  the need, at most 100 %. At half the need it gives half the power. An inlet with no pressure at all
+  is not drawn from, so its steam is not wasted. The power stays that of the steam; the speed only
+  divides it (capacity = SU / RPM).
+- **Create divides pressure at branches.** A pump's pressure is split among parallel branches, so a
+  T-piece in front of two inlets gives each less. Measured: 64 bar from the pump, 32 bar behind the
+  T-piece on one branch.
+- **Comparator on the steam inlet:** its pressure against the turbine's need, 15 = enough, any lower
+  pressure at least 1, 0 without pressure or without a running turbine.
+- **Pressure Gauge / Netherite Pressure Gauge:** a straight pipe piece (Create's straight pipe
+  underneath) with a dial. It carries fluid like a pipe and holds its material's limit (bursts or
+  explodes like a pipe). A comparator reads its pressure against its limit, 15 = limit reached, any
+  pressure at least 1. Goggles show pressure, limit and the comparator value; the pipe pressure
+  Display Link source works on it. Recipe: pressure pipe of the material + comparator.
+- **One-time warning** (CIP, client): before the title screen on the first start, a screen explains
+  the limits, bursting, netherite explosions, adding pumps and the tools to watch and regulate
+  pressure. "Understood" stores `pressureWarningSeen = true` in `config/createhp-client.toml`; Escape
+  does not close it. With Quick Play the game goes straight to a server; the warning then waits for
+  the next time the title screen opens.
 
 ## Textures
 
 New blocks need textures in Create's layout. Pipes, valves and tanks are recoloured from Create
 and listed in `LICENSE`; valves and tanks, with their models and blockstates, come from
 `tools/valve_assets.py` and `tools/tank_assets.py`. The pressure gauge on regulator and relief valve
-is drawn by that script, not taken from Create. Steam, the steam outlet and the turbine parts are
-drawn pixel by pixel in `tools/steam_assets.py` and `tools/turbine_assets.py`; they are not derived
-from Create and are not listed in `LICENSE`.
+is drawn by that script, not taken from Create. Steam, the steam outlet, the turbine parts and the
+pressure gauges are drawn pixel by pixel in `tools/steam_assets.py`, `tools/turbine_assets.py` and
+`tools/gauge_assets.py`; they are not derived from Create and are not listed in `LICENSE`. The gauges
+take the colour values of the mod's pressure pipes so they match their line.
