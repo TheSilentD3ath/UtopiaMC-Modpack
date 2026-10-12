@@ -31,20 +31,12 @@ WATER = [H("6FA4F2"), H("3F76E4"), H("2F5CB8")]
 
 def tile(p, left=False, right=False, up=False, down=False):
     """
-    Eine Kachel der Gehaeusewand: genietete Platte mit feiner Naht zu verbundenen Nachbarn, kraeftiger Rahmen nur
-    an Seiten ohne Nachbarn. So wirkt eine Turbinenwand wie eine Flaeche aus Platten mit Rahmen am Aussenrand.
-    Jede Kachel zeichnet nur die Naht oben und links; die rechte und untere kommt vom Nachbarn.
+    Eine Kachel der Gehaeusewand. Die Innenflaeche ist nahtlos: Ihr einziges Muster, ein schwacher Glanzstreifen,
+    laeuft ueber die Kachelgrenzen weiter, weil seine Periode genau eine Kachel ist. Eine Wand aus vielen Bloecken
+    wirkt so wie eine Platte. Rahmen und Nieten gibt es nur an Seiten ohne Nachbarn; die Nieten sitzen alle acht
+    Pixel, auch ueber Blockgrenzen hinweg gleichmaessig.
     """
-    # Glatte Platte mit einem schwachen Glanzstreifen; in jeder Kachel gleich, damit die Wand ruhig wirkt.
     px = [[p[1] if (x + y) % 16 in (5, 6) else p[2] for x in range(16)] for y in range(16)]
-    # Nahte zu Nachbarn: dunkle Fuge, darunter bzw. rechts davon eine helle Kante.
-    if up:
-        for i in range(16):
-            px[0][i], px[1][i] = p[3], p[1]
-    if left:
-        for i in range(16):
-            px[i][0], px[i][1] = p[3], p[1]
-    # Rahmen ohne Nachbarn: drei Pixel, aussen hell (oben, links) bzw. dunkel (unten, rechts), innen Schatten.
     for i in range(16):
         if not up:
             px[0][i], px[1][i], px[2][i] = p[0], p[1], p[3]
@@ -55,10 +47,20 @@ def tile(p, left=False, right=False, up=False, down=False):
             px[15][i], px[14][i], px[13][i] = p[4], p[3], p[1]
         if not right:
             px[i][15], px[i][14], px[i][13] = p[4], p[3], p[1]
-    # Vier Nieten je Platte, knapp innerhalb von Rahmen oder Naht: hell oben links, Schatten unten rechts.
-    for (x, y) in ((3, 3), (11, 3), (3, 11), (11, 11)):
-        px[y][x], px[y][x + 1] = p[0], p[1]
-        px[y + 1][x], px[y + 1][x + 1] = p[1], p[4]
+    # Nieten im Rahmen: auf der mittleren Rahmenzeile, bei 3 und 11.
+    for k in (3, 11):
+        if not up:
+            px[1][k] = p[0]
+            px[2][k] = p[4]
+        if not down:
+            px[14][k] = p[0]
+            px[15][k] = p[4]
+        if not left:
+            px[k][1] = p[0]
+            px[k][2] = p[4]
+        if not right:
+            px[k][14] = p[0]
+            px[k][15] = p[4]
     return px
 
 def with_port(px):

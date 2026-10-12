@@ -181,8 +181,9 @@ steam turbine.
     the maximum, condensate, and Create's generator stats; on an inlet its pressure, content and whether it belongs to a complete
     turbine; on a condensate outlet its water.
   - Look: casing, inlets, condensate outlets and output have connected textures in the layout of
-    Create's fluid tank (RECTANGLE, 4 × 4 tiles). A wall reads as riveted plates with a frame only at
-    its outer edge; parts of the other material do not join. Output and condensate outlet fit both
+    Create's fluid tank (RECTANGLE, 4 × 4 tiles). A wall reads as one seamless plate: the only pattern
+    inside is a sheen stripe that runs on across block edges, frame and rivets sit only at the outer
+    edge; parts of the other material do not join. Output and condensate outlet fit both
     materials; the output switches them to the turbine's material (block state `netherite`) when it
     finds the turbine complete.
   - Recipes: casing (4) = copper casing + 4 copper sheets; netherite casing (8) = 8 casings +

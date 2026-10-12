@@ -685,10 +685,15 @@ a redstone signal.
 
 Connected textures (maintainer, 2026-10-12: "they still look bad"): casing, steam
 inlet, condensate outlet and turbine output now join like Create's fluid tank, so a
-turbine wall reads as riveted plates with one frame at its outer edge. Output and
+turbine wall reads as one plate with one frame at its outer edge. Output and
 condensate outlet take the turbine's material when it is complete. Checked in the
 production client on the copper turbines (1 and 17 layers) and the netherite one;
 the dedicated server starts with the client classes only behind lambdas.
+Follow-up the same day ("there are still single textures in your screenshots"): the
+first sheets kept plate seams and rivets inside every block, so the block grid still
+showed. The inside of a wall is now seamless, with only a sheen stripe that continues
+across block edges; frame and rivets stay at the outer edge. Checked again in the
+production client on the same three turbines.
 
 Open (maintainer, 2026-10-12): the turbine needs a sound of its own.
 
