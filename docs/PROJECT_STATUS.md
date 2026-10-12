@@ -683,6 +683,10 @@ was not measured how quickly the output breaks without that limit.
 Breaking for existing worlds: turbines built in phase 4 stand still until they get
 a redstone signal.
 
+Open (maintainer, 2026-10-12): the turbine needs a sound of its own; the
+maintainer is drawing connected textures in the style of Create's tank, to be
+wired up once they exist.
+
 Not tested: a closed control loop (comparator to smart regulator or pump), the
 analog lever replaced by other redstone sources, the gauge on contraptions and with
 the wrench, the warning with Quick Play (by design it waits for the next title
