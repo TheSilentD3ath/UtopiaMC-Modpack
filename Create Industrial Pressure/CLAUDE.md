@@ -11,7 +11,54 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
 - Builds against Create Fabric 6.0.8.1 (`gradle.properties`); the fabric.mod.json asks
   for Create >= 6.0.0. The Utopia Core dev client runs an older Create and is no test
   bed for this mod.
-- Not yet smoke-tested in a client or on a server.
-- No German translation yet (`en_us.json` has 10 keys).
+- Smoke-tested on 2026-09-25 against Create 6.0.8.1: dev client, dedicated server and a
+  production client in multiplayer. Results and the open defects that still need a
+  decision are in `docs/PROJECT_STATUS.md`.
+- `de_de.json` follows Create's own German terms (Rohr, Glasrohr, Netherit-, Erweitert).
+  Keep both lang files on the same keys.
+- Pressure system: decisions, units, limits and the phases (valves, pressure tanks, steam,
+  turbine) are in `PRESSURE_SYSTEM.md`. All four phases are built. Pressure is Create's own
+  pipe pressure read in bar (16 units = 1 bar); do not add a second pressure model. Valves
+  change it only while a pump distributes (`PressureShaping`) and cap the flow of Create's
+  fluid networks (`FluidNetworkMixin`, `ValveFlow`).
+- Valve and tank textures, models and blockstates come from `tools/valve_assets.py` and
+  `tools/tank_assets.py` (they read Create's assets from the Create JAR; need ImageMagick).
+  Steam, steam outlet and turbine assets come from `tools/steam_assets.py` and
+  `tools/turbine_assets.py` (own pixels, nothing from Create). Regenerate instead of editing the
+  generated files by hand; they reproduce the committed files byte for byte.
+- Pressure tanks are Create's fluid tank with a per-material block entity type; their capacity
+  comes from `TankCapacityMixin`, because Create reads it from a static method.
+- The steam turbine is checked from its output block (`TurbineStructure`); the output pulls steam
+  from the inlets' buffers and pushes water into the condensate outlets' buffers each tick, so no
+  part holds another's storage. Steam inlets join the pumps' overload check like tanks
+  (`HighPressurePumpBlockEntity.addOverloadedTanks`).
+- Goggle lines need a new `LangBuilder` each (`PressureTooltip.lang()`); a shared one repeats every
+  earlier line.
+- The server config is `config/createhp-server.toml` (global on Fabric). `createTanksLimited`
+  decides whether Create's own tanks burst above 16 bar. Edit it with the
+  server stopped; on shutdown the server writes its loaded values back.
+
+## Testing
+
+- `./gradlew runClient` works as is (Loader 0.17.2). Add `-Pfabric_loader_version=0.18.4`
+  to test on the loader the pack ships.
+- On the container's software OpenGL, Flywheel's indirect backend does not draw pump
+  cogs, Create's own pump included. Run `/flywheel backend flywheel:instancing` in the
+  world first.
+- The dev client cannot join a production server: Loom pulls Porting Lib from Maven with
+  a different module set than the one nested in Create's JAR (registry mismatch on
+  `porting_lib:area_selector`). For multiplayer, run the release JAR on both sides with
+  Fabric API 0.92.6 and Create's Modrinth JAR.
+- The new valve mixins (`FluidNetworkMixin`, `ReliefOpenEndMixin`) use the default
+  `require = 1` and stop the game if they no longer apply. The pressure redirect in
+  `PumpThroughputMixin` also carries the valves; it is `require = 0` like the other pump mixins.
+- A creative fluid tank with `{TankContent:{Variant:{fluid:"createhp:steam"},...}}` is an endless
+  steam source for turbine tests; `data get block <output>` shows `Formed`, `Length`, `SteamRate`
+  and the kinetic network's capacity.
+- On the dedicated server, `data merge block <valve> {ScrollValue:N}` sets a valve's value
+  without the panel's callback; break and re-place a neighbouring pipe so the pumps redistribute.
+- The pump mixins use `require = 0` and fail silently. After any Create update, start with
+  `-Dmixin.debug.export=true` and check with `javap` that every handler is called from
+  the exported Create classes in `.mixin.out/`.
 - A new pixel-art logo is commissioned. When it replaces `logo_512.png`, check that it
   stays sharp when Mod Menu scales it.

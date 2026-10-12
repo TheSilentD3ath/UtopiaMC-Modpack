@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "R R",
+    " N ",
+    "R R"
+  ],
+  "key": {
+    "R": {
+      "item": "createhp:turbine_rotor"
+    },
+    "N": {
+      "item": "minecraft:netherite_ingot"
+    }
+  },
+  "result": {
+    "item": "createhp:netherite_turbine_rotor",
+    "count": 4
+  }
+}

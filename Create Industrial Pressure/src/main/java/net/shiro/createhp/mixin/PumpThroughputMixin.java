@@ -5,6 +5,7 @@ import com.simibubi.create.content.fluids.pump.PumpBlockEntity;
 
 import net.minecraft.core.Direction;
 import net.shiro.createhp.content.HighPressurePumpBlockEntity;
+import net.shiro.createhp.content.valve.PressureShaping;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,6 +33,9 @@ public class PumpThroughputMixin {
 		if ((Object) this instanceof HighPressurePumpBlockEntity hp) {
 			pressure *= (float) hp.getPressureMultiplier();
 		}
+		// Fuer jede Pumpe, auch Creates eigene: Ventile auf dem Weg begrenzen, was ankommt (siehe PressureShaping).
+		// Der Redirect muss beides tun; ein zweiter Redirect auf denselben Aufruf wuerde mit diesem kollidieren.
+		pressure = PressureShaping.limit(behaviour, side, inbound, pressure);
 		behaviour.addPressure(side, inbound, pressure);
 	}
 }

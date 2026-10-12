@@ -1,0 +1,7 @@
+{
+  "parent": "block/cube_column",
+  "textures": {
+    "end": "createhp:block/turbine/netherite_rotor_end",
+    "side": "createhp:block/turbine/netherite_rotor_side"
+  }
+}

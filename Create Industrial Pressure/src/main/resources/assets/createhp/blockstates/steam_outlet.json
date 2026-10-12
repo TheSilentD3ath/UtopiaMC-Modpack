@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "createhp:block/steam_outlet"
+    },
+    "facing=east": {
+      "model": "createhp:block/steam_outlet",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "createhp:block/steam_outlet",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "createhp:block/steam_outlet",
+      "y": 270
+    },
+    "facing=up": {
+      "model": "createhp:block/steam_outlet",
+      "x": 270
+    },
+    "facing=down": {
+      "model": "createhp:block/steam_outlet",
+      "x": 90
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "create:fluid_pipe"
+    },
+    {
+      "item": "create:brass_sheet"
+    },
+    {
+      "item": "create:copper_sheet"
+    }
+  ],
+  "result": {
+    "item": "createhp:steam_outlet"
+  }
+}

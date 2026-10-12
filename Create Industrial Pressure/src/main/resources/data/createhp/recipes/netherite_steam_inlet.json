@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "createhp:netherite_turbine_casing"
+    },
+    {
+      "item": "createhp:netherite_pressure_pipe"
+    }
+  ],
+  "result": {
+    "item": "createhp:netherite_steam_inlet"
+  }
+}

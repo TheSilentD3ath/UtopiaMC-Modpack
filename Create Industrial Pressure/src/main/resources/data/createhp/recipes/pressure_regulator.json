@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "createhp:pressure_valve"
+    },
+    {
+      "item": "create:precision_mechanism"
+    }
+  ],
+  "result": {
+    "item": "createhp:pressure_regulator"
+  }
+}

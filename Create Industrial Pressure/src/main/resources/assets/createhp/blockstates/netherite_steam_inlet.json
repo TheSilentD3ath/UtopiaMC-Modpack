@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "createhp:block/turbine/netherite_steam_inlet"
+    }
+  }
+}

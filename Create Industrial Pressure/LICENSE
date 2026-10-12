@@ -54,6 +54,19 @@ pipe models expect that exact texture layout:
   assets/createhp/textures/block/glass_fluid_pipe.png
   assets/createhp/textures/block/netherite_glass_fluid_pipe.png
 
+The valve textures are Create's fluid valve textures (fluid_valve, valve_open,
+valve_closed), recoloured, because the valves use Create's valve models and
+those expect that layout. This covers every file in
+
+  assets/createhp/textures/block/pressure_valve/
+
+except blank.png.
+
+The pressure tank textures are Create's fluid tank textures, recoloured for the
+same reason: every file in
+
+  assets/createhp/textures/block/pressure_tank/
+
 As far as they are based on Create, they are used under Create's licence:
 
     MIT License

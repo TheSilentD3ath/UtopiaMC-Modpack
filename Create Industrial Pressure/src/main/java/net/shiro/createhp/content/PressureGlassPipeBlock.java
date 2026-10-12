@@ -6,26 +6,39 @@ import com.simibubi.create.content.schematics.requirement.ItemRequirement;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.HitResult;
+import net.shiro.createhp.content.pressure.PipeMaterial;
+import net.shiro.createhp.content.pressure.PressureRated;
 
 import java.util.function.Supplier;
 
 /** See-through pressure pipe shared by every material tier. */
-public class PressureGlassPipeBlock extends GlassFluidPipeBlock {
+public class PressureGlassPipeBlock extends GlassFluidPipeBlock implements PressureRated {
 	private final Supplier<? extends BlockEntityType<? extends StraightPipeBlockEntity>> blockEntityType;
 	private final Supplier<PressurePipeBlock> solidPipe;
+	private final PipeMaterial material;
 
-	public PressureGlassPipeBlock(Properties properties,
+	public PressureGlassPipeBlock(Properties properties, PipeMaterial material,
 			Supplier<? extends BlockEntityType<? extends StraightPipeBlockEntity>> blockEntityType,
 			Supplier<PressurePipeBlock> solidPipe) {
 		super(properties);
+		this.material = material;
 		this.blockEntityType = blockEntityType;
 		this.solidPipe = solidPipe;
+	}
+
+	@Override
+	public PipeMaterial getMaterial() {
+		return material;
 	}
 
 	@Override
@@ -44,5 +57,12 @@ public class PressureGlassPipeBlock extends GlassFluidPipeBlock {
 	@Override
 	public ItemRequirement getRequiredItems(BlockState state, BlockEntity blockEntity) {
 		return ItemRequirement.of(solidPipe.get().defaultBlockState(), blockEntity);
+	}
+
+	// Create gibt beim Mittelklick auf ein Glasrohr immer sein Kupfer-Fluessigkeitsrohr zurueck.
+	// Unsere Glasrohre haben kein eigenes Item, also muss es das feste Druckrohr desselben Materials sein.
+	@Override
+	public ItemStack getPickedStack(BlockState state, BlockGetter view, BlockPos pos, Player player, HitResult result) {
+		return new ItemStack(solidPipe.get());
 	}
 }

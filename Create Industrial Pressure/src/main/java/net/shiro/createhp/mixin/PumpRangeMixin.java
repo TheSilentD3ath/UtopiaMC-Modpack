@@ -5,6 +5,7 @@ import com.simibubi.create.content.fluids.pump.PumpBlockEntity;
 import net.minecraft.core.Direction;
 import net.shiro.createhp.content.CHPRangeContext;
 import net.shiro.createhp.content.HighPressurePumpBlockEntity;
+import net.shiro.createhp.content.valve.PressureShaping;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -46,9 +47,17 @@ public class PumpRangeMixin {
 	@Inject(method = "updatePipesOnSide", at = @At("RETURN"))
 	private void createhp$sideRet(Direction side, CallbackInfo ci) { createhp$pop(); }
 
+	// Ausserdem fuer jede Pumpe, auch Creates eigene: Die Druckventile formen den Druck, den sie verteilt
+	// (siehe PressureShaping). Die Reichweite muss schon gesetzt sein, die Suche dort richtet sich nach ihr.
 	@Inject(method = "distributePressureTo", at = @At("HEAD"))
-	private void createhp$distHead(Direction side, CallbackInfo ci) { createhp$push(); }
+	private void createhp$distHead(Direction side, CallbackInfo ci) {
+		createhp$push();
+		PressureShaping.begin((PumpBlockEntity) (Object) this, side);
+	}
 
 	@Inject(method = "distributePressureTo", at = @At("RETURN"))
-	private void createhp$distRet(Direction side, CallbackInfo ci) { createhp$pop(); }
+	private void createhp$distRet(Direction side, CallbackInfo ci) {
+		PressureShaping.end();
+		createhp$pop();
+	}
 }

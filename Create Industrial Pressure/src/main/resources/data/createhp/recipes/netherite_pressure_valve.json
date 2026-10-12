@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "create:fluid_valve"
+    },
+    {
+      "item": "createhp:netherite_pressure_pipe"
+    }
+  ],
+  "result": {
+    "item": "createhp:netherite_pressure_valve"
+  }
+}

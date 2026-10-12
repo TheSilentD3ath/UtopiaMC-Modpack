@@ -1,0 +1,196 @@
+{
+  "variants": {
+    "axis_along_first=false,enabled=false,facing=down,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle",
+      "x": 270,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=down,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle_smart",
+      "x": 270,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=east,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle",
+      "y": 270
+    },
+    "axis_along_first=false,enabled=false,facing=east,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle_smart",
+      "y": 270
+    },
+    "axis_along_first=false,enabled=false,facing=north,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_idle",
+      "y": 180
+    },
+    "axis_along_first=false,enabled=false,facing=north,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_idle_smart",
+      "y": 180
+    },
+    "axis_along_first=false,enabled=false,facing=south,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_idle"
+    },
+    "axis_along_first=false,enabled=false,facing=south,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_idle_smart"
+    },
+    "axis_along_first=false,enabled=false,facing=up,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle",
+      "x": 90,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=up,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle_smart",
+      "x": 90,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=west,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle",
+      "y": 90
+    },
+    "axis_along_first=false,enabled=false,facing=west,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle_smart",
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=down,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting",
+      "x": 270,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=down,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting_smart",
+      "x": 270,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=east,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting",
+      "y": 270
+    },
+    "axis_along_first=false,enabled=true,facing=east,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting_smart",
+      "y": 270
+    },
+    "axis_along_first=false,enabled=true,facing=north,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_venting",
+      "y": 180
+    },
+    "axis_along_first=false,enabled=true,facing=north,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_venting_smart",
+      "y": 180
+    },
+    "axis_along_first=false,enabled=true,facing=south,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_venting"
+    },
+    "axis_along_first=false,enabled=true,facing=south,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_venting_smart"
+    },
+    "axis_along_first=false,enabled=true,facing=up,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting",
+      "x": 90,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=up,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting_smart",
+      "x": 90,
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=west,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting",
+      "y": 90
+    },
+    "axis_along_first=false,enabled=true,facing=west,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting_smart",
+      "y": 90
+    },
+    "axis_along_first=true,enabled=false,facing=down,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle",
+      "x": 270
+    },
+    "axis_along_first=true,enabled=false,facing=down,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle_smart",
+      "x": 270
+    },
+    "axis_along_first=true,enabled=false,facing=east,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_idle",
+      "y": 270
+    },
+    "axis_along_first=true,enabled=false,facing=east,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_idle_smart",
+      "y": 270
+    },
+    "axis_along_first=true,enabled=false,facing=north,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle",
+      "y": 180
+    },
+    "axis_along_first=true,enabled=false,facing=north,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle_smart",
+      "y": 180
+    },
+    "axis_along_first=true,enabled=false,facing=south,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle"
+    },
+    "axis_along_first=true,enabled=false,facing=south,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle_smart"
+    },
+    "axis_along_first=true,enabled=false,facing=up,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle",
+      "x": 90
+    },
+    "axis_along_first=true,enabled=false,facing=up,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_idle_smart",
+      "x": 90
+    },
+    "axis_along_first=true,enabled=false,facing=west,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_idle",
+      "y": 90
+    },
+    "axis_along_first=true,enabled=false,facing=west,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_idle_smart",
+      "y": 90
+    },
+    "axis_along_first=true,enabled=true,facing=down,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting",
+      "x": 270
+    },
+    "axis_along_first=true,enabled=true,facing=down,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting_smart",
+      "x": 270
+    },
+    "axis_along_first=true,enabled=true,facing=east,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_venting",
+      "y": 270
+    },
+    "axis_along_first=true,enabled=true,facing=east,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_venting_smart",
+      "y": 270
+    },
+    "axis_along_first=true,enabled=true,facing=north,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting",
+      "y": 180
+    },
+    "axis_along_first=true,enabled=true,facing=north,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting_smart",
+      "y": 180
+    },
+    "axis_along_first=true,enabled=true,facing=south,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting"
+    },
+    "axis_along_first=true,enabled=true,facing=south,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting_smart"
+    },
+    "axis_along_first=true,enabled=true,facing=up,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting",
+      "x": 90
+    },
+    "axis_along_first=true,enabled=true,facing=up,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_horizontal_venting_smart",
+      "x": 90
+    },
+    "axis_along_first=true,enabled=true,facing=west,smart=false": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_venting",
+      "y": 90
+    },
+    "axis_along_first=true,enabled=true,facing=west,smart=true": {
+      "model": "createhp:block/netherite_relief_valve/block_vertical_venting_smart",
+      "y": 90
+    }
+  }
+}

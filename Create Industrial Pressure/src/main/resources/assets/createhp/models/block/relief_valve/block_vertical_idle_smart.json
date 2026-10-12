@@ -1,0 +1,8 @@
+{
+  "parent": "create:block/fluid_valve/block_vertical_closed",
+  "textures": {
+    "2": "createhp:block/pressure_valve/copper_relief_body",
+    "3": "createhp:block/pressure_valve/copper_relief_idle_smart",
+    "particle": "createhp:block/pressure_valve/copper_relief_body"
+  }
+}

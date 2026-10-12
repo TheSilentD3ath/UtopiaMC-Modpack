@@ -4,14 +4,20 @@
   "package": "net.shiro.createhp.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "BoilerDataMixin",
+    "FluidNetworkMixin",
     "FluidPipeWrenchMixin",
     "FluidPropagatorMixin",
     "FluidPropagatorPumpMixin",
+    "FluidValveBlockEntityAccessor",
     "PumpRangeMixin",
     "PumpSourcePressureMixin",
-    "PumpThroughputMixin"
+    "PumpThroughputMixin",
+    "ReliefOpenEndMixin",
+    "TankCapacityMixin"
   ],
   "client": [
+    "FluidTankModelInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

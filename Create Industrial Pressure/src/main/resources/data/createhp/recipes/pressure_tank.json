@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "TCT",
+    "CSC",
+    "TCT"
+  ],
+  "key": {
+    "T": {
+      "item": "create:fluid_tank"
+    },
+    "C": {
+      "item": "create:copper_sheet"
+    },
+    "S": {
+      "item": "create:sturdy_sheet"
+    }
+  },
+  "result": {
+    "item": "createhp:pressure_tank",
+    "count": 1
+  }
+}
