@@ -702,6 +702,42 @@ analog lever replaced by other redstone sources, the gauge on contraptions and w
 the wrench, the warning with Quick Play (by design it waits for the next title
 screen), the English texts in the client.
 
+### Encased pressure pipes (2026-10-12)
+
+The maintainer noticed that Create's Copper Casing did nothing on the two pressure
+pipes. Both now have an encased variant, `encased_high_pressure_pipe` and
+`encased_netherite_pressure_pipe`, built like Create's encased fluid pipe: right-click
+a solid or glass pressure pipe with Copper Casing, the wrench takes the casing off
+again. The closed sides are Create's copper casing model and join neighbouring
+casings; the open sides show the pipe wall in the pipe's colour (teal or dark grey),
+so they can be told apart from Create's 16-bar encased pipe without goggles. They
+keep the limit of the pipe inside, share its block entity type (goggles, Display
+Link), drop the pipe and, as in Create, not the casing.
+
+Found on the way: Copper Casing on a pressure glass pipe used to turn it into
+Create's own encased copper pipe, which holds 16 bar. It now becomes the encased
+pressure pipe of the same material.
+
+Create checks for its own encased pipe by block in two places
+(`FluidPropagator.validateNeighbourChange`, `FluidTransportBehaviour.getRenderedRimAttachment`);
+two mixins with `require = 1` let ours pass the same checks.
+
+Checked in the production client on the dedicated server:
+
+| Check | Result |
+|---|---|
+| Casing on the high pressure pipe in a running line | becomes the encased pipe, its connections keep 64 bar |
+| Casing on the high pressure glass pipe | becomes ours, not `create:encased_fluid_pipe` |
+| Casing on the netherite pipe | encased netherite pipe, goggles "512 von 1024 bar" |
+| Wrench on the encased pipe | back to the high pressure pipe with both connections |
+| Middle click | gives the high pressure pipe, or the netherite pipe |
+| Line through an encased pipe, tank placed at its end after the pump started | fills (2.4 to 5.0 million droplets in 62 ticks) |
+| 512 bar on an encased high pressure pipe between netherite pipes | it bursts after a few seconds, drops the pipe; the netherite pipes stay |
+| Copper casing next to the encased pipes | the casing tops join into one surface |
+
+Not measured: whether the tank at an open end would also be found without the
+neighbour mixin; encased pipes on contraptions and in schematics.
+
 ## German translation of Utopia Core
 
 Utopia Core's `de_de.json` is complete: 232 of 232 keys. A script check shows it

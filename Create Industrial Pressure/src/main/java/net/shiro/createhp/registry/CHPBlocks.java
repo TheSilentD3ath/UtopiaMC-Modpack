@@ -1,6 +1,10 @@
 package net.shiro.createhp.registry;
 
 import com.simibubi.create.AllBlocks;
+import com.simibubi.create.AllSpriteShifts;
+import com.simibubi.create.content.decoration.encasing.EncasedCTBehaviour;
+import com.simibubi.create.content.decoration.encasing.EncasingRegistry;
+import com.simibubi.create.content.fluids.pipes.EncasedPipeBlock;
 import com.simibubi.create.content.fluids.tank.FluidTankItem;
 import com.simibubi.create.foundation.data.CreateRegistrate;
 import com.tterrag.registrate.util.entry.BlockEntry;
@@ -15,8 +19,10 @@ import net.shiro.createhp.client.CHPPipeAttachmentModel;
 import net.shiro.createhp.client.CHPTankModels;
 import net.shiro.createhp.client.CHPTurbineModels;
 import net.shiro.createhp.content.HighPressurePumpBlock;
+import net.shiro.createhp.content.PressureEncasedPipeBlock;
 import net.shiro.createhp.content.PressureGlassPipeBlock;
 import net.shiro.createhp.content.PressurePipeBlock;
+import net.shiro.createhp.content.PressurePipeBlockEntity;
 import net.shiro.createhp.content.PumpTier;
 import net.shiro.createhp.content.pressure.PipeMaterial;
 import net.shiro.createhp.content.pressure.PressureGaugeBlock;
@@ -78,6 +84,31 @@ public class CHPBlocks {
 					.properties(p -> p.noOcclusion())
 					.onRegister(CreateRegistrate.blockModel(() -> CHPPipeAttachmentModel::netheriteWithAO))
 					.register();
+
+	// --- Ummantelte Druckrohre: Kupfergehaeuse auf ein Druckrohr oder Glasdruckrohr, wie bei Creates Fluessigkeitsrohr ---
+	public static final BlockEntry<PressureEncasedPipeBlock> ENCASED_HIGH_PRESSURE_PIPE =
+			encasedPipe("encased_high_pressure_pipe", PipeMaterial.COPPER, HIGH_PRESSURE_PIPE,
+					() -> CHPBlockEntities.HIGH_PRESSURE_PIPE.get());
+	public static final BlockEntry<PressureEncasedPipeBlock> ENCASED_NETHERITE_PRESSURE_PIPE =
+			encasedPipe("encased_netherite_pressure_pipe", PipeMaterial.NETHERITE, NETHERITE_PRESSURE_PIPE,
+					() -> CHPBlockEntities.NETHERITE_PRESSURE_PIPE.get());
+
+	private static BlockEntry<PressureEncasedPipeBlock> encasedPipe(String id, PipeMaterial material,
+			BlockEntry<PressurePipeBlock> pipe, Supplier<BlockEntityType<PressurePipeBlockEntity>> blockEntityType) {
+		return REGISTRATE.block(id, p -> new PressureEncasedPipeBlock(p, material, pipe::get, blockEntityType))
+				// Wie das Rohr darin: Das Gehaeuse soll nicht aendern, wie lange man am Netherit-Rohr abbaut.
+				.initialProperties(() -> base(material))
+				.properties(p -> p.noOcclusion())
+				// Wie Creates ummanteltes Rohr: die geschlossenen Seiten sind Kupfergehaeuse und verbinden sich mit
+				// Gehaeusen daneben. Lambdas, damit der Server die Client-Klassen nicht laedt.
+				.onRegister(CreateRegistrate.connectedTextures(() -> new EncasedCTBehaviour(AllSpriteShifts.COPPER_CASING)))
+				.onRegister(CreateRegistrate.casingConnectivity((block, cc) -> cc.make(block, AllSpriteShifts.COPPER_CASING,
+						(state, face) -> !state.getValue(EncasedPipeBlock.FACING_TO_PROPERTY_MAP.get(face)))))
+				// Der Abfluss zu einem Tank wird wie am Rohr in den Teilen des Werkstoffs gezeichnet.
+				.onRegister(CreateRegistrate.blockModel(() -> CHPPipeAttachmentModel.factory(material)))
+				.transform(EncasingRegistry.addVariantTo(pipe))
+				.register();
+	}
 
 	// --- Druckventile: je Art in Kupfer und Netherit; Blockstates und Modelle liegen als feste Ressourcen bei ---
 	public static final BlockEntry<PressureValveBlock> PRESSURE_VALVE =

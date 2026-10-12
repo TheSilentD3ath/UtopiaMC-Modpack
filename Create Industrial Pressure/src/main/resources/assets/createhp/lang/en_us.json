@@ -7,6 +7,8 @@
   "block.createhp.high_pressure_glass_pipe": "High Pressure Glass Pipe",
   "block.createhp.netherite_pressure_pipe": "Netherite Pressure Pipe",
   "block.createhp.netherite_glass_pipe": "Netherite Glass Pressure Pipe",
+  "block.createhp.encased_high_pressure_pipe": "Encased High Pressure Pipe",
+  "block.createhp.encased_netherite_pressure_pipe": "Encased Netherite Pressure Pipe",
   "block.createhp.netherite_pressure_pump": "Netherite Pressure Pump",
   "block.createhp.advanced_netherite_pump": "Advanced Netherite Pressure Pump",
   "createhp.gui.goggles.pipe_pressure": "Pipe Pressure:",

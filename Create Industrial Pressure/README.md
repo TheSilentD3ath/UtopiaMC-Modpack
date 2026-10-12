@@ -36,7 +36,8 @@ Useful development tasks:
 
 ## Features
 
-- copper and netherite pressure pipes, each with a wrench-created glass variant
+- copper and netherite pressure pipes, each with a wrench-created glass variant and an encased
+  variant (right-click with Create's Copper Casing, like Create's fluid pipe)
 - five pump tiers with speed-scaled reach from 64 to 1024 blocks
 - pressure multipliers from 4× to 64×, coupled to matching Stress Unit costs
 - contextual range and throughput boosts that leave vanilla pumps unchanged
@@ -66,14 +67,19 @@ Glass variants follow Create's own lifecycle: wrench a solid pressure pipe to ex
 and wrench the window again to restore the matching solid material. They deliberately have no
 standalone inventory item and drop/require their matching solid pressure pipe.
 
+Encased variants work like Create's encased fluid pipe: Copper Casing on a solid or glass pressure
+pipe turns it into a solid block that keeps its connections, and the wrench takes the casing off
+again. They keep the limit of the pipe inside, show it in a ring of the pipe's colour on their open
+sides, drop the pipe and, as in Create, not the casing.
+
 Pressure is Create's own pipe pressure, shown in bar: 16 Create pressure units are 1 bar, so
 Create's pump at 256 RPM gives 16 bar and the pump tiers at 256 RPM give 64 to 1024 bar. Limits:
 
 | Pipe | Limit |
 |---|---|
 | Create fluid, glass, encased and smart pipe, fluid valve | 16 bar |
-| high pressure pipe and its glass variant | 256 bar |
-| netherite pressure pipe and its glass variant | 1024 bar |
+| high pressure pipe and its glass and encased variants | 256 bar |
+| netherite pressure pipe and its glass and encased variants | 1024 bar |
 | Create fluid tank (unless `createTanksLimited = false`) | 16 bar |
 | High Pressure Tank / Netherite Pressure Tank | 256 / 1024 bar |
 | Steam Inlet / Netherite Steam Inlet | 256 / 1024 bar |
@@ -114,10 +120,10 @@ CreateHP
   client/         render layers, Create-compatible attachment models and renderers
   config/         server config
   mixin/          narrow integration points for range, throughput, wrench, valves, flow, tanks and boilers
-tools/            generators for the valve, tank, steam, turbine and gauge textures, models and blockstates
+tools/            generators for the valve, tank, encased pipe, steam, turbine and gauge assets
 ```
 
-`PressurePipeBlock` and `PressureGlassPipeBlock` are material-neutral implementations configured by
+`PressurePipeBlock`, `PressureGlassPipeBlock` and `PressureEncasedPipeBlock` are material-neutral implementations configured by
 the registry. This keeps copper and netherite variants on one behavior path while preserving their
 existing registry IDs, models and block-entity types.
 

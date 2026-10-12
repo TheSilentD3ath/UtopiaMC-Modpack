@@ -7,6 +7,8 @@
   "block.createhp.high_pressure_glass_pipe": "Hochdruck-Glasrohr",
   "block.createhp.netherite_pressure_pipe": "Netherit-Druckrohr",
   "block.createhp.netherite_glass_pipe": "Netherit-Glasdruckrohr",
+  "block.createhp.encased_high_pressure_pipe": "Ummanteltes Hochdruckrohr",
+  "block.createhp.encased_netherite_pressure_pipe": "Ummanteltes Netherit-Druckrohr",
   "block.createhp.netherite_pressure_pump": "Netherit-Druckpumpe",
   "block.createhp.advanced_netherite_pump": "Erweiterte Netherit-Druckpumpe",
   "createhp.gui.goggles.pipe_pressure": "Rohrdruck:",

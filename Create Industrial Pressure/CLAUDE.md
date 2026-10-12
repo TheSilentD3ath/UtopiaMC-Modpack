@@ -21,8 +21,9 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
   Create's own pipe pressure read in bar (16 units = 1 bar); do not add a second pressure model. Valves
   change it only while a pump distributes (`PressureShaping`) and cap the flow of Create's
   fluid networks (`FluidNetworkMixin`, `ValveFlow`).
-- Valve and tank textures, models and blockstates come from `tools/valve_assets.py` and
-  `tools/tank_assets.py` (they read Create's assets from the Create JAR; need ImageMagick).
+- Valve, tank and encased pipe textures, models and blockstates come from `tools/valve_assets.py`,
+  `tools/tank_assets.py` and `tools/encased_pipe_assets.py` (they read Create's assets from the Create
+  JAR; need ImageMagick).
   Steam, steam outlet, turbine and gauge assets come from `tools/steam_assets.py`,
   `tools/turbine_assets.py` and `tools/gauge_assets.py` (own pixels, nothing from Create).
   Regenerate instead of editing the generated files by hand; they reproduce the committed files
@@ -36,6 +37,10 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
 - Turbine walls use connected textures: `client/TurbineCTBehaviour` joins casing, inlet, condensate
   outlet and output of the same material, `client/CHPTurbineModels` holds the sheets. Register them
   with a lambda in `CHPBlocks` (a method reference would load the client class on the server).
+- Encased pressure pipes (`PressureEncasedPipeBlock`) extend Create's `EncasedPipeBlock` and register
+  through Create's `EncasingRegistry`, so the casing click comes from `FluidPipeBlock` itself. Create's
+  glass pipe hard-codes its own encased pipe, so `PressureGlassPipeBlock.use` encases ours instead.
+  They share the block entity type of their pipe, so goggles and the Display Link work unchanged.
 - Goggle lines need a new `LangBuilder` each (`PressureTooltip.lang()`); a shared one repeats every
   earlier line.
 - The client config `config/createhp-client.toml` only holds `pressureWarningSeen`; set it to false
@@ -55,8 +60,9 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
   a different module set than the one nested in Create's JAR (registry mismatch on
   `porting_lib:area_selector`). For multiplayer, run the release JAR on both sides with
   Fabric API 0.92.6 and Create's Modrinth JAR.
-- The new valve mixins (`FluidNetworkMixin`, `ReliefOpenEndMixin`) use the default
-  `require = 1` and stop the game if they no longer apply. The pressure redirect in
+- The new valve mixins (`FluidNetworkMixin`, `ReliefOpenEndMixin`) and the encased pipe mixins
+  (`EncasedPipeNeighbourMixin`, `EncasedPipeRimMixin`) use the default `require = 1` and stop the
+  game if they no longer apply. The pressure redirect in
   `PumpThroughputMixin` also carries the valves; it is `require = 0` like the other pump mixins.
 - A creative fluid tank with `{TankContent:{Variant:{fluid:"createhp:steam"},...}}` is an endless
   steam source for turbine tests; `data get block <output>` shows `Formed`, `Length`, `SteamRate`

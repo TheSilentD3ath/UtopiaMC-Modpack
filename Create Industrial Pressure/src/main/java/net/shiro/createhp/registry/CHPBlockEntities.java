@@ -27,10 +27,11 @@ import net.shiro.createhp.content.valve.PressureValveBlockEntity;
 public class CHPBlockEntities {
 	private static final CreateRegistrate REGISTRATE = CreateHP.REGISTRATE;
 
-	/** Create's FluidPipeBlockEntity plus a goggle readout of the pressure; joins the fluid network as is. */
+	/** Creates FluidPipeBlockEntity mit Druckanzeige fuer die Brille. Das ummantelte Rohr nutzt denselben Typ,
+	 *  damit Brille und Anzeigequelle dort ohne Weiteres gelten. */
 	public static final BlockEntityEntry<PressurePipeBlockEntity> HIGH_PRESSURE_PIPE =
 			REGISTRATE.blockEntity("high_pressure_pipe", PressurePipeBlockEntity::new)
-					.validBlock(CHPBlocks.HIGH_PRESSURE_PIPE)
+					.validBlocks(CHPBlocks.HIGH_PRESSURE_PIPE, CHPBlocks.ENCASED_HIGH_PRESSURE_PIPE)
 					.register();
 
 	/** Glass (see-through) HP pipe BE — reuses Create's StraightPipeBlockEntity, with Create's own
@@ -42,10 +43,10 @@ public class CHPBlockEntities {
 					.renderer(() -> TransparentStraightPipeRenderer::new)
 					.register();
 
-	/** Netherite solid pipe BE — same Create FluidPipeBlockEntity, joins the fluid network. */
+	/** Netherit-Rohr, wie oben; auch hier mit dem ummantelten Rohr. */
 	public static final BlockEntityEntry<PressurePipeBlockEntity> NETHERITE_PRESSURE_PIPE =
 			REGISTRATE.blockEntity("netherite_pressure_pipe", PressurePipeBlockEntity::new)
-					.validBlock(CHPBlocks.NETHERITE_PRESSURE_PIPE)
+					.validBlocks(CHPBlocks.NETHERITE_PRESSURE_PIPE, CHPBlocks.ENCASED_NETHERITE_PRESSURE_PIPE)
 					.register();
 
 	/** Netherite glass pipe BE — Create's StraightPipeBlockEntity + glass visual/renderer. */
