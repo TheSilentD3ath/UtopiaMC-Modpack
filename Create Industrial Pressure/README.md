@@ -120,7 +120,7 @@ CreateHP
   client/         render layers, Create-compatible attachment models and renderers
   config/         server config
   mixin/          narrow integration points for range, throughput, wrench, valves, flow, tanks and boilers
-tools/            generators for the valve, tank, encased pipe, steam, turbine and gauge assets
+tools/            generators for the valve, tank, glass pipe, encased pipe, steam, turbine and gauge assets
 ```
 
 `PressurePipeBlock`, `PressureGlassPipeBlock` and `PressureEncasedPipeBlock` are material-neutral implementations configured by

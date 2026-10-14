@@ -21,9 +21,10 @@ tier. Details and known risks: `README.md`. Store page text: `MODRINTH.md`.
   Create's own pipe pressure read in bar (16 units = 1 bar); do not add a second pressure model. Valves
   change it only while a pump distributes (`PressureShaping`) and cap the flow of Create's
   fluid networks (`FluidNetworkMixin`, `ValveFlow`).
-- Valve, tank and encased pipe textures, models and blockstates come from `tools/valve_assets.py`,
-  `tools/tank_assets.py` and `tools/encased_pipe_assets.py` (they read Create's assets from the Create
-  JAR; need ImageMagick).
+- Valve, tank, glass pipe and encased pipe textures, models and blockstates come from
+  `tools/valve_assets.py`, `tools/tank_assets.py`, `tools/glass_pipe_assets.py` and
+  `tools/encased_pipe_assets.py` (they read Create's assets from the Create JAR; need ImageMagick).
+  Keep Create's pale glass tones as glass when recolouring: without them a window reads as a hole.
   Steam, steam outlet, turbine and gauge assets come from `tools/steam_assets.py`,
   `tools/turbine_assets.py` and `tools/gauge_assets.py` (own pixels, nothing from Create).
   Regenerate instead of editing the generated files by hand; they reproduce the committed files

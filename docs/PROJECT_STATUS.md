@@ -738,6 +738,18 @@ Checked in the production client on the dedicated server:
 Not measured: whether the tank at an open end would also be found without the
 neighbour mixin; encased pipes on contraptions and in schematics.
 
+### Glass pressure pipes get their glass back (2026-10-14)
+
+The maintainer: the windows of the glass pressure pipes look like holes, unlike
+Create's glass pipe. Cause: Create's window is empty and reads as glass only through
+the pale glass tones along its edges (48 pixels); the imported textures had recoloured
+those to the pipe colour. `tools/glass_pipe_assets.py` now derives both textures from
+Create's `glass_fluid_pipe.png`: the copper tones go through the same colour tables as
+the valves (the pipe body is unchanged, pixel for pixel), the glass gets glass tones
+(whiter on the teal high pressure pipe, Create's own on netherite). Checked in the
+production client next to Create's glass pipe, empty and with water flowing. The
+pressure tank windows already kept Create's glass.
+
 ## German translation of Utopia Core
 
 Utopia Core's `de_de.json` is complete: 232 of 232 keys. A script check shows it
